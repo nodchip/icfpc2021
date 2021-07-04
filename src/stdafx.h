@@ -17,6 +17,6 @@
 #  include <sys/time.h>
 #endif
 
-#include "glog/logging.h"
+#include <glog/logging.h>
 
 #endif // __ICFPC2021_STDAFX_H__

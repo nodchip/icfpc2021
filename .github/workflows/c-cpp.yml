@@ -8,11 +8,12 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v2
+    - name: checkout
+      uses: actions/checkout@v2
+      with:
+        submodules: true
     - name: build libs
       run: chmod +x libs/build.sh && libs/build.sh
     - name: make
