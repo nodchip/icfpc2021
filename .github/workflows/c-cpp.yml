@@ -1,0 +1,21 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: build libs
+      run: chmod +x libs/build.sh && libs/build.sh
+    - name: make
+      run: make -B -C src dirs solver test
+    - name: test
+      run: src/test
