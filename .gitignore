@@ -34,6 +34,8 @@
 *.out
 *.app
 /src/build
+/src/solver
+/src/test
 /tools/__pycache__
 /vs/.vs
 /vs/packages
