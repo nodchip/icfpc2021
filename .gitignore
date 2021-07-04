@@ -26,6 +26,9 @@
 *.a
 *.lib
 
+# Libraries
+/libs/glog_build
+
 # Executables
 *.exe
 *.out

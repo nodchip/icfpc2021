@@ -1,3 +1,6 @@
+#!/bin/bash
+# This script needs to be run on bash.
+
 echo "building fmt"
 pushd $(dirname $0)/fmt 
 mkdir -p build
