@@ -1,0 +1,5 @@
+C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/glog.dir
+C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/PACKAGE.dir
+C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/INSTALL.dir
+C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/ALL_BUILD.dir
+C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/ZERO_CHECK.dir

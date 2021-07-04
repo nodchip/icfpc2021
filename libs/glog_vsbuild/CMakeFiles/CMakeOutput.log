@@ -1,0 +1,499 @@
+The system is: Windows - 10.0.18363 - AMD64
+Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+Compiler:  
+Build flags: 
+Id flags:  
+
+The output was:
+0
+.NET Framework 向け Microsoft (R) Build Engine バージョン 16.6.0+5ff7b0c9e
+Copyright (C) Microsoft Corporation.All rights reserved.
+
+2020/07/18 10:48:50 にビルドを開始しました。
+ノード 1 上のプロジェクト "C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\3.18.0\CompilerIdC\CompilerIdC.vcxproj" (既定のターゲット)。
+PrepareForBuild:
+  ディレクトリ "Debug\" を作成しています。
+  ディレクトリ "Debug\CompilerIdC.tlog\" を作成しています。
+InitializeBuildStatus:
+  "AlwaysCreate" が指定されたため "Debug\CompilerIdC.tlog\unsuccessfulbuild" を作成しています。
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.26.28801\bin\HostX64\x64\CL.exe /c /nologo /W0 /WX- /diagnostics:column /Od /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"Debug\\" /Fd"Debug\vc142.pdb" /Gd /TC /FC /errorReport:queue CMakeCCompilerId.c
+  CMakeCCompilerId.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.26.28801\bin\HostX64\x64\link.exe /ERRORREPORT:QUEUE /OUT:".\CompilerIdC.exe" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /PDB:".\CompilerIdC.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:".\CompilerIdC.lib" /MACHINE:X64 Debug\CMakeCCompilerId.obj
+  CompilerIdC.vcxproj -> C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\3.18.0\CompilerIdC\.\CompilerIdC.exe
+PostBuildEvent:
+  for %%i in (cl.exe) do @echo CMAKE_C_COMPILER=%%~$PATH:i
+  :VCEnd
+  CMAKE_C_COMPILER=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.26.28801\bin\Hostx64\x64\cl.exe
+FinalizeBuildStatus:
+  ファイル "Debug\CompilerIdC.tlog\unsuccessfulbuild" を削除しています。
+  "Debug\CompilerIdC.tlog\CompilerIdC.lastbuildstate" のタッチ タスクを実行しています。
+プロジェクト "C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\3.18.0\CompilerIdC\CompilerIdC.vcxproj" (既定のターゲット) のビルドが完了しました。
+
+ビルドに成功しました。
+    0 個の警告
+    0 エラー
+
+経過時間 00:00:01.12
+
+
+Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.exe"
+
+Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.vcxproj"
+
+The C compiler identification is MSVC, found in "C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/3.18.0/CompilerIdC/CompilerIdC.exe"
+
+Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+Compiler:  
+Build flags: 
+Id flags:  
+
+The output was:
+0
+.NET Framework 向け Microsoft (R) Build Engine バージョン 16.6.0+5ff7b0c9e
+Copyright (C) Microsoft Corporation.All rights reserved.
+
+2020/07/18 10:48:52 にビルドを開始しました。
+ノード 1 上のプロジェクト "C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\3.18.0\CompilerIdCXX\CompilerIdCXX.vcxproj" (既定のターゲット)。
+PrepareForBuild:
+  ディレクトリ "Debug\" を作成しています。
+  ディレクトリ "Debug\CompilerIdCXX.tlog\" を作成しています。
+InitializeBuildStatus:
+  "AlwaysCreate" が指定されたため "Debug\CompilerIdCXX.tlog\unsuccessfulbuild" を作成しています。
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.26.28801\bin\HostX64\x64\CL.exe /c /nologo /W0 /WX- /diagnostics:column /Od /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"Debug\\" /Fd"Debug\vc142.pdb" /Gd /TP /FC /errorReport:queue CMakeCXXCompilerId.cpp
+  CMakeCXXCompilerId.cpp
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.26.28801\bin\HostX64\x64\link.exe /ERRORREPORT:QUEUE /OUT:".\CompilerIdCXX.exe" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /PDB:".\CompilerIdCXX.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:".\CompilerIdCXX.lib" /MACHINE:X64 Debug\CMakeCXXCompilerId.obj
+  CompilerIdCXX.vcxproj -> C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\3.18.0\CompilerIdCXX\.\CompilerIdCXX.exe
+PostBuildEvent:
+  for %%i in (cl.exe) do @echo CMAKE_CXX_COMPILER=%%~$PATH:i
+  :VCEnd
+  CMAKE_CXX_COMPILER=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.26.28801\bin\Hostx64\x64\cl.exe
+FinalizeBuildStatus:
+  ファイル "Debug\CompilerIdCXX.tlog\unsuccessfulbuild" を削除しています。
+  "Debug\CompilerIdCXX.tlog\CompilerIdCXX.lastbuildstate" のタッチ タスクを実行しています。
+プロジェクト "C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\3.18.0\CompilerIdCXX\CompilerIdCXX.vcxproj" (既定のターゲット) のビルドが完了しました。
+
+ビルドに成功しました。
+    0 個の警告
+    0 エラー
+
+経過時間 00:00:01.15
+
+
+Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.exe"
+
+Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.vcxproj"
+
+The CXX compiler identification is MSVC, found in "C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/3.18.0/CompilerIdCXX/CompilerIdCXX.exe"
+
+Detecting C compiler ABI info compiled with the following output:
+Change Dir: C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe cmTC_c2498.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:m && .NET Framework 向け Microsoft (R) Build Engine バージョン 16.6.0+5ff7b0c9e
+Copyright (C) Microsoft Corporation.All rights reserved.
+
+  Microsoft(R) C/C++ Optimizing Compiler Version 19.26.28805 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  CMakeCCompilerABI.c
+  cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_c2498.dir\Debug\\" /Fd"cmTC_c2498.dir\Debug\vc142.pdb" /Gd /TC /errorReport:queue "C:\Program Files\CMake\share\cmake-3.18\Modules\CMakeCCompilerABI.c"
+  cmTC_c2498.vcxproj -> C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\Debug\cmTC_c2498.exe
+
+
+
+Detecting CXX compiler ABI info compiled with the following output:
+Change Dir: C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe cmTC_c7cdc.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:m && .NET Framework 向け Microsoft (R) Build Engine バージョン 16.6.0+5ff7b0c9e
+Copyright (C) Microsoft Corporation.All rights reserved.
+
+  Microsoft(R) C/C++ Optimizing Compiler Version 19.26.28805 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  CMakeCXXCompilerABI.cpp
+  cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_c7cdc.dir\Debug\\" /Fd"cmTC_c7cdc.dir\Debug\vc142.pdb" /Gd /TP /errorReport:queue "C:\Program Files\CMake\share\cmake-3.18\Modules\CMakeCXXCompilerABI.cpp"
+  cmTC_c7cdc.vcxproj -> C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\Debug\cmTC_c7cdc.exe
+
+
+
+Determining if the include file inttypes.h exists passed with the following output:
+Change Dir: C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe cmTC_a96d1.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:m && .NET Framework 向け Microsoft (R) Build Engine バージョン 16.6.0+5ff7b0c9e
+Copyright (C) Microsoft Corporation.All rights reserved.
+
+  Microsoft(R) C/C++ Optimizing Compiler Version 19.26.28805 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  CheckIncludeFile.c
+  cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_a96d1.dir\Debug\\" /Fd"cmTC_a96d1.dir\Debug\vc142.pdb" /Gd /TC /errorReport:queue C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\CheckIncludeFile.c
+  cmTC_a96d1.vcxproj -> C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\Debug\cmTC_a96d1.exe
+
+
+
+Determining if the include file memory.h exists passed with the following output:
+Change Dir: C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe cmTC_ff989.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:m && .NET Framework 向け Microsoft (R) Build Engine バージョン 16.6.0+5ff7b0c9e
+Copyright (C) Microsoft Corporation.All rights reserved.
+
+  Microsoft(R) C/C++ Optimizing Compiler Version 19.26.28805 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  CheckIncludeFile.c
+  cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_ff989.dir\Debug\\" /Fd"cmTC_ff989.dir\Debug\vc142.pdb" /Gd /TC /errorReport:queue C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\CheckIncludeFile.c
+  cmTC_ff989.vcxproj -> C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\Debug\cmTC_ff989.exe
+
+
+
+Determining if the include file stdint.h exists passed with the following output:
+Change Dir: C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe cmTC_94895.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:m && .NET Framework 向け Microsoft (R) Build Engine バージョン 16.6.0+5ff7b0c9e
+Copyright (C) Microsoft Corporation.All rights reserved.
+
+  Microsoft(R) C/C++ Optimizing Compiler Version 19.26.28805 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  CheckIncludeFile.c
+  cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_94895.dir\Debug\\" /Fd"cmTC_94895.dir\Debug\vc142.pdb" /Gd /TC /errorReport:queue C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\CheckIncludeFile.c
+  cmTC_94895.vcxproj -> C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\Debug\cmTC_94895.exe
+
+
+
+Determining if the include file stdlib.h exists passed with the following output:
+Change Dir: C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe cmTC_75583.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:m && .NET Framework 向け Microsoft (R) Build Engine バージョン 16.6.0+5ff7b0c9e
+Copyright (C) Microsoft Corporation.All rights reserved.
+
+  Microsoft(R) C/C++ Optimizing Compiler Version 19.26.28805 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  CheckIncludeFile.c
+  cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_75583.dir\Debug\\" /Fd"cmTC_75583.dir\Debug\vc142.pdb" /Gd /TC /errorReport:queue C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\CheckIncludeFile.c
+  cmTC_75583.vcxproj -> C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\Debug\cmTC_75583.exe
+
+
+
+Determining if the include file string.h exists passed with the following output:
+Change Dir: C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe cmTC_103bf.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:m && .NET Framework 向け Microsoft (R) Build Engine バージョン 16.6.0+5ff7b0c9e
+Copyright (C) Microsoft Corporation.All rights reserved.
+
+  Microsoft(R) C/C++ Optimizing Compiler Version 19.26.28805 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  CheckIncludeFile.c
+  cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_103bf.dir\Debug\\" /Fd"cmTC_103bf.dir\Debug\vc142.pdb" /Gd /TC /errorReport:queue C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\CheckIncludeFile.c
+  cmTC_103bf.vcxproj -> C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\Debug\cmTC_103bf.exe
+
+
+
+Determining if the include file sys/stat.h exists passed with the following output:
+Change Dir: C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe cmTC_a98cd.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:m && .NET Framework 向け Microsoft (R) Build Engine バージョン 16.6.0+5ff7b0c9e
+Copyright (C) Microsoft Corporation.All rights reserved.
+
+  Microsoft(R) C/C++ Optimizing Compiler Version 19.26.28805 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  CheckIncludeFile.c
+  cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_a98cd.dir\Debug\\" /Fd"cmTC_a98cd.dir\Debug\vc142.pdb" /Gd /TC /errorReport:queue C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\CheckIncludeFile.c
+  cmTC_a98cd.vcxproj -> C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\Debug\cmTC_a98cd.exe
+
+
+
+Determining if the include file sys/types.h exists passed with the following output:
+Change Dir: C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe cmTC_c38cd.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:m && .NET Framework 向け Microsoft (R) Build Engine バージョン 16.6.0+5ff7b0c9e
+Copyright (C) Microsoft Corporation.All rights reserved.
+
+  Microsoft(R) C/C++ Optimizing Compiler Version 19.26.28805 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  CheckIncludeFile.c
+  cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_c38cd.dir\Debug\\" /Fd"cmTC_c38cd.dir\Debug\vc142.pdb" /Gd /TC /errorReport:queue C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\CheckIncludeFile.c
+  cmTC_c38cd.vcxproj -> C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\Debug\cmTC_c38cd.exe
+
+
+
+Determining if the include file unordered_map exists passed with the following output:
+Change Dir: C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe cmTC_051de.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:m && .NET Framework 向け Microsoft (R) Build Engine バージョン 16.6.0+5ff7b0c9e
+Copyright (C) Microsoft Corporation.All rights reserved.
+
+  Microsoft(R) C/C++ Optimizing Compiler Version 19.26.28805 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  CheckIncludeFile.cxx
+  cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_051de.dir\Debug\\" /Fd"cmTC_051de.dir\Debug\vc142.pdb" /Gd /TP /errorReport:queue C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\CheckIncludeFile.cxx
+  cmTC_051de.vcxproj -> C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\Debug\cmTC_051de.exe
+
+
+
+Determining if the include file unordered_set exists passed with the following output:
+Change Dir: C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe cmTC_60bb6.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:m && .NET Framework 向け Microsoft (R) Build Engine バージョン 16.6.0+5ff7b0c9e
+Copyright (C) Microsoft Corporation.All rights reserved.
+
+  Microsoft(R) C/C++ Optimizing Compiler Version 19.26.28805 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  CheckIncludeFile.cxx
+  cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_60bb6.dir\Debug\\" /Fd"cmTC_60bb6.dir\Debug\vc142.pdb" /Gd /TP /errorReport:queue C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\CheckIncludeFile.cxx
+  cmTC_60bb6.vcxproj -> C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\Debug\cmTC_60bb6.exe
+
+
+
+Determining if the include file stddef.h exists passed with the following output:
+Change Dir: C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe cmTC_bbb88.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:m && .NET Framework 向け Microsoft (R) Build Engine バージョン 16.6.0+5ff7b0c9e
+Copyright (C) Microsoft Corporation.All rights reserved.
+
+  Microsoft(R) C/C++ Optimizing Compiler Version 19.26.28805 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  CheckIncludeFile.c
+  cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_bbb88.dir\Debug\\" /Fd"cmTC_bbb88.dir\Debug\vc142.pdb" /Gd /TC /errorReport:queue C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\CheckIncludeFile.c
+  cmTC_bbb88.vcxproj -> C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\Debug\cmTC_bbb88.exe
+
+
+
+Determining size of unsigned __int16 passed with the following output:
+Change Dir: C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe cmTC_b8ba6.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:m && .NET Framework 向け Microsoft (R) Build Engine バージョン 16.6.0+5ff7b0c9e
+Copyright (C) Microsoft Corporation.All rights reserved.
+
+  Microsoft(R) C/C++ Optimizing Compiler Version 19.26.28805 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  HAVE___UINT16.c
+  cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_b8ba6.dir\Debug\\" /Fd"cmTC_b8ba6.dir\Debug\vc142.pdb" /Gd /TC /errorReport:queue C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CheckTypeSize\HAVE___UINT16.c
+  cmTC_b8ba6.vcxproj -> C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\Debug\cmTC_b8ba6.exe
+
+
+
+Determining size of uint16_t passed with the following output:
+Change Dir: C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe cmTC_8c411.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:m && .NET Framework 向け Microsoft (R) Build Engine バージョン 16.6.0+5ff7b0c9e
+Copyright (C) Microsoft Corporation.All rights reserved.
+
+  Microsoft(R) C/C++ Optimizing Compiler Version 19.26.28805 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  HAVE_UINT16_T.c
+  cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_8c411.dir\Debug\\" /Fd"cmTC_8c411.dir\Debug\vc142.pdb" /Gd /TC /errorReport:queue C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CheckTypeSize\HAVE_UINT16_T.c
+  cmTC_8c411.vcxproj -> C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\Debug\cmTC_8c411.exe
+
+
+
+Determining if the snprintf exist passed with the following output:
+Change Dir: C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe cmTC_dd439.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:m && .NET Framework 向け Microsoft (R) Build Engine バージョン 16.6.0+5ff7b0c9e
+Copyright (C) Microsoft Corporation.All rights reserved.
+
+  Microsoft(R) C/C++ Optimizing Compiler Version 19.26.28805 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  CheckSymbolExists.c
+  cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_dd439.dir\Debug\\" /Fd"cmTC_dd439.dir\Debug\vc142.pdb" /Gd /TC /errorReport:queue C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\CheckSymbolExists.c
+  cmTC_dd439.vcxproj -> C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\Debug\cmTC_dd439.exe
+
+
+File C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <stdio.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef snprintf
+  return ((int*)(&snprintf))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+Determining if the function UnDecorateSymbolName exists in the dbghelp passed with the following output:
+Change Dir: C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe cmTC_2fb84.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:m && .NET Framework 向け Microsoft (R) Build Engine バージョン 16.6.0+5ff7b0c9e
+Copyright (C) Microsoft Corporation.All rights reserved.
+
+  Microsoft(R) C/C++ Optimizing Compiler Version 19.26.28805 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  CheckFunctionExists.c
+  cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=UnDecorateSymbolName /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_2fb84.dir\Debug\\" /Fd"cmTC_2fb84.dir\Debug\vc142.pdb" /Gd /TC /errorReport:queue "C:\Program Files\CMake\share\cmake-3.18\Modules\CheckFunctionExists.c"
+  cmTC_2fb84.vcxproj -> C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\Debug\cmTC_2fb84.exe
+
+
+
+Performing C SOURCE FILE Test HAVE___DECLSPEC succeeded with the following output:
+Change Dir: C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe cmTC_0a141.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:m && .NET Framework 向け Microsoft (R) Build Engine バージョン 16.6.0+5ff7b0c9e
+Copyright (C) Microsoft Corporation.All rights reserved.
+
+  Microsoft(R) C/C++ Optimizing Compiler Version 19.26.28805 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  src.c
+  cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D WIN32 /D _WINDOWS /D HAVE___DECLSPEC /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_0a141.dir\Debug\\" /Fd"cmTC_0a141.dir\Debug\vc142.pdb" /Gd /TC /errorReport:queue C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\src.c
+  cmTC_0a141.vcxproj -> C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\Debug\cmTC_0a141.exe
+
+
+Source file was:
+
+__declspec(selectany) int a;
+int main(void) { return 0; }
+
+Performing C++ SOURCE FILE Test STL_STD_NAMESPACE succeeded with the following output:
+Change Dir: C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe cmTC_8fc67.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:m && .NET Framework 向け Microsoft (R) Build Engine バージョン 16.6.0+5ff7b0c9e
+Copyright (C) Microsoft Corporation.All rights reserved.
+
+  Microsoft(R) C/C++ Optimizing Compiler Version 19.26.28805 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  src.cxx
+  cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D WIN32 /D _WINDOWS /D STL_STD_NAMESPACE /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_8fc67.dir\Debug\\" /Fd"cmTC_8fc67.dir\Debug\vc142.pdb" /Gd /TP /errorReport:queue C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\src.cxx
+  cmTC_8fc67.vcxproj -> C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\Debug\cmTC_8fc67.exe
+
+
+Source file was:
+
+#include <vector>
+std::vector<int> t; int main() { }
+
+Performing C++ SOURCE FILE Test HAVE_USING_OPERATOR succeeded with the following output:
+Change Dir: C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe cmTC_57d9d.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:m && .NET Framework 向け Microsoft (R) Build Engine バージョン 16.6.0+5ff7b0c9e
+Copyright (C) Microsoft Corporation.All rights reserved.
+
+  Microsoft(R) C/C++ Optimizing Compiler Version 19.26.28805 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  src.cxx
+  cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D WIN32 /D _WINDOWS /D HAVE_USING_OPERATOR /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_57d9d.dir\Debug\\" /Fd"cmTC_57d9d.dir\Debug\vc142.pdb" /Gd /TP /errorReport:queue C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\src.cxx
+  cmTC_57d9d.vcxproj -> C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\Debug\cmTC_57d9d.exe
+
+
+Source file was:
+
+#include <iostream>
+std::ostream& operator<<(std::ostream&, struct s);
+using ::operator<<;
+int main() { }
+
+Performing C++ SOURCE FILE Test HAVE_NAMESPACES succeeded with the following output:
+Change Dir: C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe cmTC_b4f12.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:m && .NET Framework 向け Microsoft (R) Build Engine バージョン 16.6.0+5ff7b0c9e
+Copyright (C) Microsoft Corporation.All rights reserved.
+
+  Microsoft(R) C/C++ Optimizing Compiler Version 19.26.28805 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  src.cxx
+  cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D WIN32 /D _WINDOWS /D HAVE_NAMESPACES /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_b4f12.dir\Debug\\" /Fd"cmTC_b4f12.dir\Debug\vc142.pdb" /Gd /TP /errorReport:queue C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\src.cxx
+  cmTC_b4f12.vcxproj -> C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\Debug\cmTC_b4f12.exe
+
+
+Source file was:
+
+namespace Outer { namespace Inner { int i = 0; }}
+using namespace Outer::Inner;;
+int main() { return i; }
+
+Performing C++ SOURCE FILE Test HAVE_MSVC_TLS succeeded with the following output:
+Change Dir: C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe cmTC_e6906.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:m && .NET Framework 向け Microsoft (R) Build Engine バージョン 16.6.0+5ff7b0c9e
+Copyright (C) Microsoft Corporation.All rights reserved.
+
+  Microsoft(R) C/C++ Optimizing Compiler Version 19.26.28805 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  src.cxx
+  cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D WIN32 /D _WINDOWS /D HAVE_MSVC_TLS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_e6906.dir\Debug\\" /Fd"cmTC_e6906.dir\Debug\vc142.pdb" /Gd /TP /errorReport:queue C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\src.cxx
+  cmTC_e6906.vcxproj -> C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\Debug\cmTC_e6906.exe
+
+
+Source file was:
+
+__declspec(thread) int tls;
+int main() { }
+
+Performing C++ SOURCE FILE Test HAVE_CXX11_TLS succeeded with the following output:
+Change Dir: C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe cmTC_268b8.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:m && .NET Framework 向け Microsoft (R) Build Engine バージョン 16.6.0+5ff7b0c9e
+Copyright (C) Microsoft Corporation.All rights reserved.
+
+  Microsoft(R) C/C++ Optimizing Compiler Version 19.26.28805 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  src.cxx
+  cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D WIN32 /D _WINDOWS /D HAVE_CXX11_TLS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_268b8.dir\Debug\\" /Fd"cmTC_268b8.dir\Debug\vc142.pdb" /Gd /TP /errorReport:queue C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\src.cxx
+  cmTC_268b8.vcxproj -> C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\Debug\cmTC_268b8.exe
+
+
+Source file was:
+
+thread_local int tls;
+int main() { }
+
+Performing C++ SOURCE FILE Test HAVE_ALIGNED_STORAGE succeeded with the following output:
+Change Dir: C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe cmTC_33217.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:m && .NET Framework 向け Microsoft (R) Build Engine バージョン 16.6.0+5ff7b0c9e
+Copyright (C) Microsoft Corporation.All rights reserved.
+
+  Microsoft(R) C/C++ Optimizing Compiler Version 19.26.28805 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  src.cxx
+  cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D WIN32 /D _WINDOWS /D HAVE_ALIGNED_STORAGE /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_33217.dir\Debug\\" /Fd"cmTC_33217.dir\Debug\vc142.pdb" /Gd /TP /errorReport:queue C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\src.cxx
+  cmTC_33217.vcxproj -> C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\Debug\cmTC_33217.exe
+
+
+Source file was:
+
+#include <type_traits>
+std::aligned_storage<sizeof(char), alignof(char)>::type data;
+int main() { }
+
+Performing C++ SOURCE FILE Test HAVE_SYMBOLIZE succeeded with the following output:
+Change Dir: C:/home/nodchip/icfpc2020/libs/glog_vsbuild/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe cmTC_0ed56.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:m && .NET Framework 向け Microsoft (R) Build Engine バージョン 16.6.0+5ff7b0c9e
+Copyright (C) Microsoft Corporation.All rights reserved.
+
+  Microsoft(R) C/C++ Optimizing Compiler Version 19.26.28805 for x64
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  src.cxx
+  cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D WIN32 /D _WINDOWS /D HAVE_SYMBOLIZE /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_0ed56.dir\Debug\\" /Fd"cmTC_0ed56.dir\Debug\vc142.pdb" /Gd /TP /errorReport:queue C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\src.cxx
+  cmTC_0ed56.vcxproj -> C:\home\nodchip\icfpc2020\libs\glog_vsbuild\CMakeFiles\CMakeTmp\Debug\cmTC_0ed56.exe
+
+
+...and run output:
+
+Return value: 1
+Source file was:
+  #include <windows.h>
+  #include <dbghelp.h>
+  #include <cstdlib>
+
+  void foobar() { }
+
+  int main()
+  {
+      HANDLE process = GetCurrentProcess();
+
+      if (!SymInitialize(process, NULL, TRUE))
+          return EXIT_FAILURE;
+
+      char buf[sizeof(SYMBOL_INFO) + MAX_SYM_NAME];
+      SYMBOL_INFO *symbol = reinterpret_cast<SYMBOL_INFO *>(buf);
+      symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+      symbol->MaxNameLen = MAX_SYM_NAME;
+
+      void* const pc = reinterpret_cast<void*>(&foobar);
+      BOOL ret = SymFromAddr(process, reinterpret_cast<DWORD64>(pc), 0, symbol);
+
+      return ret ? EXIT_SUCCESS : EXIT_FAILURE;
+  }
+  

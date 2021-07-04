@@ -1,0 +1,1 @@
+https://github.com/fmtlib/fmt/tree/6.2.1

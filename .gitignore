@@ -30,3 +30,12 @@
 *.exe
 *.out
 *.app
+/src/build
+/tools/__pycache__
+/vs/.vs
+/vs/packages
+/vs/x64
+/vs/test/x64
+/vs/test/*.user
+/vs/solver/x64
+/vs/solver/*.user

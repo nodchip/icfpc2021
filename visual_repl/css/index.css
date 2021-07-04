@@ -1,0 +1,29 @@
+#eval-input-group {
+    display: none;
+}
+#eval-result {
+    font-size: 80%;
+    font-family: monospace;
+}
+#picture {
+}
+
+body {
+    padding-bottom: 50px; /* for footer */
+}
+
+.footer {
+    position: fixed;
+    bottom: 0;
+    height: 50px;
+    width: 100%;
+}
+
+#node-stat button {
+    font-family: monospace;
+}
+
+.container-main {
+    max-width: 1700px;
+}
+

@@ -1,0 +1,1 @@
+https://github.com/google/glog/tree/v0.4.0
