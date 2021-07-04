@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: build libs
-      run: libs/build.sh
+      run: chmod +x libs/build.sh && libs/build.sh
     - name: make
       run: make -B -C src dirs solver test
     - name: test
