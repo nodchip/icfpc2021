@@ -1,4 +1,4 @@
-LIB_PATH=../libs
+LIB_PATH=$(abspath ../libs)
 BUILD_PATH=build
 GTEST_DIR=$(LIB_PATH)/googletest/googletest
 
@@ -21,7 +21,7 @@ CXXFLAGS+=-I$(LIB_PATH)/fmt/include
 LDFLAGS+=-L$(LIB_PATH)/fmt/build -lfmt
 
 CXXFLAGS+=-I$(LIB_PATH)/glog/src -I$(LIB_PATH)/glog_build
-LDFLAGS+=-L$(LIB_PATH)/glog_build -lglog
+LDFLAGS+=-L$(LIB_PATH)/glog_build -Wl,-rpath $(LIB_PATH)/glog_build -lglog
 
 LDFLAGS+=-lpthread
 #CXXFLAGS+=-g
