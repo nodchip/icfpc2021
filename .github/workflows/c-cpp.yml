@@ -20,3 +20,10 @@ jobs:
       run: make -B -C src dirs solver test
     - name: test
       run: src/test
+      
+    - name: Slack Notification
+      uses: rtCamp/action-slack-notify@v2
+      env:
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        SLACK_COLOR: ${{ job.status }}
+        
