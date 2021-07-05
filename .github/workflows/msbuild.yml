@@ -47,5 +47,5 @@ jobs:
       run: xcopy libs\glog_vsbuild\Release\glog.dll vs\x64\Release /D
 
     - name: Test
-      working-directory: ${{env.GITHUB_WORKSPACE}}\vs\test
-      run: ..\x64\Release\test.exe
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: vs\x64\Release\test.exe
