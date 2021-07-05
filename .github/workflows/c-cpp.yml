@@ -17,7 +17,7 @@ jobs:
     - name: build libs
       run: libs/build.sh
     - name: make
-      run: make -B -C src dirs solver test -j2
+      run: make -B -C src dirs solver test
     - name: test
       run: src/test
       

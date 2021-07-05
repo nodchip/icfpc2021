@@ -6,7 +6,7 @@ pushd $(dirname $0)/fmt
 mkdir -p build
 pushd build
 cmake ..
-make fmt -j2
+make fmt
 popd
 popd
 
@@ -16,6 +16,6 @@ pushd $(dirname $0)
 mkdir -p glog_build
 pushd glog_build
 cmake -DBUILD_TESTING:BOOL=OFF -DWITH_GFLAGS:BOOL=OFF ../glog/
-make glog -j2
+make glog
 popd
 popd
