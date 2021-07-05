@@ -415,11 +415,8 @@ TEST_F(TestNazogengo, Draw) {
 TEST_F(TestNazogengo, Interact) {
   parse(":statelessdraw_result = ap ap ap interact statelessdraw nil ap ap vec 0 0");
   parse("ap mod :statelessdraw_result");
-#ifdef _MSC_VER
-  parse("!load ../../data/galaxy.txt");
-#else
-  parse("!load ../data/galaxy.txt");
-#endif
+  // The working directory must be the root of the repository.
+  parse("!load data/galaxy.txt");
   parse(":galaxy_result = ap ap ap interact galaxy nil ap ap vec 0 0");
   parse("ap mod :galaxy_result");
 }
