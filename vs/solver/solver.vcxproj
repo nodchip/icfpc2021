@@ -70,6 +70,9 @@
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>274877906944</StackReserveSize>
     </Link>
+    <PostBuildEvent>
+      <Command>copy $(SolutionDir)..\libs\glog_vsbuild\$(Configuration)\glogd.dll $(OutputPath)glogd.dll</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -93,6 +96,9 @@
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>274877906944</StackReserveSize>
     </Link>
+    <PostBuildEvent>
+      <Command>copy $(SolutionDir)..\libs\glog_vsbuild\$(Configuration)\glog.dll $(OutputPath)glog.dll</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\contest_communication.h" />
