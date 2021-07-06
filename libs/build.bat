@@ -1,16 +1,4 @@
 @echo =================================================
-@echo building fmt
-@echo =================================================
-pushd %~dp0\fmt
-mkdir build\vsbuild
-pushd build\vsbuild
-cmake ..\.. -G "Visual Studio 16 2019" || exit 1
-MSBuild FMT.sln -target:fmt -p:Configuration=Release;Platform=x64 || exit 1
-MSBuild FMT.sln -target:fmt -p:Configuration=Debug;Platform=x64 || exit 1
-popd
-popd
-
-@echo =================================================
 @echo building glog
 @echo =================================================
 pushd %~dp0
