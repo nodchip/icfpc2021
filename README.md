@@ -43,22 +43,18 @@ Build Solution
 ./test --gtest_filter=TestExample.* # run specific tests.
 ```
 
-## Run Web REPL
+## Apply a solver to all problems
 
 ```
-./solver visualize_repl
-start http://localhost:3333/
+cd scripts
+python solve_all.py SOLVER_NAME improvement   # overwrite existing solution file if the score improves
+python solve_all.py SOLVER_NAME force         # always overwrite existing solution file
+python solve_all.py SOLVER_NAME never         # do not overwrite existing solution file
 ```
 
-automatically loads `*.txt` from the data directory.
-
-## Run Console REPL
-
-```
-./solver repl
-```
-
-automatically loads `*.txt` from the data directory.
+* solves all problems in ./data/problems/
+* results are stored in ./solutions/
+* solve_all.csv (summary file) will be generated.
 
 ## Add a Solver
 

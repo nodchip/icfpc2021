@@ -73,9 +73,12 @@ def main():
 
             has_judge = 'meta' in j and 'judge' in j['meta']
             if not has_judge:
-                subprocess.run([str(EXE_DIR / 'judge'), str(Path(problem_json).resolve()), str(out_path)], cwd=EXE_DIR)
-                with open(out_path, 'r') as fi:
+                tmp2_out_path = out_path.with_suffix(out_path.suffix + '.tmp')
+                shutil.copyfile(out_path, tmp2_out_path)
+                subprocess.run([str(EXE_DIR / 'judge'), str(Path(problem_json).resolve()), str(tmp2_out_path)], cwd=EXE_DIR)
+                with open(tmp2_out_path, 'r') as fi:
                     j = json.load(fi)
+                os.unlink(tmp2_out_path)
             old_is_valid = j['meta']['judge']['is_valid']
             old_dislikes = j['meta']['judge']['dislikes']
             print(old_is_valid, old_dislikes)
