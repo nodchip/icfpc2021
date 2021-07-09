@@ -30,6 +30,7 @@ git clone --recursive https://github.com/nodchip/icfpc2021.git
 open Visual Studio 2019 Developer Console
 cd icfpc2021
 libs/build.bat # to build external libraries (Debug and Release)
+libs/build_local.bat # required only once
 start vs/ICFPC2021.sln
 select Release;x64 or Debug;x64
 Build Solution

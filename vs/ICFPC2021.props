@@ -7,21 +7,21 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <PreprocessorDefinitions>GOOGLE_GLOG_DLL_DECL=</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\src;$(ProjectDir)..\..\libs\CLI11\include;$(ProjectDir)..\..\libs\cpp-httplib\include;$(ProjectDir)..\..\libs\glog_vsbuild;$(ProjectDir)..\..\libs\glog\src;$(ProjectDir)..\..\libs\json\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\src;$(ProjectDir)..\..\libs\CLI11\include;$(ProjectDir)..\..\libs\cpp-httplib\include;$(ProjectDir)..\..\libs\glog_vsbuild;$(ProjectDir)..\..\libs\glog\src;$(ProjectDir)..\..\libs\mpir-windows\lib\$(Platform)\$(Configuration);$(ProjectDir)..\..\libs\json\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(ProjectDir)..\..\libs\glog_vsbuild\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>fmtd.lib;glogd.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\..\libs\glog_vsbuild\$(Configuration);$(ProjectDir)..\..\libs\mpir-windows\lib\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>fmtd.lib;glogd.lib;mpirxx.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <PreprocessorDefinitions>GOOGLE_GLOG_DLL_DECL=</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\src;$(ProjectDir)..\..\libs\CLI11\include;$(ProjectDir)..\..\libs\cpp-httplib\include;$(ProjectDir)..\..\libs\glog_vsbuild;$(ProjectDir)..\..\libs\glog\src;$(ProjectDir)..\..\libs\json\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\src;$(ProjectDir)..\..\libs\CLI11\include;$(ProjectDir)..\..\libs\cpp-httplib\include;$(ProjectDir)..\..\libs\glog_vsbuild;$(ProjectDir)..\..\libs\glog\src;$(ProjectDir)..\..\libs\mpir-windows$(ProjectDir)..\..\libs\mpir-windows\lib\$(Platform)\$(Configuration);$(ProjectDir)..\..\libs\json\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(ProjectDir)..\..\libs\glog_vsbuild\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>fmt.lib;glog.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\..\libs\glog_vsbuild\$(Configuration);$(ProjectDir)..\..\libs\mpir-windows\lib\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>fmt.lib;glog.lib;mpirxx.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup />
