@@ -68,3 +68,7 @@ std::ostream& operator<<(std::ostream& o, const SSolution& obj) {
     o << obj.str();
     return o;
 }
+
+bool is_compatible(const SProblem& problem, const SSolution& solution) {
+  return problem.vertices.size() == solution.vertices.size();
+}

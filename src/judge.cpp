@@ -58,9 +58,9 @@ SJudgeResult judge(const SProblem& problem, const SSolution& solution) {
 
   // dislikes
   for (size_t ihole = 0; ihole < problem.hole_polygon.size(); ++ihole) {
+    const auto& h = problem.hole_polygon[ihole];
     integer minval = std::numeric_limits<integer>::max();
     for (size_t ivert = 0; ivert < solution.vertices.size(); ++ivert) {
-      const auto& h = problem.hole_polygon[ihole];
       const auto& v = solution.vertices[ivert];
       minval = std::min(minval, distance2(h, v));
     }
