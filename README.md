@@ -45,11 +45,28 @@ Build Solution
 
 ## Solve a problem
 
+### Linux
+
 ```
+cd src
 ./solve NaiveAnnealingSolver ../data/problems/1.problem.json out.json             # regular usage
 ./solve NaiveAnnealingSolver ../data/problems/1.problem.json out.json init.json   # .. or start with initial solution.
 ./solve NaiveAnnealingSolver 1 out.json                                           # shortcut
 ```
+
+### Windows (console)
+
+* current directory: vs\{solver,judge,test}
+* exe path: vs\x64\{Release,Debug}
+
+```
+cd vs\solver
+..\x64\Release\solve NaiveAnnealingSolver ../../data/problems/1.problem.json out.json             # regular usage
+..\x64\Release\solve NaiveAnnealingSolver ../../data/problems/1.problem.json out.json init.json   # .. or start with initial solution.
+..\x64\Release\solve NaiveAnnealingSolver 1 out.json                                           # shortcut
+```
+
+
 ## Apply a solver to all problems
 
 ```
