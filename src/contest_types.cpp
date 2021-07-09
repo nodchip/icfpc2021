@@ -51,7 +51,7 @@ SSolutionPtr SSolution::load_file(const std::string& path) {
     std::ifstream input_data_ifs(path);
     nlohmann::json j;
     input_data_ifs >> j;
-    return std::make_shared<SSolution>(j);
+    return std::make_shared<SSolution>(j["vertices"]);
 }
 
 nlohmann::json SSolution::json() const {
