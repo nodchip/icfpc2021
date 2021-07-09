@@ -55,7 +55,8 @@ SSolutionPtr SSolution::load_file(const std::string& path) {
 }
 
 std::string SSolution::str() const {
-    nlohmann::json json(vertices);
+    nlohmann::json json;
+    json["vertices"] = vertices;
     return json.dump();
 }
 

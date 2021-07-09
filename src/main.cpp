@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
 
       {
         std::ofstream ofs(solution_json);
-        ofs << out.solution;
+        ofs << *out.solution;
         LOG(INFO) << fmt::format("Output   : {}", solution_json);
       }
 
