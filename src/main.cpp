@@ -1,13 +1,12 @@
 #include "stdafx.h"
 
+#include <filesystem>
+#include <iostream>
+
+#include "contest_types.h"
+#include "fmt/core.h"
 #include "nlohmann/json.hpp"
 #include "util.h"
-#include "contest_types.h"
-
-#include "fmt/core.h"
-
-#include <iostream>
-#include <filesystem>
 
 int main(int argc, char* argv[]) {
     google::InitGoogleLogging(argv[0]);
