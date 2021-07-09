@@ -101,35 +101,13 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\contest_communication.h" />
-    <ClInclude Include="..\..\src\gameparams.h" />
-    <ClInclude Include="..\..\src\getch.h" />
-    <ClInclude Include="..\..\src\interact_record.h" />
-    <ClInclude Include="..\..\src\nazoengine.h" />
-    <ClInclude Include="..\..\src\picture.h" />
-    <ClInclude Include="..\..\src\repl.h" />
-    <ClInclude Include="..\..\src\solver_registry.h" />
-    <ClInclude Include="..\..\src\tapeengine.h" />
     <ClInclude Include="..\..\src\timer.h" />
     <ClInclude Include="..\..\src\util.h" />
-    <ClInclude Include="..\..\src\visual_repl.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\contest_communication.cpp" />
-    <ClCompile Include="..\..\src\getch.cpp" />
-    <ClCompile Include="..\..\src\interact_record.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
-    <ClCompile Include="..\..\src\nazoengine.cpp" />
-    <ClCompile Include="..\..\src\picture.cpp" />
-    <ClCompile Include="..\..\src\repl.cpp" />
-    <ClCompile Include="..\..\src\solvers\empty_solver.cpp" />
-    <ClCompile Include="..\..\src\solvers\rotate_attack_solver.cpp" />
-    <ClCompile Include="..\..\src\solvers\stay_defense_solver.cpp" />
-    <ClCompile Include="..\..\src\solver_registry.cpp" />
-    <ClCompile Include="..\..\src\tapeengine.cpp" />
     <ClCompile Include="..\..\src\timer.cpp" />
     <ClCompile Include="..\..\src\util.cpp" />
-    <ClCompile Include="..\..\src\visual_repl.cpp" />
     <ClCompile Include="..\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
