@@ -29,6 +29,8 @@
 # Libraries
 /libs/glog_build
 /libs/glog_vsbuild
+/libs/mpir
+/libs/yasm
 
 # Executables
 *.exe
