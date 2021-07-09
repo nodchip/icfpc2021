@@ -13,8 +13,10 @@ ICFPC2021 sanma team repository
 
 ```
 git clone --recursive https://github.com/nodchip/icfpc2021.git
+# if you forgot to clone with --recursive, try: git submodule update --init
 cd icfpc2021
 bash libs/build.sh # to build external libraries
+bash libs/build_local.sh # required only once
 cd src
 make -Bj # rebuild all in parallel.
 make solver # or if you wish to build only the solver
