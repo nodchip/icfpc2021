@@ -10,8 +10,6 @@
 #include <filesystem>
 
 int main(int argc, char* argv[]) {
-    using namespace NTypes;
-
     google::InitGoogleLogging(argv[0]);
     google::InstallFailureSignalHandler();
     google::SetStderrLogging(google::INFO);
