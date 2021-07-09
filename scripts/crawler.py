@@ -58,9 +58,6 @@ def submit(problem, filename):
             response = requests.post(url, headers=headers, data=solution)
             print('Trying to submit for problem {}'.format(problem))
             print('Submitted "{}" for {} as ID {}'.format(filename, problem, response.text))
-            # print('Error in submit {}:'.format(problem))
-            print(response.text)
-            print(response.code)
     except:
         print('Failed to open "{}"'.format(filename))
 
