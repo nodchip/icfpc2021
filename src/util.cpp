@@ -1,6 +1,9 @@
 #include "stdafx.h"
 #include "util.h"
 #include <optional>
+#include <sstream>
+#include <iomanip>
+#include <ctime>
 #include <filesystem>
 #include <fmt/core.h>
 
@@ -14,6 +17,18 @@ std::filesystem::path default_data_path() {
 
 std::filesystem::path default_problem_path(int num) {
   return default_data_path() / "problems" / fmt::format("{}.problem.json", num);
+}
+
+bool update_meta(nlohmann::json& solution_json, const std::string& solver_name) {
+  auto now = std::chrono::system_clock::now();
+  auto in_time_t = std::chrono::system_clock::to_time_t(now);
+  std::ostringstream oss;
+  oss << std::put_time(std::localtime(&in_time_t), "%Y/%m/%d %H:%M:%S");
+
+  if (solution_json.find("meta") == solution_json.end()) solution_json["meta"] = {};
+  solution_json["meta"]["created_at"] = oss.str();
+  solution_json["meta"]["solver"] = solver_name;
+  return true;
 }
 
 std::vector<std::string> split(std::string s, std::string delimiter) {

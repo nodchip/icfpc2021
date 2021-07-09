@@ -74,6 +74,7 @@ int main(int argc, char* argv[]) {
         if (output_meta) {
           if (json.find("meta") == json.end()) json["meta"] = {};
           json["meta"]["elapsed_s"] = solve_s;
+          update_meta(json, solver_name);
         }
         if (output_judge) {
           SJudgeResult res = judge(*problem, *out.solution);
