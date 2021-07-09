@@ -36,6 +36,7 @@
 *.app
 /src/build
 /src/solver
+/src/judge
 /src/test
 /tools/__pycache__
 /vs/.vs
@@ -48,3 +49,5 @@
 /vs/judge/x64
 /vs/judge/*.user
 
+# logs
+/src/*.log.*
