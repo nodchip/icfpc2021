@@ -67,10 +67,6 @@ std::optional<std::string> read_file(std::filesystem::path file_path) {
   return content;
 }
 
-void debug_func() {
-    DEBUGOUT << std::endl;
-}
-
 // vim:ts=2 sw=2 sts=2 et ci
 
 

@@ -81,46 +81,4 @@ std::istream& operator>>(std::istream& is, T& a) {
     return is;
 }
 
-/* format */
-template<typename... Ts>
-std::string format(const std::string& f, Ts... t) {
-    size_t l = std::snprintf(nullptr, 0, f.c_str(), t...);
-    std::vector<char> b(l + 1);
-    std::snprintf(&b[0], l + 1, f.c_str(), t...);
-    return std::string(&b[0], &b[0] + l);
-}
-
-/* debug */
-#define ENABLE_DEBUG
-
-#ifdef ENABLE_DEBUG
-
-#define DEBUGOUT std::cerr
-
-#define debug(...) \
-do { \
-    DEBUGOUT << "  "; \
-    DEBUGOUT << #__VA_ARGS__ << " :[DEBUG - " << __LINE__ << ":" << __FUNCTION__ << "]" << std::endl; \
-    DEBUGOUT << "    "; \
-    debug_func(__VA_ARGS__); \
-} while(0);
-
-void debug_func();
-
-template <class Head, class... Tail>
-void debug_func(Head&& head, Tail&&... tail) {
-    DEBUGOUT << head;
-    if (sizeof...(Tail) == 0) {
-        DEBUGOUT << " ";
-    }
-    else {
-        DEBUGOUT << ", ";
-    }
-    debug_func(std::move(tail)...);
-}
-
-#else
-#define debug(...) void(0);
-#endif
-
 // vim:ts=2 sw=2 sts=2 et ci
