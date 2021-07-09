@@ -4,9 +4,6 @@
 [submodule "libs/mpir"]
 	path = libs/mpir
 	url = https://github.com/wbhart/mpir
-[submodule "libs/mpir-windows"]
-	path = libs/mpir-windows
-	url = https://github.com/BrianGladman/mpir
 [submodule "libs/yasm"]
 	path = libs/yasm
 	url = https://github.com/yasm/yasm/
