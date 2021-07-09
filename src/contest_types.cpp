@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <fstream>
 #include <iostream>
+#include <filesystem>
 #include "contest_types.h"
 
 SProblem::SProblem(const nlohmann::json& json) : json(json) {
@@ -32,6 +33,9 @@ std::ostream& operator<<(std::ostream& o, const SProblem& obj) {
 }
 
 SProblemPtr SProblem::load_file(const std::string& path) {
+    if (!std::filesystem::exists(path)) {
+      return nullptr;
+    }
     std::ifstream input_data_ifs(path);
     nlohmann::json j;
     input_data_ifs >> j;
@@ -41,6 +45,9 @@ SProblemPtr SProblem::load_file(const std::string& path) {
 SSolution::SSolution(const std::vector<Point>& vertices) : vertices(vertices) {}
 
 SSolutionPtr SSolution::load_file(const std::string& path) {
+    if (!std::filesystem::exists(path)) {
+      return nullptr;
+    }
     std::ifstream input_data_ifs(path);
     nlohmann::json j;
     input_data_ifs >> j;
