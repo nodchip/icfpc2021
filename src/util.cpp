@@ -53,6 +53,11 @@ std::optional<std::string> read_file(std::filesystem::path file_path) {
   std::string content((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
   return content;
 }
+
+void dump_func() {
+    DUMPOUT << std::endl;
+}
+
 // vim:ts=2 sw=2 sts=2 et ci
 
 
