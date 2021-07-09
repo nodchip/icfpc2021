@@ -43,6 +43,13 @@ Build Solution
 ./test --gtest_filter=TestExample.* # run specific tests.
 ```
 
+## Solve a problem
+
+```
+./solve NaiveAnnealingSolver ../data/problems/1.problem.json out.json             # regular usage
+./solve NaiveAnnealingSolver ../data/problems/1.problem.json out.json init.json   # .. or start with initial solution.
+./solve NaiveAnnealingSolver 1 out.json                                           # shortcut
+```
 ## Apply a solver to all problems
 
 ```

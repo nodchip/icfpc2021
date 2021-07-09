@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
 
   CLI11_PARSE(app, argc, argv);
 
-  SProblemPtr problem = SProblem::load_file(problem_json);
+  SProblemPtr problem = SProblem::load_file_ext(problem_json);
   CHECK(problem);
   SSolutionPtr solution = SSolution::load_file(solution_json);
   CHECK(solution);

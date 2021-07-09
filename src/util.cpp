@@ -2,6 +2,19 @@
 #include "util.h"
 #include <optional>
 #include <filesystem>
+#include <fmt/core.h>
+
+std::filesystem::path default_data_path() {
+#ifdef _MSC_VER
+  return std::filesystem::current_path().parent_path().parent_path() / "data";
+#else
+  return std::filesystem::current_path().parent_path() / "data";
+#endif
+}
+
+std::filesystem::path default_problem_path(int num) {
+  return default_data_path() / "problems" / fmt::format("{}.problem.json", num);
+}
 
 std::vector<std::string> split(std::string s, std::string delimiter) {
   std::vector<std::string> res;

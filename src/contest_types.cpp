@@ -3,6 +3,7 @@
 #include <iostream>
 #include <filesystem>
 #include "contest_types.h"
+#include "util.h"
 
 SProblem::SProblem(const nlohmann::json& json) : json(json) {
     using std::cerr;
@@ -40,6 +41,22 @@ SProblemPtr SProblem::load_file(const std::string& path) {
     nlohmann::json j;
     input_data_ifs >> j;
     return std::make_shared<SProblem>(j);
+}
+
+SProblemPtr SProblem::load_file_ext(const std::string& path) {
+    if (std::filesystem::exists(path)) {
+      return load_file(path);
+    }
+    try {
+      const int num = std::stoi(path);
+      return load_file(default_problem_path(num).string());
+    } catch (const std::invalid_argument& e) {
+      LOG(ERROR) << "not an number: " << path;
+      throw e;
+    } catch (const std::out_of_range& e) {
+      LOG(ERROR) << "out of range: " << path;
+      throw e;
+    }
 }
 
 SSolution::SSolution(const std::vector<Point>& vertices) : vertices(vertices) {}

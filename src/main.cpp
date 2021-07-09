@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
         LOG(ERROR) << fmt::format("solver [{0}] not found!", solver_name);
         return 0;
       }
-      SProblemPtr problem = SProblem::load_file(problem_json);
+      SProblemPtr problem = SProblem::load_file_ext(problem_json);
       LOG(INFO) << fmt::format("Problem  : {}", problem_json);
 
       SSolutionPtr initial_solution;
