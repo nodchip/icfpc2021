@@ -23,6 +23,9 @@ LDFLAGS+=-L$(LIB_PATH)/fmt/build -lfmt
 CXXFLAGS+=-I$(LIB_PATH)/glog/src -I$(LIB_PATH)/glog_build
 LDFLAGS+=-L$(LIB_PATH)/glog_build -Wl,-rpath $(LIB_PATH)/glog_build -lglog
 
+CXXFLAGS+=-I$(LIB_PATH)/mpir
+LDFLAGS+=-L$(LIB_PATH)/mpir/.libs -Wl,-rpath $(LIB_PATH)/mpir/.libs -lgmp -lgmpxx
+
 LDFLAGS+=-lpthread
 #CXXFLAGS+=-g
 #CXXFLAGS+=-pg
@@ -52,6 +55,10 @@ SOLVER_OBJS=$(SOLVER_SRCS:%.cpp=$(BUILD_PATH)/%.o)
 SOLVER_DEPS=$(SOLVER_SRCS:%.cpp=$(BUILD_PATH)/%.d)
 SOLVER_BUILD_PATH=build/solvers
 
+TEST_MPIR_SRCS=$(SRCS) test_mpir.cpp
+TEST_MPIR_OBJS=$(TEST_MPIR_SRCS:%.cpp=$(BUILD_PATH)/%.o)
+TEST_MPIR_DEPS=$(TEST_MPIR_SRCS:%.cpp=$(BUILD_PATH)/%.d)
+
 GTEST_SRCS=$(GTEST_DIR)/src/gtest-all.cc $(GTEST_DIR)/src/gtest_main.cc
 TEST_BUILD_PATH=build/tests
 TEST_CXXFLAGS=-I$(GTEST_DIR) -I$(GTEST_DIR)/include
@@ -61,7 +68,7 @@ TEST_OBJS=$(TEST_SRCS:%.cpp=$(BUILD_PATH)/%.o)
 TEST_DEPS=$(TEST_SRCS:%.cpp=$(BUILD_PATH)/%.d)
 $(TEST_OBJS): CXXFLAGS+=$(TEST_CXXFLAGS)
 
-TARGETS=solver judge test
+TARGETS=solver judge test test_mpir
 
 .PHONY: all
 all: dirs $(TARGETS)
@@ -87,6 +94,9 @@ solver: $(MAIN_OBJS) $(SOLVER_OBJS)
 	$(CXX) $(CXXFLAGS) -Wall $^ -o $@ $(LDFLAGS)
 
 judge: $(JUDGE_OBJS) $(SOLVER_OBJS)
+	$(CXX) $(CXXFLAGS) -Wall $^ -o $@ $(LDFLAGS)
+
+test_mpir: $(TEST_MPIR_OBJS)
 	$(CXX) $(CXXFLAGS) -Wall $^ -o $@ $(LDFLAGS)
 
 test: $(GTEST_SRCS) $(TEST_OBJS) $(OBJS)

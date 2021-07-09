@@ -13,6 +13,9 @@ public:
     ret.solution = std::make_shared<SSolution>();
     ret.solution->vertices = args.problem->vertices;
 
+    // dummy.
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
     return ret;
   }
 };
