@@ -53,3 +53,6 @@
 
 # logs
 /src/*.log.*
+
+# temporary files
+/scripts/solve_all.csv
