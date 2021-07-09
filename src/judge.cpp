@@ -1,10 +1,10 @@
 #include "stdafx.h"
-#include "timer.h"
 #include <chrono>
 #include <iostream>
 
 #include <fmt/format.h>
 
+#include "timer.h"
 #include "judge.h"
 
 SJudgeResult judge(const SProblem& problem, const SSolution& solution) {

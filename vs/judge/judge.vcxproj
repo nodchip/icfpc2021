@@ -22,10 +22,12 @@
     <ClCompile Include="..\..\src\contest_types.cpp" />
     <ClCompile Include="..\..\src\judge.cpp" />
     <ClCompile Include="..\..\src\judge_main.cpp" />
+    <ClCompile Include="..\..\src\util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\contest_types.h" />
     <ClInclude Include="..\..\src\judge.h" />
+    <ClInclude Include="..\..\src\util.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

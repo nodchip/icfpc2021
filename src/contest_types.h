@@ -1,11 +1,12 @@
 #pragma once
-#include "nlohmann/json.hpp"
+#include <nlohmann/json.hpp>
 
 using integer = int64_t;
 
 using Edge = std::pair<integer, integer>;
 
 using Point = std::pair<integer, integer>;
+using Line = std::array<Point, 2>;
 
 struct SProblem;
 using SProblemPtr = std::shared_ptr<SProblem>;

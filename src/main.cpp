@@ -3,11 +3,12 @@
 #include <chrono>
 #include <filesystem>
 #include <iostream>
+
 #include <CLI/CLI.hpp>
+#include <fmt/core.h>
+#include <nlohmann/json.hpp>
 
 #include "contest_types.h"
-#include "fmt/core.h"
-#include "nlohmann/json.hpp"
 #include "util.h"
 #include "judge.h"
 #include "solver_registry.h"

@@ -9,14 +9,11 @@ int main(int argc, char* argv[]) {
   google::InitGoogleLogging(argv[0]);
   google::InstallFailureSignalHandler();
   google::SetStderrLogging(google::INFO);
-  // TODO: Rename log file name.
-  google::SetLogDestination(google::INFO, "main.log.");
+  google::SetLogDestination(google::INFO, "judge.log.");
 
   std::ios::sync_with_stdio(false);
   std::cin.tie(NULL);
 
-  int return_code = 0;
-  
   CLI::App app { "judge module" };
 
   std::string problem_json;
@@ -52,8 +49,6 @@ int main(int argc, char* argv[]) {
       ofs << json;
     }
   }
-
-  // TODO: save solution file with these meta info.
 
   return 0;
 }
