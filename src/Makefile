@@ -29,8 +29,7 @@ LDFLAGS+=-lpthread
 #CXXFLAGS+=-DNDEBUG
 
 # add your cpp files here:
-SRCS+=contest_communication.cpp nazoengine.cpp visual_repl.cpp interact_record.cpp tapeengine.cpp repl.cpp getch.cpp solver_registry.cpp util.cpp picture.cpp
-#SRCS+=timer.cpp
+SRCS+=util.cpp
 OBJS=$(SRCS:%.cpp=$(BUILD_PATH)/%.o)
 DEPS=$(SRCS:%.cpp=$(BUILD_PATH)/%.d)
 
