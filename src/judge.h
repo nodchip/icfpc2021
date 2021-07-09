@@ -44,6 +44,8 @@ struct SJudgeResult {
 
 SJudgeResult judge(const SProblem& problem, const SSolution& solution);
 
+bool update_judge(const SJudgeResult& res, nlohmann::json& solution_json);
+
 // geometry codes from..
 // http://www.prefield.com
 

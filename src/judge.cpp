@@ -69,3 +69,16 @@ SJudgeResult judge(const SProblem& problem, const SSolution& solution) {
 
   return res;
 }
+
+bool update_judge(const SJudgeResult& res, nlohmann::json& solution_json) {
+  if (solution_json.find("meta") == solution_json.end()) solution_json["meta"] = {};
+  auto& meta_json = solution_json["meta"];
+  if (meta_json.find("juge") == meta_json.end()) meta_json["judge"] = {};
+  
+  meta_json["judge"]["dislikes"] = res.dislikes;
+  meta_json["judge"]["fit_in_hole"] = res.fit_in_hole();
+  meta_json["judge"]["satisfy_stretch"] = res.satisfy_stretch();
+  meta_json["judge"]["is_valid"] = res.is_valid();
+
+  return true;
+}

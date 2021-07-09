@@ -21,8 +21,10 @@ int main(int argc, char* argv[]) {
 
   std::string problem_json;
   std::string solution_json;
+  bool output_judge = true;
   app.add_option("problem_json", problem_json, "problem JSON file path");
   app.add_option("solution_json", solution_json, "solution JSON file path");
+  app.add_flag("-j,--output-judge,!--no-output-judge", output_judge, "output judge info to solution JSON");
 
   CLI11_PARSE(app, argc, argv);
 
@@ -37,6 +39,19 @@ int main(int argc, char* argv[]) {
   LOG(INFO) << "judge : fit_in_hole = " << res.fit_in_hole();
   LOG(INFO) << "judge : satisfy_stretch = " << res.satisfy_stretch();
   LOG(INFO) << "judge : is_valid = " << res.is_valid();
+
+  if (output_judge) {
+    nlohmann::json json;
+    {
+      std::ifstream ifs(solution_json);
+      ifs >> json;
+    }
+    update_judge(res, json);
+    {
+      std::ofstream ofs(solution_json);
+      ofs << json;
+    }
+  }
 
   // TODO: save solution file with these meta info.
 

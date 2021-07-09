@@ -67,18 +67,12 @@ int main(int argc, char* argv[]) {
           json["meta"]["elapsed_s"] = solve_s;
         }
         if (output_judge) {
-          if (json.find("meta") == json.end()) json["meta"] = {};
           SJudgeResult res = judge(*problem, *out.solution);
           LOG(INFO) << "judge : dislikes = " << res.dislikes;
           LOG(INFO) << "judge : fit_in_hole = " << res.fit_in_hole();
           LOG(INFO) << "judge : satisfy_stretch = " << res.satisfy_stretch();
           LOG(INFO) << "judge : is_valid = " << res.is_valid();
-          json["meta"]["judge"] = {
-            {"dislikes", res.dislikes},
-            {"fit_in_hole", res.fit_in_hole()},
-            {"satisfy_stretch", res.satisfy_stretch()},
-            {"is_valid", res.is_valid()},
-          };
+          update_judge(res, json);
         }
         ofs << json.dump();
         LOG(INFO) << fmt::format("Output   : {}", solution_json);
