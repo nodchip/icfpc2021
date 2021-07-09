@@ -4,7 +4,7 @@ ICFPC2021 sanma team repository
 ## Prerequisites
 
 * Linux (Ubuntu 20.04 LTS (not 18.04 LTS which lacks g++-10)) / WSL1 on Windows 10
-  * `sudo apt install build-essential git-core cmake g++-10`
+  * `sudo apt install build-essential git-core cmake g++-10 libtool autoconf texinfo`
 * Windows 10
   * Visual Studio 2019 (16.10.3)
   * CMake 3.17.3 (add to PATH)
@@ -13,8 +13,10 @@ ICFPC2021 sanma team repository
 
 ```
 git clone --recursive https://github.com/nodchip/icfpc2021.git
+# if you forgot to clone with --recursive, try: git submodule update --init
 cd icfpc2021
 bash libs/build.sh # to build external libraries
+bash libs/build_local.sh # required only once
 cd src
 make -Bj # rebuild all in parallel.
 make solver # or if you wish to build only the solver

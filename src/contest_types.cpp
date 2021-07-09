@@ -51,7 +51,7 @@ SSolutionPtr SSolution::load_file(const std::string& path) {
     std::ifstream input_data_ifs(path);
     nlohmann::json j;
     input_data_ifs >> j;
-    return std::make_shared<SSolution>(j);
+    return std::make_shared<SSolution>(j["vertices"]);
 }
 
 nlohmann::json SSolution::json() const {
@@ -67,4 +67,8 @@ std::string SSolution::str() const {
 std::ostream& operator<<(std::ostream& o, const SSolution& obj) {
     o << obj.str();
     return o;
+}
+
+bool is_compatible(const SProblem& problem, const SSolution& solution) {
+  return problem.vertices.size() == solution.vertices.size();
 }

@@ -34,3 +34,5 @@ struct SSolution {
     nlohmann::json json() const;
     friend std::ostream& operator<<(std::ostream& o, const SSolution& obj);
 };
+
+bool is_compatible(const SProblem& problem, const SSolution& solution);
