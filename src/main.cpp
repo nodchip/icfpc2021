@@ -28,9 +28,11 @@ int main(int argc, char* argv[]) {
     std::string solver_name;
     std::string problem_json;
     std::string solution_json;
+    bool output_meta = true;
     sub_solve->add_option("solver_name", solver_name, "solver name");
     sub_solve->add_option("problem_json", problem_json, "problem JSON file path");
     sub_solve->add_option("solution_json", solution_json, "output solution JSON file path");
+    sub_solve->add_flag("-m,--output-meta,!--no-output-meta", output_meta, "output meta info to solution JSON");
 
     auto sub_list_solvers = app.add_subcommand("list_solvers", "list up registered solvers");
 
@@ -56,7 +58,13 @@ int main(int argc, char* argv[]) {
 
       {
         std::ofstream ofs(solution_json);
-        ofs << *out.solution;
+        nlohmann::json json = out.solution->json();
+        if (output_meta) {
+          json["meta"] = {
+            {"elapsed_s", solve_s},
+          };
+        }
+        ofs << json.dump();
         LOG(INFO) << fmt::format("Output   : {}", solution_json);
       }
 

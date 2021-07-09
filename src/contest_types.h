@@ -31,5 +31,6 @@ struct SSolution {
     SSolution(const std::vector<Point>& vertices);
     static SSolutionPtr load_file(const std::string& path);
     std::string str() const;
+    nlohmann::json json() const;
     friend std::ostream& operator<<(std::ostream& o, const SSolution& obj);
 };

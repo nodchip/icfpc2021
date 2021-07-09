@@ -54,10 +54,14 @@ SSolutionPtr SSolution::load_file(const std::string& path) {
     return std::make_shared<SSolution>(j);
 }
 
-std::string SSolution::str() const {
+nlohmann::json SSolution::json() const {
     nlohmann::json json;
     json["vertices"] = vertices;
-    return json.dump();
+    return json;
+}
+
+std::string SSolution::str() const {
+    return json().dump();
 }
 
 std::ostream& operator<<(std::ostream& o, const SSolution& obj) {
