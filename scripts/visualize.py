@@ -53,9 +53,10 @@ def visualize(problem_file_path, pose_file_path, output_file_path):
     if pose_file_path:
         with open(pose_file_path, 'r') as file:
             pose = json.load(file)
-        for edge in pose['vertices']:
-            src = problem['figure']['vertices'][edge[0]]
-            dst = problem['figure']['vertices'][edge[1]]
+        for edge in problem['figure']['edges']:
+            src = pose['vertices'][edge[0]]
+            dst = pose['vertices'][edge[1]]
+            src, dst = [src[0], dst[0]], [src[1], dst[1]]
             plt.plot(src, dst, color='blue')
 
     if output_file_path:
