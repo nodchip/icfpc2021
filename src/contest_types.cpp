@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <fstream>
 #include <iostream>
 #include "contest_types.h"
 
@@ -27,6 +28,13 @@ std::string SProblem::str() const {
 std::ostream& operator<<(std::ostream& o, const SProblem& obj) {
     o << obj.str();
     return o;
+}
+
+SProblemPtr SProblem::load_file(std::string path) {
+    std::ifstream input_data_ifs(path);
+    nlohmann::json j;
+    input_data_ifs >> j;
+    return std::make_shared<SProblem>(j);
 }
 
 SSolution::SSolution(const std::vector<Point>& vertices) : vertices(vertices) {}

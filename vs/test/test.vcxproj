@@ -96,7 +96,10 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\contest_types.cpp" />
+    <ClCompile Include="..\..\src\judge.cpp" />
     <ClCompile Include="..\..\src\tests\test_example.cpp" />
+    <ClCompile Include="..\..\src\tests\test_judge.cpp" />
     <ClCompile Include="..\..\src\test_main.cpp" />
     <ClCompile Include="..\..\src\timer.cpp" />
     <ClCompile Include="..\..\src\util.cpp" />
@@ -106,6 +109,8 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\src\contest_types.h" />
+    <ClInclude Include="..\..\src\judge.h" />
     <ClInclude Include="..\..\src\timer.h" />
   </ItemGroup>
   <ItemGroup>

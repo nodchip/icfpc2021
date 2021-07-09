@@ -7,6 +7,8 @@ using Edge = std::pair<integer, integer>;
 
 using Point = std::pair<integer, integer>;
 
+struct SProblem;
+using SProblemPtr = std::shared_ptr<SProblem>;
 struct SProblem {
     nlohmann::json json;
     integer epsilon = 0;
@@ -15,10 +17,11 @@ struct SProblem {
     std::vector<Edge> edges;
     SProblem() {};
     SProblem(const nlohmann::json& json);
+    static SProblemPtr load_file(std::string path);
     std::string str() const;
     friend std::ostream& operator<<(std::ostream& o, const SProblem& obj);
 };
-using SProblemPtr = std::shared_ptr<SProblem>;
+
 
 struct SSolution {
     std::vector<Point> vertices;

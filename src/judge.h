@@ -87,6 +87,10 @@ inline bool intersectSS(const Line &s, const Line &t) {
   return ccw(s[0],s[1],t[0])*ccw(s[0],s[1],t[1]) <= 0 &&
          ccw(t[0],t[1],s[0])*ccw(t[0],t[1],s[1]) <= 0;
 }
+inline bool intersectSS_strict(const Line &s, const Line &t) { // false if two segments ar ON.
+  return ccw(s[0],s[1],t[0])*ccw(s[0],s[1],t[1]) < 0 &&
+         ccw(t[0],t[1],s[0])*ccw(t[0],t[1],s[1]) < 0;
+}
 inline bool intersectSP(const Line &s, const Point &p) {
   return abs(s[0]-p)+abs(s[1]-p)-abs(s[1]-s[0]) < EPS; // triangle inequality
 }

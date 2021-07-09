@@ -22,7 +22,7 @@ SJudgeResult judge(const SProblem& problem, const SSolution& solution) {
       auto h0 = problem.hole_polygon[ihole];
       auto h1 = problem.hole_polygon[(ihole + 1) % problem.hole_polygon.size()];
       const Line hole_segment = {h0, h1};
-      if (intersectSS(figure_segment, hole_segment)) {
+      if (intersectSS_strict(figure_segment, hole_segment)) {
         intersects = true;
         break;
       }
@@ -34,7 +34,8 @@ SJudgeResult judge(const SProblem& problem, const SSolution& solution) {
 
   // all figure points are inside the hole.
   for (size_t ivert = 0; ivert < solution.vertices.size(); ++ivert) {
-    if (!contains(problem.hole_polygon, solution.vertices[ivert])) {
+    // (c) Every point located on any line segment of the figure in the assumed pose must either lay inside the hole, or on its boundary 
+    if (contains(problem.hole_polygon, solution.vertices[ivert]) == EContains::EOUT) {
       res.out_of_hole_vertices.push_back(ivert);
     }
   }
@@ -49,7 +50,8 @@ SJudgeResult judge(const SProblem& problem, const SSolution& solution) {
     auto moved_j = solution.vertices[edge.second];
     auto a = distance2(moved_i, moved_j);
     auto b = distance2(org_i, org_j);
-    if (std::abs(denominator * a - denominator * b) >= problem.epsilon * b) {
+    // |d(moved) / d(original) - 1| <= eps / 1000000
+    if (std::abs(denominator * a - denominator * b) > problem.epsilon * b) {
       res.stretch_violating_edges.push_back(iedge);
     }
   }
