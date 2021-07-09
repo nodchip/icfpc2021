@@ -2,7 +2,7 @@ LIB_PATH=$(abspath ../libs)
 BUILD_PATH=build
 GTEST_DIR=$(LIB_PATH)/googletest/googletest
 
-CXXFLAGS+=-O2 -Wall -Wno-sign-compare -std=c++2a -march=native
+CXXFLAGS+=-O2 -Wall -Wno-sign-compare -std=c++17 -march=native
 CXXFLAGS+=-Wno-unused-variable -Wno-unused-function
 CXXFLAGS+=-I.
 CXXFLAGS+=-MMD -MP
