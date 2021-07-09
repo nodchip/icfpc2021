@@ -86,37 +86,37 @@ std::string format(const std::string& f, Ts... t) {
     return std::string(&b[0], &b[0] + l);
 }
 
-/* dump */
-#define ENABLE_DUMP
+/* debug */
+#define ENABLE_DEBUG
 
-#ifdef ENABLE_DUMP
+#ifdef ENABLE_DEBUG
 
-#define DUMPOUT std::cerr
+#define DEBUGOUT std::cerr
 
-#define dump(...) \
+#define debug(...) \
 do { \
-    DUMPOUT << "  "; \
-    DUMPOUT << #__VA_ARGS__ << " :[DUMP - " << __LINE__ << ":" << __FUNCTION__ << "]" << std::endl; \
-    DUMPOUT << "    "; \
-    dump_func(__VA_ARGS__); \
+    DEBUGOUT << "  "; \
+    DEBUGOUT << #__VA_ARGS__ << " :[DEBUG - " << __LINE__ << ":" << __FUNCTION__ << "]" << std::endl; \
+    DEBUGOUT << "    "; \
+    debug_func(__VA_ARGS__); \
 } while(0);
 
-void dump_func();
+void debug_func();
 
 template <class Head, class... Tail>
-void dump_func(Head&& head, Tail&&... tail) {
-    DUMPOUT << head;
+void debug_func(Head&& head, Tail&&... tail) {
+    DEBUGOUT << head;
     if (sizeof...(Tail) == 0) {
-        DUMPOUT << " ";
+        DEBUGOUT << " ";
     }
     else {
-        DUMPOUT << ", ";
+        DEBUGOUT << ", ";
     }
-    dump_func(std::move(tail)...);
+    debug_func(std::move(tail)...);
 }
 
 #else
-#define dump(...) void(0);
+#define debug(...) void(0);
 #endif
 
 // vim:ts=2 sw=2 sts=2 et ci
