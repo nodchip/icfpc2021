@@ -4,7 +4,8 @@
 #include "contest_types.h"
 
 SProblem::SProblem(const nlohmann::json& json) : json(json) {
-    using std::cerr, std::endl;
+    using std::cerr;
+    using std::endl;
     epsilon = json["epsilon"];
     auto hs = json["hole"];
     for (auto h : hs) {
@@ -30,7 +31,7 @@ std::ostream& operator<<(std::ostream& o, const SProblem& obj) {
     return o;
 }
 
-SProblemPtr SProblem::load_file(std::string path) {
+SProblemPtr SProblem::load_file(const std::string& path) {
     std::ifstream input_data_ifs(path);
     nlohmann::json j;
     input_data_ifs >> j;
@@ -38,6 +39,13 @@ SProblemPtr SProblem::load_file(std::string path) {
 }
 
 SSolution::SSolution(const std::vector<Point>& vertices) : vertices(vertices) {}
+
+SSolutionPtr SSolution::load_file(const std::string& path) {
+    std::ifstream input_data_ifs(path);
+    nlohmann::json j;
+    input_data_ifs >> j;
+    return std::make_shared<SSolution>(j);
+}
 
 std::string SSolution::str() const {
     nlohmann::json json(vertices);

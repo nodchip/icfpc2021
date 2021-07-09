@@ -17,16 +17,19 @@ struct SProblem {
     std::vector<Edge> edges;
     SProblem() {};
     SProblem(const nlohmann::json& json);
-    static SProblemPtr load_file(std::string path);
+    static SProblemPtr load_file(const std::string& path);
     std::string str() const;
     friend std::ostream& operator<<(std::ostream& o, const SProblem& obj);
 };
 
 
+struct SSolution;
+using SSolutionPtr = std::shared_ptr<SSolution>;
 struct SSolution {
     std::vector<Point> vertices;
     SSolution() {};
     SSolution(const std::vector<Point>& vertices);
+    static SSolutionPtr load_file(const std::string& path);
     std::string str() const;
     friend std::ostream& operator<<(std::ostream& o, const SSolution& obj);
 };
