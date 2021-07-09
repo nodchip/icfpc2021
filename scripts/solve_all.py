@@ -37,43 +37,52 @@ def main():
         else:
             out_path = args.output_dir / (Path(problem_json).stem + '.pose.json')
 
-        exists = out_path.is_file()
+        # solve.
+        tmp_out_path = out_path.with_suffix(out_path.suffix + '.tmp')
+        subprocess.run([str(EXE_DIR / 'solver'), 'solve', args.solver_name, str(Path(problem_json).resolve()), str(tmp_out_path)], cwd=EXE_DIR)
+        with open(tmp_out_path, 'r') as fi:
+            j = json.load(fi)
+        new_is_valid = j['meta']['judge']['is_valid']
+        new_dislikes = j['meta']['judge']['dislikes']
 
-        action = 'direct'
+        if not new_is_valid:
+            print(name, 'skip (invalid)')
+            rows.append({'name': name, 'result': 'invalid'})
+            os.unlink(tmp_out_path)
+            continue
+
+        action = 'force'
+        exists = out_path.is_file()
         if args.overwrite_option == 'never':
             if exists:
                 action = 'skip'
             else:
-                action = 'direct'
+                action = 'force'
         elif args.overwrite_option == 'force':
-            action = 'direct'
+            action = 'force'
         elif args.overwrite_option == 'improvement': 
             if exists:
                 action = 'compare'
             else:
-                action = 'direct'
-
+                action = 'force'
         
         if action == 'skip':
-            print('skip')
-            rows.append({'name': name, 'result': 'skip'})
+            os.unlink(tmp_out_path)
+            print(name, 'skip (never overwrite)')
+            rows.append({'name': name, 'result': 'skip (never overwrite)'})
         
-        elif action == 'direct':
-            # direct output
-            subprocess.run([str(EXE_DIR / 'solver'), 'solve', args.solver_name, str(Path(problem_json).resolve()), str(out_path)], cwd=EXE_DIR)
-            print('wrote')
+        elif action == 'force':
+            shutil.move(tmp_out_path, out_path)
+            print(name, 'wrote')
             rows.append({'name': name, 'result': 'wrote'})
         
         elif action == 'compare':
-            tmp_out_path = out_path.with_suffix(out_path.suffix + '.tmp')
-            subprocess.run([str(EXE_DIR / 'solver'), 'solve', args.solver_name, str(Path(problem_json).resolve()), str(tmp_out_path)], cwd=EXE_DIR)
-
             with open(out_path, 'r') as fi:
                 j = json.load(fi)
 
             has_judge = 'meta' in j and 'judge' in j['meta']
             if not has_judge:
-                tmp2_out_path = out_path.with_suffix(out_path.suffix + '.tmp')
+                tmp2_out_path = out_path.with_suffix(out_path.suffix + '.tmp2')
                 shutil.copyfile(out_path, tmp2_out_path)
                 subprocess.run([str(EXE_DIR / 'judge'), str(Path(problem_json).resolve()), str(tmp2_out_path)], cwd=EXE_DIR)
                 with open(tmp2_out_path, 'r') as fi:
@@ -81,13 +90,7 @@ def main():
                 os.unlink(tmp2_out_path)
             old_is_valid = j['meta']['judge']['is_valid']
             old_dislikes = j['meta']['judge']['dislikes']
-            print(old_is_valid, old_dislikes)
 
-            with open(tmp_out_path, 'r') as fi:
-                j = json.load(fi)
-            new_is_valid = j['meta']['judge']['is_valid']
-            new_dislikes = j['meta']['judge']['dislikes']
-            print(new_is_valid, new_dislikes)
             
             improved = False
             if old_is_valid:
@@ -103,11 +106,11 @@ def main():
             
             if improved:
                 shutil.move(tmp_out_path, out_path)
-                print('wrote (improved)')
+                print(name, 'wrote (improved)')
                 rows.append({'name': name, 'result': 'wrote_improve'})
             else:
                 os.unlink(tmp_out_path)
-                print('skip (did not improve)')
+                print(name, 'skip (did not improve)')
                 rows.append({'name': name, 'result': 'skip_noimprove'})
 
     df = pd.DataFrame(rows)
