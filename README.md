@@ -4,7 +4,7 @@ ICFPC2021 sanma team repository
 ## Prerequisites
 
 * Linux (Ubuntu 20.04 LTS (not 18.04 LTS which lacks g++-10)) / WSL1 on Windows 10
-  * `sudo apt install build-essential git-core cmake g++-10`
+  * `sudo apt install build-essential git-core cmake g++-10 libtool autoconf texinfo`
 * Windows 10
   * Visual Studio 2019 (16.10.3)
   * CMake 3.17.3 (add to PATH)
@@ -30,6 +30,7 @@ git clone --recursive https://github.com/nodchip/icfpc2021.git
 open Visual Studio 2019 Developer Console
 cd icfpc2021
 libs/build.bat # to build external libraries (Debug and Release)
+libs/build_local.bat # required only once
 start vs/ICFPC2021.sln
 select Release;x64 or Debug;x64
 Build Solution
@@ -42,22 +43,25 @@ Build Solution
 ./test --gtest_filter=TestExample.* # run specific tests.
 ```
 
-## Run Web REPL
+## Solve a problem
 
 ```
-./solver visualize_repl
-start http://localhost:3333/
+./solve NaiveAnnealingSolver ../data/problems/1.problem.json out.json             # regular usage
+./solve NaiveAnnealingSolver ../data/problems/1.problem.json out.json init.json   # .. or start with initial solution.
+./solve NaiveAnnealingSolver 1 out.json                                           # shortcut
 ```
-
-automatically loads `*.txt` from the data directory.
-
-## Run Console REPL
+## Apply a solver to all problems
 
 ```
-./solver repl
+cd scripts
+python solve_all.py SOLVER_NAME improvement   # overwrite existing solution file if the score improves
+python solve_all.py SOLVER_NAME force         # always overwrite existing solution file
+python solve_all.py SOLVER_NAME never         # do not overwrite existing solution file
 ```
 
-automatically loads `*.txt` from the data directory.
+* solves all problems in ./data/problems/
+* results are stored in ./solutions/
+* solve_all.csv (summary file) will be generated.
 
 ## Add a Solver
 

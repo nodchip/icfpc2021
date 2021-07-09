@@ -3,9 +3,6 @@
 #include <array>
 #include "contest_types.h"
 
-using Line = std::array<Point, 2>;
-//using integer = int64_t;
-
 inline integer get_x(const Point& p) { return p.first; }
 inline integer get_y(const Point& p) { return p.second; }
 inline Point& operator-=(Point& lhs, const Point& rhs) {
@@ -44,6 +41,8 @@ struct SJudgeResult {
 
 SJudgeResult judge(const SProblem& problem, const SSolution& solution);
 
+bool update_judge(const SJudgeResult& res, nlohmann::json& solution_json);
+
 // geometry codes from..
 // http://www.prefield.com
 
@@ -53,9 +52,9 @@ inline integer dot(const Point& a, const Point& b) {
 inline integer norm(const Point& a) {
   return dot(a, a);
 }
-inline integer abs(const Point& a) {
-  return std::sqrt(norm(a));
-}
+//inline integer abs(const Point& a) {
+//  return std::sqrt(norm(a)); // not integer..
+//}
 inline integer cross(const Point& a, const Point& b) {
   return get_y(a) * get_x(b) - get_x(a) * get_y(b);
 }
@@ -91,9 +90,9 @@ inline bool intersectSS_strict(const Line &s, const Line &t) { // false if two s
   return ccw(s[0],s[1],t[0])*ccw(s[0],s[1],t[1]) < 0 &&
          ccw(t[0],t[1],s[0])*ccw(t[0],t[1],s[1]) < 0;
 }
-inline bool intersectSP(const Line &s, const Point &p) {
-  return abs(s[0]-p)+abs(s[1]-p)-abs(s[1]-s[0]) < EPS; // triangle inequality
-}
+//inline bool intersectSP(const Line &s, const Point &p) {
+//  return abs(s[0]-p)+abs(s[1]-p)-abs(s[1]-s[0]) < EPS; // triangle inequality
+//}
 
 // http://www.prefield.com/algorithm/geometry/contains.html
 #define curr(P, i) P[i]

@@ -3,6 +3,9 @@
 #include <optional>
 #include <iostream>
 
+std::filesystem::path default_data_path();
+std::filesystem::path default_problem_path(int num);
+
 std::vector<std::string> split(std::string s, std::string delimiter);
 std::string join(std::vector<std::string> tokens, std::string delimiter);
 std::pair<std::string, std::string> split_first(std::string s, std::string delimiter);

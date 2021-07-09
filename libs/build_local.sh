@@ -13,4 +13,11 @@ pushd $(dirname $0)/mpir
 ./autogen.sh
 ./configure --enable-cxx --enable-gmpcompat --with-yasm=$(cd ../yasm && pwd)/yasm
 make -j
+rm cxx/.dirstamp gmpxx.h
 popd
+
+echo "remove unnecessary file from yasm"
+pushd $(dirname $0)/yasm
+rm Makefile config.h config.h.in config.status config/test-driver genmacro genmodule genperf genstring genversion re2c vsyasm yasm ytasm
+popd
+

@@ -11,6 +11,7 @@ CXXFLAGS+=-MMD -MP
 CXXFLAGS+=-I$(LIB_PATH)/CLI11/include
 CXXFLAGS+=-I$(LIB_PATH)/json/include
 CXXFLAGS+=-I$(LIB_PATH)/cpp-httplib/include
+CXXFLAGS+=-I$(LIB_PATH)/boost_1_76_0/
 
 # enable this for HTTPS support.
 #CXXFLAGS+=-DCPPHTTPLIB_OPENSSL_SUPPORT
@@ -23,8 +24,8 @@ LDFLAGS+=-L$(LIB_PATH)/fmt/build -lfmt
 CXXFLAGS+=-I$(LIB_PATH)/glog/src -I$(LIB_PATH)/glog_build
 LDFLAGS+=-L$(LIB_PATH)/glog_build -Wl,-rpath $(LIB_PATH)/glog_build -lglog
 
-CXXFLAGS+=-I$(LIB_PATH)/mpir
-LDFLAGS+=-L$(LIB_PATH)/mpir/.libs -Wl,-rpath $(LIB_PATH)/mpir/.libs -lgmp -lgmpxx
+#CXXFLAGS+=-I$(LIB_PATH)/mpir
+#LDFLAGS+=-L$(LIB_PATH)/mpir/.libs -Wl,-rpath $(LIB_PATH)/mpir/.libs -lgmp -lgmpxx
 
 LDFLAGS+=-lpthread
 #CXXFLAGS+=-g
@@ -68,7 +69,7 @@ TEST_OBJS=$(TEST_SRCS:%.cpp=$(BUILD_PATH)/%.o)
 TEST_DEPS=$(TEST_SRCS:%.cpp=$(BUILD_PATH)/%.d)
 $(TEST_OBJS): CXXFLAGS+=$(TEST_CXXFLAGS)
 
-TARGETS=solver judge test test_mpir
+TARGETS=solver judge test # test_mpir
 
 .PHONY: all
 all: dirs $(TARGETS)
