@@ -2,9 +2,12 @@
 #include <filesystem>
 #include <optional>
 #include <iostream>
+#include <nlohmann/json.hpp>
 
 std::filesystem::path default_data_path();
 std::filesystem::path default_problem_path(int num);
+
+bool update_meta(nlohmann::json& solution_json, const std::string& solver_name);
 
 std::vector<std::string> split(std::string s, std::string delimiter);
 std::string join(std::vector<std::string> tokens, std::string delimiter);
