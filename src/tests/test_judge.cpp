@@ -1,17 +1,41 @@
 #include "stdafx.h"
 
+#include <filesystem>
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 #include "judge.h"
 
-#ifdef _MSC_VER
-#define DATA_PATH "../../data"
-#else
-#define DATA_PATH "../data"
-#endif
+namespace fs = std::filesystem;
 
-TEST(JudgeTest, TestProblem11_OK) {
-  SProblemPtr problem = SProblem::load_file(DATA_PATH "/problems/11.problem.json");
+class JudgeTest : public testing::Test {
+ public:
+  JudgeTest() {
+    root_dir_ = fs::absolute(fs::current_path());
+    while (!isProjectRoot(root_dir_)) {
+      root_dir_ = root_dir_.parent_path();
+    }
+    problem_dir_ = problem_dir_;
+    problem_dir_ /= "data/problems";
+  }
+
+  const fs::path& root_dir() { return root_dir_; }
+  const fs::path& problem_dir() { return problem_dir_; }
+
+ private:
+  bool isProjectRoot(const fs::path& dir) {
+    auto www_path = dir;
+    www_path /= "www";
+    return fs::exists(www_path);
+  }
+
+  fs::path root_dir_;
+  fs::path problem_dir_;
+};
+
+TEST_F(JudgeTest, TestProblem11_OK) {
+  auto filepath = problem_dir();
+  filepath /= "11.problem.json";
+  SProblemPtr problem = SProblem::load_file(filepath.c_str());
   EXPECT_EQ(problem->vertices.size(), 3);
 
   SSolution solution;
@@ -27,8 +51,10 @@ TEST(JudgeTest, TestProblem11_OK) {
   EXPECT_TRUE(res.is_valid());
 }
 
-TEST(JudgeTest, TestProblem1_VeryClose) {
-  SProblemPtr problem = SProblem::load_file(DATA_PATH "/problems/1.problem.json");
+TEST_F(JudgeTest, TestProblem1_VeryClose) {
+  auto filepath = problem_dir();
+  filepath /= "1.problem.json";
+  SProblemPtr problem = SProblem::load_file(filepath.c_str());
   EXPECT_FALSE(problem->vertices.empty());
 
   SSolution solution;
