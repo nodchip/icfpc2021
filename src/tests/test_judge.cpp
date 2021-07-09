@@ -35,7 +35,7 @@ class JudgeTest : public testing::Test {
 TEST_F(JudgeTest, TestProblem11_OK) {
   auto filepath = problem_dir();
   filepath /= "11.problem.json";
-  SProblemPtr problem = SProblem::load_file(filepath.c_str());
+  SProblemPtr problem = SProblem::load_file(filepath.string());
   EXPECT_EQ(problem->vertices.size(), 3);
 
   SSolution solution;
@@ -54,7 +54,7 @@ TEST_F(JudgeTest, TestProblem11_OK) {
 TEST_F(JudgeTest, TestProblem1_VeryClose) {
   auto filepath = problem_dir();
   filepath /= "1.problem.json";
-  SProblemPtr problem = SProblem::load_file(filepath.c_str());
+  SProblemPtr problem = SProblem::load_file(filepath.string());
   EXPECT_FALSE(problem->vertices.empty());
 
   SSolution solution;
