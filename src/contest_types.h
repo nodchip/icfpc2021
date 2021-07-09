@@ -22,4 +22,8 @@ using SProblemPtr = std::shared_ptr<SProblem>;
 
 struct SSolution {
     std::vector<Point> vertices;
+    SSolution() {};
+    SSolution(const std::vector<Point>& vertices);
+    std::string str() const;
+    friend std::ostream& operator<<(std::ostream& o, const SSolution& obj);
 };

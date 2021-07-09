@@ -33,5 +33,10 @@ int main(int argc, char* argv[]) {
 
     debug(*problem);
 
+    debug(problem->vertices);
+
+    nlohmann::json test_json(problem->vertices);
+    debug(test_json.dump());
+
     return 0;
 }

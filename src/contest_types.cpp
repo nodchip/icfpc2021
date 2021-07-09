@@ -28,3 +28,15 @@ std::ostream& operator<<(std::ostream& o, const SProblem& obj) {
     o << obj.str();
     return o;
 }
+
+SSolution::SSolution(const std::vector<Point>& vertices) : vertices(vertices) {}
+
+std::string SSolution::str() const {
+    nlohmann::json json(vertices);
+    return json.dump();
+}
+
+std::ostream& operator<<(std::ostream& o, const SSolution& obj) {
+    o << obj.str();
+    return o;
+}
