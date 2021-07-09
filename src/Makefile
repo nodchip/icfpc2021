@@ -29,7 +29,7 @@ LDFLAGS+=-lpthread
 #CXXFLAGS+=-DNDEBUG
 
 # add your cpp files here:
-SRCS+=util.cpp contest_types.cpp
+SRCS+=util.cpp contest_types.cpp judge.cpp
 OBJS=$(SRCS:%.cpp=$(BUILD_PATH)/%.o)
 DEPS=$(SRCS:%.cpp=$(BUILD_PATH)/%.d)
 
@@ -42,6 +42,10 @@ PCH_OUT=
 MAIN_SRCS=$(SRCS) main.cpp
 MAIN_OBJS=$(MAIN_SRCS:%.cpp=$(BUILD_PATH)/%.o)
 MAIN_DEPS=$(MAIN_SRCS:%.cpp=$(BUILD_PATH)/%.d)
+
+JUDGE_SRCS=$(SRCS) judge_main.cpp
+JUDGE_OBJS=$(JUDGE_SRCS:%.cpp=$(BUILD_PATH)/%.o)
+JUDGE_DEPS=$(JUDGE_SRCS:%.cpp=$(BUILD_PATH)/%.d)
 
 SOLVER_SRCS=$(wildcard solvers/*.cpp)
 SOLVER_OBJS=$(SOLVER_SRCS:%.cpp=$(BUILD_PATH)/%.o)
@@ -57,7 +61,7 @@ TEST_OBJS=$(TEST_SRCS:%.cpp=$(BUILD_PATH)/%.o)
 TEST_DEPS=$(TEST_SRCS:%.cpp=$(BUILD_PATH)/%.d)
 $(TEST_OBJS): CXXFLAGS+=$(TEST_CXXFLAGS)
 
-TARGETS=solver test
+TARGETS=solver judge test
 
 .PHONY: all
 all: dirs $(TARGETS)
@@ -82,7 +86,10 @@ $(BUILD_PATH)/%.o: %.cpp $(PCH_OUT)
 solver: $(MAIN_OBJS) $(SOLVER_OBJS)
 	$(CXX) $(CXXFLAGS) -Wall $^ -o $@ $(LDFLAGS)
 
+judge: $(JUDGE_OBJS) $(SOLVER_OBJS)
+	$(CXX) $(CXXFLAGS) -Wall $^ -o $@ $(LDFLAGS)
+
 test: $(GTEST_SRCS) $(TEST_OBJS) $(OBJS)
 	$(CXX) $(TEST_CXXFLAGS) $^ -o $@ $(TEST_LDFLAGS)
 
--include $(DEPS) $(MAIN_DEPS) $(SOLVER_DEPS) $(TEST_DEPS)
+-include $(DEPS) $(MAIN_DEPS) $(JUDGE_DEPS) $(SOLVER_DEPS) $(TEST_DEPS)
