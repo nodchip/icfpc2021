@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <iostream>
 #include "contest_types.h"
 
 namespace NTypes {

@@ -1,6 +1,7 @@
 #pragma once
 #include <filesystem>
 #include <optional>
+#include <iostream>
 
 std::vector<std::string> split(std::string s, std::string delimiter);
 std::string join(std::vector<std::string> tokens, std::string delimiter);
