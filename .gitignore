@@ -28,6 +28,7 @@
 
 # Libraries
 /libs/glog_build
+/libs/glog_vsbuild
 
 # Executables
 *.exe
@@ -44,3 +45,6 @@
 /vs/test/*.user
 /vs/solver/x64
 /vs/solver/*.user
+/vs/judge/x64
+/vs/judge/*.user
+
