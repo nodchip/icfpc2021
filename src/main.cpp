@@ -9,6 +9,7 @@
 #include "fmt/core.h"
 #include "nlohmann/json.hpp"
 #include "util.h"
+#include "judge.h"
 #include "solver_registry.h"
 
 int main(int argc, char* argv[]) {
@@ -29,10 +30,12 @@ int main(int argc, char* argv[]) {
     std::string problem_json;
     std::string solution_json;
     bool output_meta = true;
+    bool output_judge = true;
     sub_solve->add_option("solver_name", solver_name, "solver name");
     sub_solve->add_option("problem_json", problem_json, "problem JSON file path");
     sub_solve->add_option("solution_json", solution_json, "output solution JSON file path");
     sub_solve->add_flag("-m,--output-meta,!--no-output-meta", output_meta, "output meta info to solution JSON");
+    sub_solve->add_flag("-j,--output-judge,!--no-output-judge", output_judge, "output judge info to solution JSON");
 
     auto sub_list_solvers = app.add_subcommand("list_solvers", "list up registered solvers");
 
@@ -60,8 +63,21 @@ int main(int argc, char* argv[]) {
         std::ofstream ofs(solution_json);
         nlohmann::json json = out.solution->json();
         if (output_meta) {
-          json["meta"] = {
-            {"elapsed_s", solve_s},
+          if (json.find("meta") == json.end()) json["meta"] = {};
+          json["meta"]["elapsed_s"] = solve_s;
+        }
+        if (output_judge) {
+          if (json.find("meta") == json.end()) json["meta"] = {};
+          SJudgeResult res = judge(*problem, *out.solution);
+          LOG(INFO) << "judge : dislikes = " << res.dislikes;
+          LOG(INFO) << "judge : fit_in_hole = " << res.fit_in_hole();
+          LOG(INFO) << "judge : satisfy_stretch = " << res.satisfy_stretch();
+          LOG(INFO) << "judge : is_valid = " << res.is_valid();
+          json["meta"]["judge"] = {
+            {"dislikes", res.dislikes},
+            {"fit_in_hole", res.fit_in_hole()},
+            {"satisfy_stretch", res.satisfy_stretch()},
+            {"is_valid", res.is_valid()},
           };
         }
         ofs << json.dump();
