@@ -17,7 +17,6 @@ int main(int argc, char* argv[]) {
     google::InitGoogleLogging(argv[0]);
     google::InstallFailureSignalHandler();
     google::SetStderrLogging(google::INFO);
-    // TODO: Rename log file name.
     google::SetLogDestination(google::INFO, "main.log.");
 
     std::ios::sync_with_stdio(false);
@@ -35,7 +34,7 @@ int main(int argc, char* argv[]) {
     bool output_judge = true;
     sub_solve->add_option("solver_name", solver_name, "solver name");
     sub_solve->add_option("problem_json", problem_json, "problem JSON file path");
-    sub_solve->add_option("solution_json", solution_json, "output solution JSON file path");
+    sub_solve->add_option("solution_json", solution_json, "output solution JSON file path (optional)");
     sub_solve->add_option("initial_solution_json", initial_solution_json, "input solution JSON file path (optional)");
     sub_solve->add_flag("-m,--output-meta,!--no-output-meta", output_meta, "output meta info to solution JSON");
     sub_solve->add_flag("-j,--output-judge,!--no-output-judge", output_judge, "output judge info to solution JSON");
@@ -71,7 +70,6 @@ int main(int argc, char* argv[]) {
       LOG(INFO) << fmt::format("Elapsed  : {:.2f} s", solve_s);
 
       {
-        std::ofstream ofs(solution_json);
         nlohmann::json json = out.solution->json();
         if (output_meta) {
           if (json.find("meta") == json.end()) json["meta"] = {};
@@ -85,8 +83,13 @@ int main(int argc, char* argv[]) {
           LOG(INFO) << "judge : is_valid = " << res.is_valid();
           update_judge(res, json);
         }
-        ofs << json.dump();
-        LOG(INFO) << fmt::format("Output   : {}", solution_json);
+        if (solution_json.empty()) {
+          LOG(INFO) << "No output";
+        } else {
+          std::ofstream ofs(solution_json);
+          ofs << json.dump();
+          LOG(INFO) << fmt::format("Output   : {}", solution_json);
+        }
       }
 
       return 0;
