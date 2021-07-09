@@ -30,6 +30,9 @@
     <ClInclude Include="..\..\src\solver_registry.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\judge.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\main.cpp">
@@ -52,6 +55,9 @@
     </ClCompile>
     <ClCompile Include="..\..\src\solvers\empty_solver.cpp">
       <Filter>ソース ファイル\solvers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\judge.cpp">
+      <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
