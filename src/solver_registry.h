@@ -8,6 +8,7 @@
 
 struct SolverArguments {
   SProblemPtr problem;
+  SSolutionPtr optional_initial_solution;
 };
 
 struct SolverOutputs {
