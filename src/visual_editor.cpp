@@ -312,6 +312,12 @@ int SVisualEditor::show(int wait) {
         canvas->draw_tolerated_vertex = !canvas->draw_tolerated_vertex;
         canvas->update(get_mouseover_node_id());
     }
+    if (c == 's') {
+        const std::string file_path = "intermediate.pose.json";
+        std::ofstream ofs(file_path);
+        ofs << canvas->solution->json();
+        LOG(INFO) << "saved: " << file_path;
+    }
     if (c == 'h') {
         canvas->shift(-1, 0);
         canvas->update(-1);
