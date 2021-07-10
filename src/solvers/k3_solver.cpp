@@ -31,7 +31,7 @@ struct Xorshift {
         return x % (r - l + 1) + l;
     }
     double next_double() {
-        return double(next_int()) / UINT_MAX;
+        return double(next_int()) / std::numeric_limits<unsigned>::max();
     }
 };
 
@@ -113,7 +113,7 @@ public:
             d2_orig.push_back(distance2(u, v));
         }
         hole_polygon = prob->hole_polygon;
-        inner_polygon_points = enum_inner_polygon_points(hole_polygon);
+        build_polygon_map();
         // solution
         vertices = prob->vertices;
     }
@@ -132,23 +132,25 @@ public:
         return SROI(x_min, y_min, x_max, y_max);
     }
 
-    void build_polygon_map(const std::vector<Point>& polygon) const {
-        SROI roi = calc_roi(polygon);
-        
-    }
-
-    std::vector<Point> enum_inner_polygon_points(const std::vector<Point>& polygon) const {
-        std::vector<Point> res;
-        SROI roi = calc_roi(polygon);
-        for (integer x = roi.x_min; x <= roi.x_max; x++) {
-            for (integer y = roi.y_min; y <= roi.y_max; y++) {
+    void build_polygon_map() {
+        polygon_roi = calc_roi(hole_polygon);
+        auto& roi = polygon_roi;
+        inner_polygon_map.resize(roi.y_max - roi.y_min + 1, std::vector<bool>(roi.x_max - roi.x_min + 1, false));
+        for (integer y = roi.y_min; y <= roi.y_max; y++) {
+            for (integer x = roi.x_min; x <= roi.x_max; x++) {
                 Point p(x, y);
-                if (contains(polygon, p)) {
-                    res.push_back(p);
+                if (contains(hole_polygon, p)) {
+                    inner_polygon_points.push_back(p);
+                    inner_polygon_map[y - roi.y_min][x - roi.x_min] = true;
                 }
             }
         }
-        return res;
+    }
+
+    bool is_inside_polygon(integer x, integer y) const {
+        auto& roi = polygon_roi;
+        if (x < roi.x_min || x > roi.x_max || y < roi.y_min || y > roi.y_max) return false;
+        return inner_polygon_map[y - roi.y_min][x - roi.x_min];
     }
 
     Point calc_representative_polygon_point(const std::vector<Point>& inner_polygon_points) const {
@@ -213,19 +215,64 @@ public:
         auto from = pose[vid];
         pose[vid] = to;
         double new_score = evaluate(pose);
-        if (new_score == std::numeric_limits<double>::max()) {
-            return std::make_shared<SMove>(vid, from, to, new_score, false);
-        }
+        if (new_score == std::numeric_limits<double>::max()) return nullptr;
         return std::make_shared<SMove>(vid, from, to, new_score - now_score, true);
     }
 
     SSlidePtr calc_slide_stat(int dir, double now_score) const {
+        static constexpr int di[] = { 0, -1, 0, 1 };
+        static constexpr int dj[] = { 1, 0, -1, 0 };
         auto pose = vertices;
-        
+        for (auto& [x, y] : pose) {
+            if (!is_inside_polygon(x + dj[dir], y + di[dir])) return nullptr;
+            x += dj[dir]; y += di[dir];
+        }
+        double new_score = evaluate(pose);
+        if (new_score == std::numeric_limits<double>::max()) return nullptr;
+        return std::make_shared<SSlide>(dir, new_score - now_score, true);
+    }
+
+    STransPtr create_random_trans(double now_score) {
+        if (rnd.next_int(10)) {
+            int vid = rnd.next_int(vertices.size());
+            int to_id = rnd.next_int(inner_polygon_points.size());
+            return calc_move_stat(vid, inner_polygon_points[to_id], now_score);
+        }
+        else {
+            return calc_slide_stat(rnd.next_int(4), now_score);
+        }
     }
 
     void move_vertex(std::vector<Point>& pose, integer vid, const Point& to) {
         pose[vid] = to;
+    }
+
+    void slide_all_vertices(std::vector<Point>& pose, int dir) {
+        static constexpr int di[] = { 0, -1, 0, 1 };
+        static constexpr int dj[] = { 1, 0, -1, 0 };
+        for (auto& [x, y] : pose) {
+            x += dj[dir]; y += di[dir];
+        }
+    }
+
+    void transition(std::vector<Point>& pose, STransPtr trans) {
+        STrans::Type type = trans->type;
+        switch (type) {
+        case K3Solver::STrans::Type::MOVE:
+        {
+            SMovePtr mv = std::static_pointer_cast<SMove>(trans);
+            move_vertex(pose, mv->vid, mv->to);
+        }
+            break;
+        case K3Solver::STrans::Type::SLIDE:
+        {
+            SSlidePtr sl = std::static_pointer_cast<SSlide>(trans);
+            slide_all_vertices(pose, sl->dir);
+        }
+            break;
+        default:
+            break;
+        }
     }
 
     std::vector<Point> scatter(std::vector<Point> pose, integer num_loop) {
@@ -269,20 +316,14 @@ public:
         double now_score = evaluate(vertices);
         integer loop = 0, num_loop = 3000000;
         for(integer loop = 0; loop < num_loop; loop++) {
-            int vid = rnd.next_int(vertices.size());
-            int to_id = rnd.next_int(inner_polygon_points.size());
-            //LOG(INFO) << "vid = " << vid << ", to_id = " << to_id << ", to = " << inner_polygon_points[to_id];
-            SMovePtr mv = calc_move_stat(vid, inner_polygon_points[to_id], now_score);
-
-            if (!mv->is_valid) continue;
-
-            double temp = get_temp(10.0, 0.0, loop, num_loop);
-            double prob = exp(-mv->diff / temp);
+            STransPtr trans = create_random_trans(now_score);
+            if (!trans) continue;
+            double temp = get_temp(100.0, 0.0, loop, num_loop);
+            double prob = exp(-trans->diff / temp);
             if (rnd.next_double() < prob) {
-                move_vertex(vertices, mv->vid, mv->to);
-                now_score += mv->diff;
+                transition(vertices, trans);
+                now_score += trans->diff;
             }
-
             if (editor && loop % 1000 == 0) {
                 LOG(INFO) << "loop = " << loop << ", score = " << now_score;
                 editor->set_pose(std::make_shared<SSolution>(vertices));
@@ -308,6 +349,8 @@ private:
     std::vector<integer> d2_orig;
     std::vector<Point> vertices_orig;
     std::vector<Point> hole_polygon;
+    SROI polygon_roi;
+    std::vector<std::vector<bool>> inner_polygon_map;
     std::vector<Point> inner_polygon_points;
     // solution
     std::vector<Point> vertices;
