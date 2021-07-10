@@ -24,10 +24,11 @@ def show_problems():
     problem_contexts = []
 
     for id in ids:
-        dislikes = contest_infos[id]['your dislikes']
+        web = contest_infos[id]
+        dislikes = web['your dislikes']
         problem = load_problem_json(id)
         problem.update({
-            'best_dislikes': int(contest_infos[id]['minimal dislikes']),
+            'best_dislikes': int(web['minimal dislikes']) if not math.isnan(web['minimal dislikes']) else 99999,
             'dislikes': int(dislikes) if not math.isnan(dislikes) else None,
             'max_score': get_score(problem),
         })
