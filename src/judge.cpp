@@ -110,16 +110,28 @@ SJudgeResult judge(const SProblem& problem, const SSolution& solution) {
       && contains(problem.hole_polygon, moved_i) == EContains::EON
       && contains(problem.hole_polygon, moved_j) == EContains::EON
       ) {
-      // if moved_i, moved_j is exactly on the hole polygon, intersectSS / bg::difference always say that 
-      // the segment is INSIDE the polygon which is wrong when it is concave.
-      // dirty hack:
-      const double p = 1e-6;
-      const Point2d interp { 
-        get_x(moved_i) * p + get_x(moved_j) * (1.0 - p) ,
-        get_y(moved_i) * p + get_y(moved_j) * (1.0 - p) ,
-      };
-      if (contains(hole_polygon_d, interp) == EContains::EOUT) {
-        intersects = true;
+      bool on_edge = false;
+      for (const auto& original_edge : problem.edges) {
+        auto original_i = solution.vertices[edge.first];
+        auto original_j = solution.vertices[edge.second];
+        if ((moved_i == original_i && moved_j == original_j) ||
+            (moved_i == original_j && moved_j == original_i)) {
+          on_edge = true;
+          break;
+        }
+      }
+      if (!on_edge) {
+        // if moved_i, moved_j is exactly on the hole polygon, intersectSS / bg::difference always say that
+        // the segment is INSIDE the polygon which is wrong when it is concave.
+        // dirty hack:
+        const double p = 1e-6;
+        const Point2d interp {
+          get_x(moved_i) * p + get_x(moved_j) * (1.0 - p) ,
+          get_y(moved_i) * p + get_y(moved_j) * (1.0 - p) ,
+        };
+        if (contains(hole_polygon_d, interp) == EContains::EOUT) {
+          intersects = true;
+        }
       }
     }
     if (intersects) {
