@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
     auto sub_solve = app.add_subcommand("solve");
     std::string solver_name;
     std::string problem_json;
-    std::string solution_json;
+    std::string solution_json = "out.pose.json";
     std::string initial_solution_json;
     bool output_meta = true;
     bool output_judge = true;
