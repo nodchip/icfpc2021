@@ -1,0 +1,1 @@
+{"meta":{"created_at":"2021/07/10 11:24:58","elapsed_s":0.493785,"judge":{"dislikes":0,"fit_in_hole":true,"is_valid":true,"satisfy_stretch":true},"solver":"FlipAnnealingSolver"},"vertices":[[10,0],[10,10],[0,10]]}
