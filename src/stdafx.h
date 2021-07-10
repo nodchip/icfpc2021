@@ -2,11 +2,9 @@
 #ifndef __ICFPC2021_STDAFX_H__
 #define __ICFPC2021_STDAFX_H__
 
-#ifdef _MSC_VER
-#define CPPHTTPLIB_OPENSSL_SUPPORT
-#endif 
-
-#include <httplib.h>  // include before <windows.h>
+#include <fstream>
+#include <random>
+#include <thread>
 
 #ifdef _MSC_VER
 #  define NOMINMAX

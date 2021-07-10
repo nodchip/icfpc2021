@@ -1,5 +1,7 @@
 #include "stdafx.h"
 
+#include <thread>
+
 #include "contest_types.h"
 #include "solver_registry.h"
 

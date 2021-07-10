@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <ctime>
 #include <filesystem>
+#include <fstream>
 #include <fmt/core.h>
 
 std::filesystem::path default_data_path() {
