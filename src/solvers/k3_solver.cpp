@@ -39,6 +39,8 @@ class K3Solver : public SolverBase {
 public:
     K3Solver() {}
 
+    using Pose = std::vector<Point>;
+
     struct SROI {
         integer x_min, y_min, x_max, y_max;
         SROI(integer x_min = 0, integer y_min = 0, integer x_max = 0, integer y_max = 0)
@@ -113,8 +115,6 @@ public:
         }
         hole_polygon = prob->hole_polygon;
         build_polygon_map();
-        // solution
-        vertices = prob->vertices;
     }
 
     SROI calc_roi(const std::vector<Point>& points) const {
@@ -171,7 +171,7 @@ public:
         return nearest_point;
     }
 
-    double evaluate(const std::vector<Point>& pose) const {
+    double evaluate(const Pose& pose) const {
         SSolutionPtr sol = std::make_shared<SSolution>();
         sol->vertices = pose;
         auto res = judge(*prob, *sol);
@@ -194,52 +194,54 @@ public:
             auto u = pose[uid], v = pose[vid];
             stretch_cost += calc_violation(d2_orig[eid], distance2(u, v));
         }
-        return stretch_cost + res.dislikes * 3;
+        //return stretch_cost + res.dislikes * 3;
+        double weight = 0.5 * progress_rate + 0.5;
+        return weight * stretch_cost + (1.0 - weight) * res.dislikes;
     }
 
-    SMovePtr calc_move_stat(integer vid, const Point& to, double now_score) const {
-        auto pose = vertices;
+    SMovePtr calc_move_stat(Pose& pose, integer vid, const Point& to, double now_score) {
         auto from = pose[vid];
         pose[vid] = to;
         double new_score = evaluate(pose);
+        pose[vid] = from;
         if (new_score == std::numeric_limits<double>::max()) return nullptr;
         return std::make_shared<SMove>(vid, from, to, new_score - now_score, true);
     }
 
-    SSlidePtr calc_slide_stat(int dir, double now_score) const {
+    SSlidePtr calc_slide_stat(const Pose& pose, int dir, double now_score) const {
         static constexpr int di[] = { 0, -1, 0, 1 };
         static constexpr int dj[] = { 1, 0, -1, 0 };
-        auto pose = vertices;
-        for (auto& [x, y] : pose) {
+        auto pose_cpy = pose;
+        for (auto& [x, y] : pose_cpy) {
             if (!is_inside_polygon(x + dj[dir], y + di[dir])) return nullptr;
             x += dj[dir]; y += di[dir];
         }
-        double new_score = evaluate(pose);
+        double new_score = evaluate(pose_cpy);
         if (new_score == std::numeric_limits<double>::max()) return nullptr;
         return std::make_shared<SSlide>(dir, new_score - now_score, true);
     }
 
-    STransPtr create_random_trans(double now_score) {
+    STransPtr create_random_trans(Pose& pose, double now_score) {
         // TODO: vertices ‚Å‚Í‚È‚­ pose ‚Å
         static constexpr int di[] = { 0, -1, 0, 1 };
         static constexpr int dj[] = { 1, 0, -1, 0 };
         int r = rnd.next_int(10);
         if (r < 8) {
             // adjacent move
-            int vid = rnd.next_int(vertices.size());
-            auto [x, y] = vertices[vid];
+            int vid = rnd.next_int(pose.size());
+            auto [x, y] = pose[vid];
             int dir = rnd.next_int(4);
             if (!is_inside_polygon(x + dj[dir], y + di[dir])) return nullptr;
-            return calc_move_stat(vid, Point(x + dj[dir], y + di[dir]), now_score);
+            return calc_move_stat(pose, vid, Point(x + dj[dir], y + di[dir]), now_score);
         }
         if (r < 9) {
             // completely random warp
-            int vid = rnd.next_int(vertices.size());
+            int vid = rnd.next_int(pose.size());
             int to_id = rnd.next_int(inner_polygon_points.size());
-            return calc_move_stat(vid, inner_polygon_points[to_id], now_score);
+            return calc_move_stat(pose, vid, inner_polygon_points[to_id], now_score);
         }
         else {
-            return calc_slide_stat(rnd.next_int(4), now_score);
+            return calc_slide_stat(pose, rnd.next_int(4), now_score);
         }
     }
 
@@ -276,18 +278,18 @@ public:
     }
 
     std::vector<Point> scatter(std::vector<Point> pose, integer num_loop) {
-        double now_score = evaluate(vertices);
+        double now_score = evaluate(pose);
         for (integer loop = 0; loop < num_loop; loop++) {
             int vid = rnd.next_int(pose.size());
             int to_id = rnd.next_int(inner_polygon_points.size());
-            SMovePtr mv = calc_move_stat(vid, inner_polygon_points[to_id], now_score);
+            SMovePtr mv = calc_move_stat(pose, vid, inner_polygon_points[to_id], now_score);
             if (mv->is_valid) {
                 move_vertex(pose, mv->vid, mv->to);
                 now_score += mv->diff;
             }
             if (editor && loop % 1000 == 0) {
                 LOG(INFO) << "loop = " << loop << ", score = " << now_score;
-                editor->set_pose(std::make_shared<SSolution>(vertices));
+                editor->set_pose(std::make_shared<SSolution>(pose));
                 int c = editor->show(1);
             }
             loop++;
@@ -298,9 +300,11 @@ public:
     SolverOutputs solve(const SolverArguments& args) override {
         initialize(args);
         
+        auto pose = vertices_orig;
+
         // initial state
         auto representative_point = calc_representative_polygon_point(inner_polygon_points);
-        for (int i = 0; i < vertices.size(); i++) move_vertex(vertices, i, representative_point);
+        for (int i = 0; i < pose.size(); i++) move_vertex(pose, i, representative_point);
 
         constexpr bool visualize = true;
         if (visualize) {
@@ -313,20 +317,27 @@ public:
 
         //vertices = scatter(vertices, 10000);
 
-        double now_score = evaluate(vertices);
-        integer loop = 0, num_loop = 3000000;
+        progress_rate = 0.0;
+        double now_score = evaluate(pose);
+        integer loop = 0, num_loop = 3000000, accepted = 0;
         for(integer loop = 0; loop < num_loop; loop++) {
             if (editor && loop % 1000 == 0) {
-                LOG(INFO) << "loop = " << loop << ", score = " << now_score;
-                editor->set_pose(std::make_shared<SSolution>(vertices));
+                progress_rate = double(loop) / num_loop;
+                LOG(INFO) 
+                    << "loop = " << loop 
+                    << ", progress_rate = " << progress_rate
+                    << ", accept_rate = " << double(accepted) / loop
+                    << ", score = " << now_score;
+                editor->set_pose(std::make_shared<SSolution>(pose));
                 int c = editor->show(1);
             }
-            STransPtr trans = create_random_trans(now_score);
+            STransPtr trans = create_random_trans(pose, now_score);
             if (!trans) continue;
             double temp = get_temp(30.0, 0.0, loop, num_loop);
             double prob = exp(-trans->diff / temp);
             if (rnd.next_double() < prob) {
-                transition(vertices, trans);
+                accepted++;
+                transition(pose, trans);
                 now_score += trans->diff;
             }
             loop++;
@@ -335,7 +346,7 @@ public:
         // do nothing.
         SolverOutputs ret;
         ret.solution = std::make_shared<SSolution>();
-        ret.solution->vertices = vertices;
+        ret.solution->vertices = pose;
         return ret;
     }
 
@@ -352,8 +363,8 @@ private:
     SROI polygon_roi;
     std::vector<std::vector<bool>> inner_polygon_map;
     std::vector<Point> inner_polygon_points;
-    // solution
-    std::vector<Point> vertices;
+    // for evaluation
+    double progress_rate;
     // for visualize
     SVisualEditorPtr editor;
 };
