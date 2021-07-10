@@ -11,23 +11,36 @@ using Point2d = std::pair<double, double>;
 using Line = std::array<Point, 2>;
 
 struct SBonus {
-    enum class Type { GLOBALIST, BREAK_A_LEG };
+    enum class Type { GLOBALIST, BREAK_A_LEG, INVALID };
+    static constexpr integer DUMMY_PROBLEM_ID = -1;
+
     Type type;
-    Point position;
+    Point position; // not meaningful in Pose file.
     integer problem_id;
     SBonus(Type type, const Point& position, integer problem_id) : type(type), position(position), problem_id(problem_id) {}
+    SBonus(Type type) : type(type), problem_id(DUMMY_PROBLEM_ID) {}
+    static Type parse_bonus_name(const std::string& name) {
+      if (name == "GLOBALIST") return Type::GLOBALIST;
+      if (name == "BREAK_A_LEG") return Type::BREAK_A_LEG;
+      return Type::INVALID;
+    }
+    static const char* bonus_name(Type type) {
+      if (type == Type::GLOBALIST) return "GLOBALIST";
+      if (type == Type::BREAK_A_LEG) return "BREAK_A_LEG";
+      return "INVALID";
+    }
 };
 
 struct SProblem;
 using SProblemPtr = std::shared_ptr<SProblem>;
 struct SProblem {
     nlohmann::json json;
-    std::vector<SBonus> bonuses;
+    std::vector<SBonus> bonuses; // bonuses in the JSON. these bonuses are gaind by solving this problem.
     integer epsilon = 0;
     std::vector<Point> hole_polygon;
     std::vector<Point> vertices;
     std::vector<Edge> edges;
-    bool is_globalist_mode = false;
+    bool is_globalist_mode = false; // solve this problem in GLOBALIST mode.
     SProblem() {};
     SProblem(const nlohmann::json& json);
     static SProblemPtr load_file(const std::string& path);
@@ -45,8 +58,10 @@ struct SSolution;
 using SSolutionPtr = std::shared_ptr<SSolution>;
 struct SSolution {
     std::vector<Point> vertices;
+    std::vector<SBonus> bonuses;
     SSolution() {};
     SSolution(const std::vector<Point>& vertices);
+    SSolution(const std::vector<Point>& vertices, const std::vector<SBonus>& bonuses);
     static SSolutionPtr load_file(const std::string& path);
     std::string str() const;
     nlohmann::json json() const;

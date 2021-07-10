@@ -44,6 +44,16 @@ int main(int argc, char* argv[]) {
 
     auto sub_list_solvers = app.add_subcommand("list_solvers", "list up registered solvers");
 
+    std::string solution_json_base = "try_globalist";
+    auto sub_try_globalist = app.add_subcommand("try_globalist");
+    sub_try_globalist->add_option("solver_name", solver_name, "solver name");
+    sub_try_globalist->add_option("problem_json", problem_json, "problem JSON file path");
+    sub_try_globalist->add_option("solution_json_base", solution_json_base, "output solution JSON file path (optional)");
+    sub_try_globalist->add_option("initial_solution_json", initial_solution_json, "input solution JSON file path (optional)");
+    sub_try_globalist->add_flag("-m,--output-meta,!--no-output-meta", output_meta, "output meta info to solution JSON");
+    sub_try_globalist->add_flag("-j,--output-judge,!--no-output-judge", output_judge, "output judge info to solution JSON");
+    sub_try_globalist->add_flag("--visualize", visualize_output, "visualize output");
+
     CLI11_PARSE(app, argc, argv);
 
     if (sub_solve->parsed()) {
@@ -105,6 +115,74 @@ int main(int argc, char* argv[]) {
 
     if (sub_list_solvers->parsed()) {
       SolverRegistry::displaySolvers();
+      return 0;
+    }
+
+    if (sub_try_globalist->parsed()) {
+      LOG(ERROR) << fmt::format("Solver   : {}", solver_name);
+
+      auto solver = SolverRegistry::getSolver(solver_name);
+      if (!solver) {
+        LOG(ERROR) << fmt::format("solver [{0}] not found!", solver_name);
+        return 0;
+      }
+      SProblemPtr problem = SProblem::load_file_ext(problem_json);
+      LOG(INFO) << fmt::format("Problem  : {}", problem_json);
+
+      SSolutionPtr initial_solution;
+      if (std::filesystem::exists(initial_solution_json)) {
+        initial_solution = SSolution::load_file(initial_solution_json);
+        CHECK(initial_solution);
+        CHECK(is_compatible(*problem, *initial_solution));
+        LOG(INFO) << fmt::format("Initial Solution  : {}", initial_solution_json);
+      }
+
+      std::vector<SolverOutputs> out(2);
+      std::vector<SJudgeResult> res(2);
+      std::vector<nlohmann::json> out_json(2);
+      for (int trial = 0; trial < 2; ++trial) {
+        problem->is_globalist_mode = trial == 0;
+        LOG(INFO) << fmt::format("Trying GLOBALIST  : {}", problem->is_globalist_mode);
+
+        const auto t0 = std::chrono::system_clock::now();
+        out[trial] = solver->solve({ problem, initial_solution });
+        const auto t1 = std::chrono::system_clock::now();
+        const double solve_s = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count() * 1e-6;
+        LOG(INFO) << fmt::format("Elapsed  : {:.2f} s", solve_s);
+
+        {
+          if (problem->is_globalist_mode) {
+            out[trial].solution->bonuses.push_back(SBonus(SBonus::Type::GLOBALIST));
+          }
+
+          nlohmann::json json = out[trial].solution->json();
+          if (output_meta) {
+            if (json.find("meta") == json.end()) json["meta"] = {};
+            json["meta"]["elapsed_s"] = solve_s;
+            update_meta(json, solver_name);
+          }
+          if (output_judge) {
+            res[trial] = judge(*problem, *out[trial].solution);
+            LOG(INFO) << "judge : dislikes = " << res[trial].dislikes;
+            LOG(INFO) << "judge : fit_in_hole = " << res[trial].fit_in_hole();
+            LOG(INFO) << "judge : satisfy_stretch = " << res[trial].satisfy_stretch();
+            LOG(INFO) << "judge : is_valid = " << res[trial].is_valid();
+            update_judge(res[trial], json);
+          }
+          out_json[trial] = json;
+
+          {
+            auto path = trial == 0 ? solution_json_base + ".on.nosubmit.pose.json" : solution_json_base + ".off.nosubmit.pose.json";
+            std::ofstream ofs(path);
+            ofs << json;
+            LOG(INFO) << fmt::format("Output   : {}", path);
+          }
+
+          if (visualize_output) {
+            visualize_and_edit(problem, out[trial].solution);
+          }
+        }
+      }
       return 0;
     }
 

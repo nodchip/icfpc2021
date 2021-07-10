@@ -62,6 +62,13 @@ struct SJudgeResult {
     }
   }
   bool is_valid() const { return fit_in_hole() && satisfy_stretch(); }
+  // better is smaller.
+  friend bool operator<(const SJudgeResult& lhs, const SJudgeResult& rhs) {
+    if (lhs.is_valid() != rhs.is_valid()) {
+      return int(lhs.is_valid()) > int(rhs.is_valid()); 
+    }
+    return lhs.dislikes < rhs.dislikes;
+  }
 };
 
 SJudgeResult judge(const SProblem& problem, const SSolution& solution);
