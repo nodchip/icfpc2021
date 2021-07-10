@@ -77,8 +77,19 @@ class Solver : public SolverBase {
     const double T1 = 1.0e-2;
     double progress = 0.0;
 
+    // lesser version of tonagi's idea 
+    for (auto& p : pose) { p = hole_[0]; }
+
     auto evaluate_and_descide_rollback = [&]() -> bool {
       auto [feasible, updated_cost] = Evaluate(pose);
+
+      // tonagi's idea.
+      auto res = judge(*args.problem, pose);
+      if (!res.fit_in_hole()) {
+        feasible = false;
+        updated_cost = DBL_MAX;
+      }
+
 #if 0
       auto judge_valid = judge(*args.problem, pose).is_valid();
       if (feasible != judge_valid) {
@@ -118,6 +129,19 @@ class Solver : public SolverBase {
       if (evaluate_and_descide_rollback()) {
         x -= dx;
         y -= dy;
+      }
+    };
+
+    auto shift = [&] {
+      const int dx = std::uniform_int_distribution(-1, 1)(rng_);
+      const int dy = std::uniform_int_distribution(-1, 1)(rng_);
+      auto pose_bak = pose;
+      for (auto& p : pose) {
+        p.first += dx;
+        p.second += dy;
+      }
+      if (evaluate_and_descide_rollback()) {
+        pose = pose_bak;
       }
     };
 
@@ -198,6 +222,7 @@ class Solver : public SolverBase {
     using Action = std::function<void()>;
     std::vector<std::pair<double, Action>> action_probs = {
       {0.9, single_small_change},
+      {0.01, shift},
       {0.01, hop_grid},
       {0.01, flip},
     };
