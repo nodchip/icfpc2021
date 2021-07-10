@@ -69,4 +69,19 @@ TEST_F(JudgeTest, TestProblem1_VeryClose) {
   EXPECT_FALSE(res.is_valid());
 }
 
+TEST_F(JudgeTest, DiagonalIntersection) {
+  Point a0 = {5, 10};
+  Point a1 = {10, 10};
+  Point b0 = {6, 9};
+  Point b1 = {8, 11};
+  EXPECT_TRUE(intersectSS_strict({a0, a1}, {b0, b1}));
+  EXPECT_TRUE(intersectSS_strict({a1, a0}, {b0, b1}));
+  EXPECT_TRUE(intersectSS_strict({a0, a1}, {b1, b0}));
+  EXPECT_TRUE(intersectSS_strict({a1, a0}, {b1, b0}));
+  EXPECT_TRUE(intersectSS_strict({b0, b1}, {a0, a1}));
+  EXPECT_TRUE(intersectSS_strict({b0, b1}, {a1, a0}));
+  EXPECT_TRUE(intersectSS_strict({b1, b0}, {a0, a1}));
+  EXPECT_TRUE(intersectSS_strict({b1, b0}, {a1, a0}));
+}
+
 // vim:ts=2 sw=2 sts=2 et ci
