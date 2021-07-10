@@ -15,6 +15,15 @@ using BoostPolygon = bg::model::polygon<BoostPoint>;
 using BoostLinestring = bg::model::linestring<BoostPoint>;
 
 template <typename T>
+void shrink(T& point_a, T& point_b) {
+  constexpr double eps = 1e-6;
+  auto shrink_a = point_a * (1.0 - eps) + point_b * eps;
+  auto shrink_b = point_b * (1.0 - eps) + point_a * eps;
+  point_a = shrink_a;
+  point_b = shrink_b;
+}
+
+template <typename T>
 BoostPoint ToBoostPoint(const T& point) {
   const auto [x, y] = point;
   return BoostPoint(x, y);
@@ -51,7 +60,7 @@ class Solver : public SolverBase {
     epsilon_ = args.problem->epsilon;
     hole_polygon_ = ToBoostPolygon(hole_);
 
-    constexpr bool visualize = true;
+    constexpr bool visualize = false;
     SVisualEditorPtr editor;
     if (visualize) {
       editor = std::make_shared<SVisualEditor>(args.problem, "visualize");
@@ -69,7 +78,21 @@ class Solver : public SolverBase {
     double progress = 0.0;
 
     auto evaluate_and_descide_rollback = [&]() -> bool {
-      const auto [feasible, updated_cost] = Evaluate(pose);
+      auto [feasible, updated_cost] = Evaluate(pose);
+#if 0
+      auto judge_valid = judge(*args.problem, pose).is_valid();
+      if (feasible != judge_valid) {
+        LOG(INFO) << feasible << " " << judge_valid;
+        if (editor) {
+          editor->set_pose(std::make_shared<SSolution>(pose));
+          while (true) {
+            int c = editor->show(1);
+            if (c == 27) break;
+          }
+        }
+      }
+#endif
+
       if (feasible && updated_cost < best_feasible_cost) {
         best_feasible_cost = updated_cost;
         best_feasible_pose = pose;
@@ -224,7 +247,10 @@ class Solver : public SolverBase {
     }
     for (const auto& edge : edges_) {
       const auto [a, b] = edge;
-      BoostLinestring linestring{ToBoostPoint(pose[a]), ToBoostPoint(pose[b])};
+      Point2d pa = pose[a];
+      Point2d pb = pose[b];
+      shrink(pa, pb);
+      BoostLinestring linestring{ToBoostPoint(pa), ToBoostPoint(pb)};
       std::vector<BoostLinestring> differences;
       bg::difference(linestring, hole_polygon_, differences);
       for (const auto& segment : differences) {
