@@ -2,10 +2,7 @@
 
 import flask
 import json
-import math
 import os
-import pandas as pd
-import re
 import requests
 
 app = flask.Blueprint('submit', __name__)
@@ -13,6 +10,7 @@ app = flask.Blueprint('submit', __name__)
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SOLUTIONS_DIR = os.path.join(ROOT_DIR, 'solutions')
 API_TOKEN = 'f086e0bb-cfeb-495d-9f1d-240ea717b30b'
+
 
 @app.route('/submit', methods=['POST'])
 def submit_pose():
