@@ -82,6 +82,7 @@ def solution_context(problem, solution):
         mine = meta['judge']['dislikes']
         context['dislikes'] = str(mine)
         context['score'] = str(get_score(problem, mine))
+        context['eligible'] = is_eligible_for_submit(solution)
  
     return context
 
@@ -135,3 +136,13 @@ def get_score(problem, dislikes=None):
         score = score * math.sqrt((best + 1) / (dislikes + 1))
 
     return int(math.ceil(score))
+
+def is_eligible_for_submit(solution):
+    if not solution['meta']['judge']['is_valid']:
+        return False
+    # if bonus exists, problem should be >= 0
+    if 'bonuses' in solution:
+        for bonus in solution['bonuses']:
+            if bonus.get('problem', -1) < 0:
+                return False
+    return True

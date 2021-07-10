@@ -47,7 +47,7 @@ function submit(id, solver) {
                 <span>{{ solution.solver }}</span><br>
                 <span>DL {{ solution.dislikes }}</span><br>
                 <span>SC ({{ solution.score }})</span>
-                {% if problem.state == 'danger' and loop.index == 1 %}
+                {% if problem.state == 'danger' and loop.index == 1 and solution.eligible %}
                 <button type="button" id="button_{{solution.solver}}_{{problem.id}}" onclick="submit({{problem.id}}, '{{solution.solver}}')">Submit</button>
                 {% endif %}
             </td>
