@@ -48,18 +48,25 @@ def visualize(problem_file_path, pose_file_path, output_file_path):
     for edge in problem['figure']['edges']:
         src = problem['figure']['vertices'][edge[0]]
         dst = problem['figure']['vertices'][edge[1]]
-        src, dst = [src[0], dst[0]], [src[1], dst[1]]
-        plt.plot(src, dst, color='red')
+        plt.plot(*zip(src, dst), color='gray')
 
     # poseを描画する
     if pose_file_path:
+        epsilon = problem['epsilon']
         with open(pose_file_path, 'r') as file:
             pose = json.load(file)
         for edge in problem['figure']['edges']:
+            src = problem['figure']['vertices'][edge[0]]
+            dst = problem['figure']['vertices'][edge[1]]
+            d0 = sum((s - d) ** 2 for s, d in zip(src, dst))
             src = pose['vertices'][edge[0]]
             dst = pose['vertices'][edge[1]]
-            src, dst = [src[0], dst[0]], [src[1], dst[1]]
-            plt.plot(src, dst, color='blue')
+            d1 = sum((s - d) ** 2 for s, d in zip(src, dst))
+            color = 'blue'
+            satisfied = 10**6 * abs(d1 - d0) <= d0 * epsilon
+            if not satisfied:
+                color = 'red' if d1 > d0 else 'cyan'
+            plt.plot(*zip(src, dst), color=color)
 
     if output_file_path:
         plt.savefig(output_file_path)
