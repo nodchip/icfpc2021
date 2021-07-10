@@ -5,35 +5,29 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ title }}</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700">
-    <link href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css" rel="stylesheet">
-    <script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js" integrity="sha384-q2kxQ16AaE6UbzuKqyBE9/u/KzioAlnx2maXQHiDX9d4/zp8Ok3f+M7DPm+Ib6IU" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.min.js" integrity="sha384-pQQkAEnwaBkjpqZ8RU1fF1AKtTcHJwFl3pblpTlHXybJjHpMYo79HY3hIi4NKxyj" crossorigin="anonymous"></script>
 {% block additional_header %}{% endblock %}
 </head>
 
-<body>
-    <header class="mdc-top-app-bar">
-        <div class="mdc-top-app-bar__row">
-            <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
-                <button class="material-icons mdc-top-app-bar__navigation-icon mdc-icon-button"
-                    aria-label="Open navigation menu">menu</button>
-                <span class="mdc-top-app-bar__title">{{ title }}</span>
-            </section>
-            <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-end" role="toolbar">
-                <button class="material-icons mdc-top-app-bar__action-item mdc-icon-button"
-                    aria-label="Favorite">favorite</button>
-                <button class="material-icons mdc-top-app-bar__action-item mdc-icon-button"
-                    aria-label="Search">search</button>
-                <button class="material-icons mdc-top-app-bar__action-item mdc-icon-button"
-                    aria-label="Options">more_vert</button>
-            </section>
+<body class="ht-frontpage-body">
+    <header class="ht-header">
+        <div class="container">
+            <div class="ht-header-inner">
+                <div class="ht-bigtitle text-center">
+                    <h1 class="ht-bigtitle-main ht-frontpage-title">{{ title }}</h1>
+                </div>
+            </div>
         </div>
     </header>
-    <main class="mdc-top-app-bar--fixed-adjust">
+    <main class="container">
         {% block content %}
         {% endblock %}
     </main>
+    </div>
 </body>
 
 </html>

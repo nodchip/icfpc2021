@@ -1,27 +1,27 @@
 {% extends "common.html" %}
 {% block additional_header %}{% endblock %}
 {% block content %}
-<table class="mdc-data-table__table">
+<table class="table">
     <thead>
-        <tr class="mdc-data-table__header-row">
-            <th class="mdc-data-table__header-cell" data-column-id="id">ID</th>
-            <th class="mdc-data-table__header-cell">問題</th>
-            <th class="mdc-data-table__header-cell" data-column-id="epsilon">ε</th>
-            <th class="mdc-data-table__header-cell" data-column-id="max-dislike">dislike</th>
-            <th class="mdc-data-table__header-cell" data-column-score="max-score">スコア</th>
+        <tr>
+            <th data-column-id="id">ID</th>
+            <th>問題</th>
+            <th>ε</th>
+            <th>dislike</th>
+            <th>スコア</th>
+            <th>Solutions</th>
+        </tr>
     </thead>
-    <tbody class="mdc-data-table__content">
+    <tbody>
     {% for problem in problems %}
-    <tr data-row-id="problem{{ problem.id }}" class="mdc-data-table__row">
-        <td class="mdc-data-table__cell">{{ problem.id }}</td>
-        <td class="mdc-data-table__cell"><a href="https://poses.live/problems/{{ problem.id }}"><img src="{{ problem.image }}" height="100" width="100"></a></td>
-        <td class="mdc-data-table__cell">{{ problem.epsilon }}<br>({{ problem.epsilon // 1000 / 10}}%)</td>
-        <td class="mdc-data-table__cell">
-            {{ problem.dislikes or '-' }} / {{ problem.best_dislikes }}
-        </td>
-        <td class="mdc-data-table__cell">{{ problem.max_score }}</td>
+    <tr{% if problem.state %} class="table-{{problem.state}}"{% endif %}>
+        <td>{{ problem.id }}</td>
+        <td><a href="https://poses.live/problems/{{ problem.id }}"><img src="{{ problem.image }}" height="100" width="100"></a></td>
+        <td>{{ problem.epsilon }}<br>({{ problem.epsilon // 1000 / 10}}%)</td>
+        <td>{{ problem.dislikes or '-' }} / {{ problem.best_dislikes }}</td>
+        <td>{{ problem.max_score }}</td>
         {% for solution in problem.solutions %}
-            <td class="mdc-data-table__cell">
+            <td>
                 <span>{{ solution.solver }}</span><br>
                 <span>{{ solution.dislikes }}</span><br>
                 <span>({{ solution.score }})</span>

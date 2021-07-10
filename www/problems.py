@@ -26,20 +26,25 @@ def show_problems():
 
     for id in ids:
         problem = load_problem_json(id)
-        problem['best_dislikes'] = int(contest_infos[id]['minimal dislikes'])
-        if not math.isnan(contest_infos[id]['your dislikes']):
-            problem['dislikes'] = int(contest_infos[id]['your dislikes'])
-        problem['max_score'] = get_score(problem)
+        problem.update({
+            'best_dislikes': int(contest_infos[id]['minimal dislikes']),
+            'dislikes': None if math.isnan(contest_infos[id]['your dislikes']) else int(contest_infos[id]['your dislikes']),
+            'max_score': get_score(problem),
+        })
 
         context = {
             'id': id,
             'image': 'images/{}.problem.png'.format(id),
             'epsilon': problem['epsilon'],
             'max_score': problem['max_score'],
-            'best_dislikes': problem['best_dislikes'],
-            'dislikes': str(problem['dislikes']) if 'dislikes' in problem else None,
+            'best_dislikes': str(problem['best_dislikes']),
+            'dislikes': str(problem['dislikes']) if problem['dislikes'] else None,
             'solutions': [solution_context(problem, x) for x in solutions[id]],
         }
+        if problem['dislikes'] == problem['best_dislikes']:
+            context['state'] = 'success'
+        elif solutions[id] and problem['dislikes'] != solutions[id][0]['meta']['judge']['dislikes']:
+            context['state'] = 'danger'
         problem_contexts.append(context)
 
     context = {
