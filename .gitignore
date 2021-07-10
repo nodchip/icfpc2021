@@ -59,3 +59,17 @@
 
 # OpenCV
 !/libs/opencv/**
+
+# MPIR Windows
+/libs/mpir-windows/gmp.h
+/libs/mpir-windows/mpir.h
+/libs/mpir-windows/msvc/vs19/.vs
+/libs/mpir-windows/msvc/vs19/dll_mpir_gc/*.user
+/libs/mpir-windows/msvc/vs19/dll_mpir_gc/Win32
+/libs/mpir-windows/msvc/vs19/dll_mpir_gc/x64
+/libs/mpir-windows/msvc/vs19/lib_mpir_cxx/*.user
+/libs/mpir-windows/msvc/vs19/lib_mpir_cxx/Win32
+/libs/mpir-windows/msvc/vs19/lib_mpir_cxx/x64
+/libs/mpir-windows/msvc/vs19/lib_mpir_gc/*.user
+/libs/mpir-windows/msvc/vs19/lib_mpir_gc/Win32
+/libs/mpir-windows/msvc/vs19/lib_mpir_gc/x64
