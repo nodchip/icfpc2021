@@ -159,7 +159,13 @@ struct SCanvas {
         img_base_size = std::max(x_max, y_max) + img_offset * 2;
         mag = 1200 / img_base_size;
         img_size = img_base_size * mag;
-        img_base = cv::Mat_<cv::Vec3b>(img_size, img_size, cv::Vec3b(255, 255, 255));
+        img_base = cv::Mat_<cv::Vec3b>(img_size, img_size, cv::Vec3b(192, 192, 192));
+        std::vector<cv::Point> cv_hole_polygon;
+        for (auto p : problem->hole_polygon) {
+          auto [x, y] = cvt(p);
+          cv_hole_polygon.emplace_back(x, y);
+        }
+        cv::fillPoly(img_base, cv_hole_polygon, cv::Scalar(255, 255, 255));
         for (int x = x_min; x <= x_max; x++) {
             for (int y = y_min; y <= y_max; y++) {
                 cv::circle(img_base, cvt(x, y), 2, cv::Scalar(200, 200, 200), cv::FILLED);
