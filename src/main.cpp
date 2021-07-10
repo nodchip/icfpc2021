@@ -33,14 +33,16 @@ int main(int argc, char* argv[]) {
     std::string initial_solution_json;
     bool output_meta = true;
     bool output_judge = true;
-    bool visualize_output = false;
+    bool visualize = false;
+    bool post_edit = false;
     sub_solve->add_option("solver_name", solver_name, "solver name");
     sub_solve->add_option("problem_json", problem_json, "problem JSON file path");
     sub_solve->add_option("solution_json", solution_json, "output solution JSON file path (optional)");
     sub_solve->add_option("initial_solution_json", initial_solution_json, "input solution JSON file path (optional)");
     sub_solve->add_flag("-m,--output-meta,!--no-output-meta", output_meta, "output meta info to solution JSON");
     sub_solve->add_flag("-j,--output-judge,!--no-output-judge", output_judge, "output judge info to solution JSON");
-    sub_solve->add_flag("--visualize", visualize_output, "visualize output");
+    sub_solve->add_flag("--visualize", visualize, "realtime visualize");
+    sub_solve->add_flag("--post-edit", post_edit, "post edit output");
 
     auto sub_list_solvers = app.add_subcommand("list_solvers", "list up registered solvers");
 
@@ -52,7 +54,8 @@ int main(int argc, char* argv[]) {
     sub_try_globalist->add_option("initial_solution_json", initial_solution_json, "input solution JSON file path (optional)");
     sub_try_globalist->add_flag("-m,--output-meta,!--no-output-meta", output_meta, "output meta info to solution JSON");
     sub_try_globalist->add_flag("-j,--output-judge,!--no-output-judge", output_judge, "output judge info to solution JSON");
-    sub_try_globalist->add_flag("--visualize", visualize_output, "visualize output");
+    sub_try_globalist->add_flag("--visualize", visualize, "realtime visualize");
+    sub_try_globalist->add_flag("--post-edit", post_edit, "post edit output");
 
     CLI11_PARSE(app, argc, argv);
 
@@ -77,7 +80,7 @@ int main(int argc, char* argv[]) {
 
       SolverOutputs out;
       const auto t0 = std::chrono::system_clock::now();
-      out = solver->solve({ problem, initial_solution });
+      out = solver->solve({ problem, initial_solution, visualize });
       const auto t1 = std::chrono::system_clock::now();
       const double solve_s = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count() * 1e-6;
       LOG(INFO) << fmt::format("Elapsed  : {:.2f} s", solve_s);
@@ -106,7 +109,7 @@ int main(int argc, char* argv[]) {
         }
       }
 
-      if (visualize_output) {
+      if (post_edit) {
         visualize_and_edit(problem, out.solution);
       }
 
@@ -145,7 +148,7 @@ int main(int argc, char* argv[]) {
         LOG(INFO) << fmt::format("Trying GLOBALIST  : {}", problem->is_globalist_mode);
 
         const auto t0 = std::chrono::system_clock::now();
-        out[trial] = solver->solve({ problem, initial_solution });
+        out[trial] = solver->solve({ problem, initial_solution, visualize });
         const auto t1 = std::chrono::system_clock::now();
         const double solve_s = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count() * 1e-6;
         LOG(INFO) << fmt::format("Elapsed  : {:.2f} s", solve_s);
@@ -178,7 +181,7 @@ int main(int argc, char* argv[]) {
             LOG(INFO) << fmt::format("Output   : {}", path);
           }
 
-          if (visualize_output) {
+          if (post_edit) {
             visualize_and_edit(problem, out[trial].solution);
           }
         }
