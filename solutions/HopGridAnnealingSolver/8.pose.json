@@ -1,0 +1,1 @@
+{"meta":{"created_at":"2021/07/10 17:51:58","elapsed_s":68.750439,"git_commit":"0908281fc730d31d7b8b05ecbbdcc18144d04f9f","judge":{"dislikes":2087,"fit_in_hole":true,"is_valid":true,"satisfy_stretch":true},"solver":"HopGridAnnealingSolver"},"vertices":[[18,47],[33,54],[32,59],[74,53],[67,44],[69,28],[46,91],[59,32],[57,28],[45,33],[53,47],[62,54],[92,74]]}
