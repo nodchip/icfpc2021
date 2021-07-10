@@ -2,7 +2,9 @@
 
 import flask
 import os
+import json
 import re
+import math
 
 app = flask.Flask(__name__)
 
@@ -18,12 +20,21 @@ def home():
 @app.route('/problems.html')
 def show_problems():
     ids = sorted([int(re.sub(r'\D', '', x)) for x in os.listdir(path=PROBLEMS_DIR)])
+    problems = []
+    for id in ids:
+        context = {
+            'id': id,
+            'image': 'images/{}.problem.png'.format(id),
+        }
+        with open(os.path.join(PROBLEMS_DIR, '{}.problem.json'.format(id))) as f:
+            prob = json.load(f)
+            vertices = len(prob['figure']['vertices'])
+            edges = len(prob['figure']['edges'])
+            hole = len(prob['hole'])
+            context['score_upperbound'] = int(math.ceil(1000 * math.log2(vertices * edges * hole)))
+            context['epsilon'] = prob['epsilon']
+        problems.append(context)
 
-    problems = [{
-        'id': id,
-        'image': 'images/{}.problem.png'.format(id),
-        'file': os.path.join(PROBLEMS_DIR, '{}.problem.json'.format(id)),
-    } for id in ids]
     context = {
         'problems': problems,
     }
