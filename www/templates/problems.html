@@ -1,5 +1,23 @@
 {% extends "common.html" %}
-{% block additional_header %}{% endblock %}
+{% block additional_header %}
+<script>
+function submit(id, solver) {
+    const button_id = "button_" + solver+ "_" + id;
+    let button = document.getElementById(button_id);
+    button.disabled = 'disabled';
+    button.innerText = 'Submitting';
+
+    let xhr = new XMLHttpRequest();
+    xhr.open('POST', '/submit');
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.onload = () => {
+        console.log(xhr.status);
+        button.innerText = xhr.response;
+    };
+    xhr.send('{"id": ' + id + ', "solver": "' + solver + '"}');
+}
+</script>
+{% endblock %}
 {% block content %}
 <table class="table">
     <thead>
@@ -25,6 +43,9 @@
                 <span>{{ solution.solver }}</span><br>
                 <span>DL {{ solution.dislikes }}</span><br>
                 <span>SC ({{ solution.score }})</span>
+                {% if problem.state == 'danger' and loop.index == 1 %}
+                <button type="button" id="button_{{solution.solver}}_{{problem.id}}" onclick="submit({{problem.id}}, '{{solution.solver}}')">Submit</button>
+                {% endif %}
             </td>
         {% endfor %}
     </tr>
