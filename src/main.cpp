@@ -12,6 +12,7 @@
 #include "util.h"
 #include "judge.h"
 #include "solver_registry.h"
+#include "visual_editor.h"
 
 int main(int argc, char* argv[]) {
     google::InitGoogleLogging(argv[0]);
@@ -32,12 +33,14 @@ int main(int argc, char* argv[]) {
     std::string initial_solution_json;
     bool output_meta = true;
     bool output_judge = true;
+    bool visualize_output = false;
     sub_solve->add_option("solver_name", solver_name, "solver name");
     sub_solve->add_option("problem_json", problem_json, "problem JSON file path");
     sub_solve->add_option("solution_json", solution_json, "output solution JSON file path (optional)");
     sub_solve->add_option("initial_solution_json", initial_solution_json, "input solution JSON file path (optional)");
     sub_solve->add_flag("-m,--output-meta,!--no-output-meta", output_meta, "output meta info to solution JSON");
     sub_solve->add_flag("-j,--output-judge,!--no-output-judge", output_judge, "output judge info to solution JSON");
+    sub_solve->add_flag("--visualize", visualize_output, "visualize output");
 
     auto sub_list_solvers = app.add_subcommand("list_solvers", "list up registered solvers");
 
@@ -90,6 +93,25 @@ int main(int argc, char* argv[]) {
           std::ofstream ofs(solution_json);
           ofs << json.dump();
           LOG(INFO) << fmt::format("Output   : {}", solution_json);
+        }
+      }
+
+      if (visualize_output) {
+        SVisualEditorPtr editor = std::make_shared<SVisualEditor>(problem, "visualize");
+        editor->set_pose(out.solution);
+        while (true) {
+            int c = editor->show(15);
+            if (c == 27) {
+                auto editor_solution = editor->get_pose();
+                const std::string file_path = "editor.pose.json";
+                std::ofstream ofs(file_path);
+                auto json = editor_solution->json();
+                update_meta(json, "ManualSolver");
+                update_judge(judge(*problem, *editor_solution), json);
+                ofs << json;
+                LOG(INFO) << "saved editor solution: " << file_path;
+                break;
+            }
         }
       }
 
