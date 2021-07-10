@@ -35,6 +35,7 @@ public:
 		x_min = INT64_MAX, x_max = INT64_MIN;
 		y_min = INT64_MAX, y_max = INT64_MIN;
 	}
+	SVOI(const SVOI& rhs) : x_min(rhs.x_min), x_max(rhs.x_max), y_min(rhs.y_min), y_max(rhs.y_max) {}
 	SVOI(const std::vector<Point>& points) {
 		x_min = INT64_MAX, x_max = INT64_MIN;
 		y_min = INT64_MAX, y_max = INT64_MIN;
@@ -102,17 +103,56 @@ bool is_point_valid(SProblemPtr problem, SSolutionPtr solution, int vertex, std:
 std::vector<Point> able_points(SProblemPtr problem, SSolutionPtr solution, int vertex, std::vector<int> decided_points, const mat& vertices_distances) {
 	std::vector<Point> ret = {};
 	SVOI voi(problem->hole_polygon);
-	int last_e = -1;
+	int min_e = -1;
+	integer min_len = 1e18;
 	for (auto e : decided_points) if(vertices_distances[e][vertex]) {
 		SVOI tmp(solution->vertices[e], upper_limit(vertices_distances[e][vertex],problem->epsilon));
 		voi &= tmp;
-		last_e = e;
+		if (min_len > vertices_distances[e][vertex]) {
+			min_e = e;
+			min_len = vertices_distances[e][vertex];
+		}
 	}
-	CHECK(last_e >= 0);
+	CHECK(min_e >= 0);
+	integer e_max2 = upper_limit(vertices_distances[min_e][vertex], problem->epsilon);
+	integer e_min2 = lower_limit(vertices_distances[min_e][vertex], problem->epsilon);
 	if (!voi.is_valid()) return ret;
-	for (int y = voi.y_min; y < voi.y_max; y++) for(int x=voi.x_min; x< voi.x_max; x++){
-		Point point = std::make_pair(x, y);
-		if (is_point_valid(problem, solution, vertex, decided_points, vertices_distances, point)) ret.push_back(point);
+	for (integer y = voi.y_min; y < voi.y_max; y++) {
+		integer X = solution->vertices[min_e].first;
+		integer len = abs(solution->vertices[min_e].second - y); 
+		integer len2 = (len * len);
+		if (len2 <= e_max2) {
+			integer max_len2 = e_max2 - len2;
+			integer min_len2 = e_min2 - len2;
+			integer max_len = std::ceil(std::sqrt(max_len2));
+
+			if (min_len2 <= 0) {
+				integer x_min = std::max(X - max_len, voi.x_min);
+				integer x_max = std::min(X + max_len + 1, voi.x_max);
+				for (integer x = x_min; x < x_max; x++) {
+					Point point = std::make_pair(x, y);
+					if (is_point_valid(problem, solution, vertex, decided_points, vertices_distances, point)) ret.push_back(point);
+				}
+			}
+
+			else {
+				integer min_len = std::floor(std::sqrt(min_len2));
+				integer x_min = std::max(X - max_len, voi.x_min);
+				integer x_max = std::min(X - min_len + 1, voi.x_max);
+				for (integer x = x_min; x < x_max; x++) {
+					Point point = std::make_pair(x, y);
+					if (is_point_valid(problem, solution, vertex, decided_points, vertices_distances, point)) ret.push_back(point);
+				}
+				x_min = std::max(X + min_len, voi.x_min);
+				x_max = std::min(X + max_len + 1, voi.x_max);
+				for (integer x = x_min; x < x_max; x++) {
+					Point point = std::make_pair(x, y);
+					if (is_point_valid(problem, solution, vertex, decided_points, vertices_distances, point)) ret.push_back(point);
+				}
+			}
+
+			
+		}
 	}
 	return ret;
 }
@@ -121,7 +161,7 @@ std::vector<Point> able_points(SProblemPtr problem, SSolutionPtr solution, int v
 SSolutionPtr dfs_able_points(SProblemPtr problem, SSolutionPtr solution, std::vector<int> decided_points, std::vector<int> restriction_edges, const mat& vertices_distances, int V, long long& counter) {
 	counter++;
 	//if (counter % integer(1e4) == 0) LOG(INFO) << "counter is (able_points) " << counter;
-	if (counter > 1e9) return nullptr;
+	//if (counter > 1e9) return nullptr;
 	if (decided_points.size() == V) {
 		auto judgement = judge(*problem, *solution);
 		if (judgement.is_valid()) return solution;
@@ -152,7 +192,7 @@ SSolutionPtr dfs_holes(SProblemPtr problem, const mat& hole_distances, const mat
 	constexpr int one_min = 1000 * 60;
 	counter++;
 	//if(counter % integer(1e4) == 0) LOG(INFO) << "counter is (holes)" << counter;
-	if (counter > 1e9) return nullptr;
+	//if (counter > 1e9) return nullptr;
 	//LOG(INFO) << "v.size is : " << v.size();
 	//if (timer.elapsed_ms() > one_min) return nullptr;
  	if (v.size() >= H) {

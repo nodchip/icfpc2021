@@ -53,9 +53,15 @@
 
 # logs
 /src/*.log.*
+/vs/solver/*.log.*
 
 # temporary files
 /scripts/solve_all.csv
+/src/_HEAD.txt
+/vs/solver/_HEAD.txt
+
+# www
+__pycache__/
 
 # OpenCV
 !/libs/opencv/**
