@@ -56,3 +56,6 @@
 
 # temporary files
 /scripts/solve_all.csv
+
+# OpenCV
+!/libs/opencv/**
