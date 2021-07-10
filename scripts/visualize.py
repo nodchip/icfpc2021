@@ -48,7 +48,8 @@ def visualize(problem_file_path, pose_file_path, output_file_path):
     for edge in problem['figure']['edges']:
         src = problem['figure']['vertices'][edge[0]]
         dst = problem['figure']['vertices'][edge[1]]
-        plt.plot(*zip(src, dst), color='gray')
+        color = 'gray' if pose_file_path else 'red'
+        plt.plot(*zip(src, dst), color=color)
 
     # poseを描画する
     if pose_file_path:
