@@ -206,9 +206,9 @@ struct SCanvas {
         draw_stats(img);
     }
 
-    SCanvas(SProblemPtr problem) : problem(problem) {
-        solution = std::make_shared<SSolution>();
-        solution->vertices = problem->vertices;
+    bool set_pose(SSolutionPtr pose) {
+        CHECK(is_compatible(*problem, *pose));
+        solution = pose;
         auto rect_poly = calc_bb(problem->hole_polygon);
         auto rect_fig = calc_bb(problem->vertices);
         integer x_min = std::min(rect_poly.x, rect_fig.x);
@@ -239,6 +239,12 @@ struct SCanvas {
         }
         edge_colors.resize(problem->edges.size(), cv::Scalar(0, 255, 0));
         update(-1);
+    }
+
+    SCanvas(SProblemPtr problem) : problem(problem) {
+        auto pose = std::make_shared<SSolution>();
+        pose->vertices = problem->vertices;
+        set_pose(pose);
     }
 };
 
@@ -284,8 +290,7 @@ SVisualEditor::~SVisualEditor() {
 }
 
 bool SVisualEditor::set_pose(SSolutionPtr pose) {
-    CHECK(is_compatible(*canvas->problem, *pose));
-    canvas->solution = pose;
+    canvas->set_pose(pose);
     return false;
 }
 

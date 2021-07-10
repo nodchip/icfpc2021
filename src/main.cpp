@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
 
       SSolutionPtr initial_solution;
       if (std::filesystem::exists(initial_solution_json)) {
-        SSolutionPtr initial_solution = SSolution::load_file(initial_solution_json);
+        initial_solution = SSolution::load_file(initial_solution_json);
         CHECK(initial_solution);
         CHECK(is_compatible(*problem, *initial_solution));
         LOG(INFO) << fmt::format("Initial Solution  : {}", initial_solution_json);

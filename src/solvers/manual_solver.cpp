@@ -29,11 +29,6 @@ struct SManualSolver {
             if (c == 27) {
                 return editor->get_pose();
             }
-            //if (c == 'd') {
-            //    editor->canvas->draw_distant_hole_vertex = !editor->canvas->draw_distant_hole_vertex;
-            //    editor->canvas->update(-1);
-            //}
-            //cv::imshow(editor->window_name, editor->canvas->img);
         }
         return nullptr;
     }
@@ -47,6 +42,9 @@ public:
         SolverOutputs ret;
 
         SManualSolverPtr manual_solver = std::make_shared<SManualSolver>(args.problem);
+        if (args.optional_initial_solution) {
+            manual_solver->editor->set_pose(args.optional_initial_solution);
+        }
 
         ret.solution = manual_solver->solve();
         return ret;
