@@ -74,6 +74,9 @@ struct SCanvas {
 
     std::vector<cv::Scalar> edge_colors;
 
+    cv::Scalar violating_vertex_color = cv::Scalar(128, 0, 128);
+    cv::Scalar out_of_hole_edge_color = cv::Scalar(128, 0, 128);
+
     inline cv::Point cvt(int x, int y) { return cv::Point((x + img_offset) * mag, (y + img_offset) * mag); };
     inline cv::Point cvt(const Point& p) { return cvt(p.first, p.second); }
     inline Point icvt(int x, int y) { return { x / mag - img_offset, y / mag - img_offset }; }
@@ -120,6 +123,12 @@ struct SCanvas {
         is_valid = res.is_valid();
         // draw
         img = img_base.clone();
+        for (int eid : res.out_of_hole_edges) {
+            auto [u, v] = problem->edges[eid];
+            auto [x1, y1] = cvt(solution->vertices[u]);
+            auto [x2, y2] = cvt(solution->vertices[v]);
+            draw_line(img, x1, y1, x2, y2, out_of_hole_edge_color, 3);
+        }
         for (int eid = 0; eid < problem->edges.size(); eid++) {
             auto [u, v] = problem->edges[eid];
             auto [x1, y1] = cvt(solution->vertices[u]);
@@ -129,6 +138,10 @@ struct SCanvas {
         if (selected_id != -1) {
             auto [x, y] = cvt(solution->vertices[selected_id]);
             draw_circle(img, x, y, std::max(3, int(mag) / 2), cv::Scalar(0, 0, 255), cv::FILLED);
+        }
+        for (int vid : res.out_of_hole_vertices) {
+            auto [x, y] = cvt(solution->vertices[vid]);
+            draw_circle(img, x, y, std::max(2, int(mag) / 3), violating_vertex_color, cv::FILLED);
         }
         draw_stats(img);
     }
