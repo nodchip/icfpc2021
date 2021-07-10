@@ -75,6 +75,7 @@ struct SCanvas {
 
     bool draw_distant_hole_vertex = true;
     bool draw_tolerated_vertex = true;
+    bool draw_edge_lengths_mode = true;
 
     std::vector<cv::Scalar> edge_colors;
 
@@ -227,7 +228,9 @@ struct SCanvas {
             draw_circle(img, x, y, std::max(2, int(mag) / 3), violating_vertex_color, cv::FILLED);
         }
         draw_stats(img);
-        draw_edge_lengths(img);
+        if (draw_edge_lengths_mode) {
+            draw_edge_lengths(img);
+        }
     }
 
     bool set_pose(SSolutionPtr pose) {
@@ -330,6 +333,10 @@ int SVisualEditor::show(int wait) {
     }
     if (c == 'd') {
         canvas->draw_distant_hole_vertex = !canvas->draw_distant_hole_vertex;
+        canvas->update(-1);
+    }
+    if (c == 'e') {
+        canvas->draw_edge_lengths_mode = !canvas->draw_edge_lengths_mode;
         canvas->update(-1);
     }
     if (c == 't') {
