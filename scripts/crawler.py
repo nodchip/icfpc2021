@@ -15,7 +15,7 @@ def get_options():
 
     options, args = parser.parse_args()
 
-    if options.get and opts.problem is None:
+    if options.get and options.problem is None:
         print('"get" requires "problem"')
         return ({}, [])
     if options.submit and (options.problem is None or options.file is None):
@@ -38,7 +38,7 @@ def get(problem):
     url = 'https://poses.live/api/problems/{}'.format(problem)
     response = requests.get(url, headers=headers)
 
-    filename = '{}.problem'.forat(problem)
+    filename = '{}.problem.json'.format(problem)
     try:
         with open(filename, 'w') as f:
             f.write(response.text)
