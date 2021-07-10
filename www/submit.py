@@ -21,11 +21,14 @@ def submit_pose():
     if solver == 'ManualSolver':
         solver = 'by_hands'
     solution = json.dumps(load_pose_json(type=solver, id=id))
+    assert solution is not None
 
     headers = {'Authorization': 'Bearer {}'.format(API_TOKEN)}
     url = 'https://poses.live/api/problems/{}/solutions'.format(id)
     response = requests.post(url, headers=headers, data=solution)
-    print(response)
+    if response.status_code != 200:
+        print('>', solution)
+        print(response.text)
     return response.text
 
 
