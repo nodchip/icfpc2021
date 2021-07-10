@@ -30,19 +30,14 @@ def visualize(problem_file_path, pose_file_path, output_file_path):
     max_x = max(problem['hole'] + problem['figure']['vertices'], key=get_x)[0]
     min_y = min(problem['hole'] + problem['figure']['vertices'], key=get_y)[1]
     max_y = max(problem['hole'] + problem['figure']['vertices'], key=get_y)[1]
-    axes = plt.axes()
+    axes = plt.axes(facecolor='pink')
     axes.set_ylim([max_y + 1, min_y - 1])
 
     # 縦横比を1:1にする
     axes.set_aspect('equal')
 
     # holeを描画する
-    for index in range(0, len(problem['hole'])):
-        src = problem['hole'][index]
-        dst = problem['hole'][(index + 1) % len(problem['hole'])]
-        # plt.plot() はx座標の列とy座標の列を受け取るので転置する
-        src, dst = [src[0], dst[0]], [src[1], dst[1]]
-        plt.plot(src, dst, color='black')
+    plt.fill(*zip(*problem['hole']), facecolor='white')
 
     # figureを描画する
     for edge in problem['figure']['edges']:
