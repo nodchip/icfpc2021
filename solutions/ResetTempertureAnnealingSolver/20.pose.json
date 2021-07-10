@@ -1,0 +1,1 @@
+{"bonuses":[],"meta":{"created_at":"2021/07/11 01:18:22","elapsed_s":47.424366,"git_commit":"e242d27bffe4c77f7a4f8ce5f238a6f30e8fe505","judge":{"dislikes":808,"fit_in_hole":true,"is_valid":true,"satisfy_stretch":true},"solver":"ResetTempertureAnnealingSolver"},"vertices":[[5,16],[24,37],[31,27],[50,48],[52,43],[31,26]]}
