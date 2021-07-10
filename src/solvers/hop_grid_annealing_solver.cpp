@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <cmath>
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/geometries/polygon.hpp>
@@ -76,6 +77,15 @@ class Solver : public SolverBase {
     const double T1 = 1.0e-2;
     double progress = 0.0;
 
+    integer ymin = INT_MAX, ymax = INT_MIN;
+    integer xmin = INT_MAX, xmax = INT_MIN;
+    for (auto p : hole_) {
+      xmin = std::min(xmin, get_x(p));
+      ymin = std::min(ymin, get_y(p));
+      xmax = std::max(xmax, get_x(p));
+      ymax = std::max(ymax, get_y(p));
+    }
+
     // lesser version of tonagi's idea 
     for (auto& p : pose) { p = hole_[0]; }
 
@@ -83,10 +93,12 @@ class Solver : public SolverBase {
       auto [feasible, updated_cost] = Evaluate(pose);
 
       // tonagi's idea.
-      auto res = judge(*args.problem, pose);
-      if (!res.fit_in_hole()) {
-        feasible = false;
-        updated_cost = DBL_MAX;
+      if (true || !best_feasible_pose.empty()) {
+        auto res = judge(*args.problem, pose);
+        if (!res.fit_in_hole()) {
+          feasible = false;
+          updated_cost = DBL_MAX;
+        }
       }
 
 #if 0
@@ -117,7 +129,6 @@ class Solver : public SolverBase {
     };
     evaluate_and_descide_rollback();
 
-
     auto single_small_change = [&] { // ynasu87 original
       const int v = std::uniform_int_distribution(0, N - 1)(rng_);
       const int dx = std::uniform_int_distribution(-1, 1)(rng_);
@@ -144,6 +155,34 @@ class Solver : public SolverBase {
       }
     };
 
+    auto slight_rotate = [&] {
+      const double deg = std::uniform_real_distribution(-2.0, 2.0)(rng_);
+      auto pose_bak = pose;
+
+      integer curr_ymin = INT_MAX, curr_ymax = INT_MIN;
+      integer curr_xmin = INT_MAX, curr_xmax = INT_MIN;
+      for (auto p : hole_) {
+        curr_xmin = std::min(curr_xmin, get_x(p));
+        curr_ymin = std::min(curr_ymin, get_y(p));
+        curr_xmax = std::max(curr_xmax, get_x(p));
+        curr_ymax = std::max(curr_ymax, get_y(p));
+      }
+
+      const double cx = double(curr_xmin + curr_xmax) / 2;
+      const double cy = double(curr_ymin + curr_ymax) / 2;
+      const double sin = std::sin(deg * 3.1415 / 180.0);
+      const double cos = std::cos(deg * 3.1415 / 180.0);
+      for (auto& p : pose) {
+        const double dx = p.first - cx;
+        const double dy = p.second - cy;
+        p.first  = std::round(dx * cos - dy * sin + cx);
+        p.second = std::round(dx * sin + dy * cos + cy);
+      }
+      if (evaluate_and_descide_rollback()) {
+        pose = pose_bak;
+      }
+    };
+
     auto flip = [&] { // from FlipAnnealingSolver
       const int v0 = std::uniform_int_distribution(0, N - 1)(rng_);
       const int v1 = std::uniform_int_distribution(0, N - 1)(rng_);
@@ -163,15 +202,6 @@ class Solver : public SolverBase {
         pose = pose_bak;
       }
     };
-
-    integer ymin = INT_MAX, ymax = INT_MIN;
-    integer xmin = INT_MAX, xmax = INT_MIN;
-    for (auto p : hole_) {
-      xmin = std::min(xmin, get_x(p));
-      ymin = std::min(ymin, get_y(p));
-      xmax = std::max(xmax, get_x(p));
-      ymax = std::max(ymax, get_y(p));
-    }
 
     auto edges_cache = edges_from_vertex(*args.problem);
     auto hop_grid = [&] { // jump to a tolerated (by at least one edge) point.
@@ -221,9 +251,10 @@ class Solver : public SolverBase {
     using Action = std::function<void()>;
     std::vector<std::pair<double, Action>> action_probs = {
       {0.9, single_small_change},
+      {0.01, slight_rotate},
       {0.01, shift},
       {0.01, hop_grid},
-      {0.01, flip},
+      {0.03, flip},
     };
     {
       // normalize probs
