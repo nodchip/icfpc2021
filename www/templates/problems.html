@@ -49,7 +49,7 @@ function submit(id, solver) {
             ({{ problem.epsilon // 1000 / 10}}%)
         </td>
         <td>
-            <span class="line">DL: {{ problem.dislikes }}/{{ problem.best_dislikes }}</span><br>
+            <span class="line">DL: {{ problem.dislikes or '-'}}/{{ problem.best_dislikes }}</span><br>
             <span class="line">SC: {{ problem.max_score }}</span>
         </td>
         <td>
