@@ -21,6 +21,12 @@ inline Point operator-(const Point& lhs, const Point& rhs) {
 inline Point operator+(const Point& lhs, const Point& rhs) {
   return { get_x(lhs) - get_x(rhs), get_y(lhs) - get_y(rhs) };
 }
+inline Point operator*(const Point& lhs, double rhs) {
+  return { get_x(lhs) * rhs, get_y(lhs) * rhs };
+}
+inline Point operator*(double lhs, const Point& rhs) {
+  return { lhs * get_x(rhs), lhs * get_y(rhs) };
+}
 
 template <typename T>
 T SQ(T x) { return x * x; }

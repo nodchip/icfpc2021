@@ -112,6 +112,7 @@
     <ClCompile Include="..\..\src\judge.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
     <ClCompile Include="..\..\src\solvers\empty_solver.cpp" />
+    <ClCompile Include="..\..\src\solvers\flip_annealing_solver.cpp" />
     <ClCompile Include="..\..\src\solvers\manual_solver.cpp" />
     <ClCompile Include="..\..\src\solvers\naive_annealing_solver.cpp" />
     <ClCompile Include="..\..\src\solver_registry.cpp" />
