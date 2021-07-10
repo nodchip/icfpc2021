@@ -68,9 +68,9 @@ cd vs\solver
 
 ## Manual solver
 
-'''
+```
 ./solver solve ManualSolver 52 output_53.pose.json [optional_input_pose_53.pose.json]
-'''
+```
 
 * d : toggle individual dislike score (large red circle means bad dislike)
 * t : toggle "tolerated grid points" view (dark blue indicates some of the edges tolerate the point. light blue indicates all edges agree to the point.)
