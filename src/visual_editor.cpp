@@ -116,6 +116,29 @@ struct SCanvas {
         cv::putText(img, stat_str, cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 0.7, is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 128), 1, cv::LINE_AA);
     }
 
+    void draw_edge_lengths(cv::Mat& img) {
+        int nh = problem->hole_polygon.size();
+        for (int i = 0; i < nh; i++) {
+            Point raw_u = problem->hole_polygon[i];
+            Point raw_v = problem->hole_polygon[(i + 1) % nh];
+            cv::Point u = cvt(raw_u), v = cvt(raw_v);
+            integer d2 = distance2(raw_u, raw_v);
+            cv::putText(img, std::to_string(d2), (u + v) / 2, cv::FONT_HERSHEY_SIMPLEX, 0.35, cv::Scalar(0, 0, 0), 1, cv::LINE_AA);
+        }
+        for(int eid = 0; eid < problem->edges.size(); eid++) {
+            auto [iu, iv] = problem->edges[eid];
+            Point raw_u = solution->vertices[iu];
+            Point raw_v = solution->vertices[iv];
+            Point orig_raw_u = problem->vertices[iu];
+            Point orig_raw_v = problem->vertices[iv];
+            cv::Point u = cvt(raw_u), v = cvt(raw_v);
+            integer d2 = distance2(raw_u, raw_v);
+            integer orig_d2 = distance2(orig_raw_u, orig_raw_v);
+            auto col = get_edge_color(eid);
+            cv::putText(img, std::to_string(d2) + "/" + std::to_string(orig_d2), (u + v) / 2, cv::FONT_HERSHEY_SIMPLEX, 0.35, col / 255 * 150, 1, cv::LINE_AA);
+        }
+    }
+
     void shift(int dx, int dy) {
         for (auto& p : solution->vertices) {
           p.first += dx;
@@ -204,6 +227,7 @@ struct SCanvas {
             draw_circle(img, x, y, std::max(2, int(mag) / 3), violating_vertex_color, cv::FILLED);
         }
         draw_stats(img);
+        draw_edge_lengths(img);
     }
 
     bool set_pose(SSolutionPtr pose) {
