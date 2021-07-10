@@ -116,6 +116,13 @@ struct SCanvas {
         cv::putText(img, stat_str, cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(0, 0, 0), 1, cv::LINE_AA);
     }
 
+    void shift(int dx, int dy) {
+        for (auto& p : solution->vertices) {
+          p.first += dx;
+          p.second += dy;
+        }
+    }
+
     void update(int selected_id) {
         // judge
         auto res = judge(*problem, *solution);
@@ -172,7 +179,7 @@ struct SCanvas {
                     }
                     for (auto v : exact_grid) {
                         auto [x, y] = cvt(v);
-                        draw_circle(img, x, y, 2, cv::Scalar(128, 0, 0), cv::FILLED);
+                        draw_circle(img, x, y, 4, cv::Scalar(128, 0, 0), cv::FILLED);
                     }
                     exact_grids.emplace_back(std::move(exact_grid));
                 }
@@ -298,6 +305,22 @@ int SVisualEditor::show(int wait) {
     if (c == 't') {
         canvas->draw_tolerated_vertex = !canvas->draw_tolerated_vertex;
         canvas->update(get_mouseover_node_id());
+    }
+    if (c == 'h') {
+        canvas->shift(-1, 0);
+        canvas->update(-1);
+    }
+    if (c == 'j') {
+        canvas->shift(0, 1);
+        canvas->update(-1);
+    }
+    if (c == 'k') {
+        canvas->shift(0, -1);
+        canvas->update(-1);
+    }
+    if (c == 'l') {
+        canvas->shift(1, 0);
+        canvas->update(-1);
     }
     cv::imshow(window_name, canvas->img);
     return c;
