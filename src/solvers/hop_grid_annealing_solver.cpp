@@ -4,6 +4,7 @@
 #include <boost/geometry/geometries/polygon.hpp>
 #include "contest_types.h"
 #include "solver_registry.h"
+#include "visual_editor.h"
 #include "judge.h"
 
 namespace HopGridAnnealingSolver {
@@ -49,6 +50,12 @@ class Solver : public SolverBase {
     edges_ = args.problem->edges;
     epsilon_ = args.problem->epsilon;
     hole_polygon_ = ToBoostPolygon(hole_);
+
+    constexpr bool visualize = true;
+    SVisualEditorPtr editor;
+    if (visualize) {
+      editor = std::make_shared<SVisualEditor>(args.problem, "visualize");
+    }
 
     const int N = vertices_.size();
     auto pose = vertices_;
@@ -186,6 +193,11 @@ class Solver : public SolverBase {
         if (p_action < p_accum) {
           action_probs[i].second();
         }
+      }
+
+      if (editor && i % 100 == 0) {
+        editor->set_pose(std::make_shared<SSolution>(pose));
+        int c = editor->show(1);
       }
     }
 
