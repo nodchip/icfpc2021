@@ -32,7 +32,7 @@ function submit(id, solver) {
             <th>ID</th>
             <th>問題</th>
             <th>#hole/#vert/ε</th>
-            <th>min dislike<br>score</th>
+            <th>dislike<br>score</th>
             <th>Bonus</th>
             <th>Solutions</th>
         </tr>
@@ -49,7 +49,7 @@ function submit(id, solver) {
             ({{ problem.epsilon // 1000 / 10}}%)
         </td>
         <td>
-            <span class="line">DL: {{ problem.best_dislikes }}</span><br>
+            <span class="line">DL: {{ problem.dislikes }}/{{ problem.best_dislikes }}</span><br>
             <span class="line">SC: {{ problem.max_score }}</span>
         </td>
         <td>
