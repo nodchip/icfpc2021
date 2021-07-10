@@ -70,6 +70,9 @@ struct SCanvas {
     integer dislikes;
     bool fit_in_hole;
     bool satisfy_stretch;
+    int num_no_fit_in_hole_vert = 0;
+    int num_no_fit_in_hole_edge = 0;
+    int num_no_satisfy_stretch = 0;
     bool is_valid;
 
     std::vector<cv::Scalar> edge_colors;
@@ -107,7 +110,8 @@ struct SCanvas {
     }
 
     void draw_stats(cv::Mat& img) {
-        std::string stat_str = fmt::format("dislikes={}, fit={}, stretch={}, is_valid={}", dislikes, fit_in_hole, satisfy_stretch, is_valid);
+        std::string stat_str = fmt::format("dislikes={}, fit={}(NG edge {} vert {}), stretch={}(NG {}), is_valid={}",
+          dislikes, fit_in_hole, num_no_fit_in_hole_edge, num_no_fit_in_hole_vert, satisfy_stretch, num_no_satisfy_stretch, is_valid);
         cv::putText(img, stat_str, cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(0, 0, 0), 1, cv::LINE_AA);
     }
 
@@ -117,6 +121,9 @@ struct SCanvas {
         dislikes = res.dislikes;
         fit_in_hole = res.fit_in_hole();
         satisfy_stretch = res.satisfy_stretch();
+        num_no_fit_in_hole_vert = res.out_of_hole_vertices.size();
+        num_no_fit_in_hole_edge = res.out_of_hole_edges.size();
+        num_no_satisfy_stretch = res.stretch_violating_edges.size();
         for (int eid = 0; eid < problem->edges.size(); eid++) {
             edge_colors[eid] = get_edge_color(eid);
         }
@@ -127,7 +134,7 @@ struct SCanvas {
             auto [u, v] = problem->edges[eid];
             auto [x1, y1] = cvt(solution->vertices[u]);
             auto [x2, y2] = cvt(solution->vertices[v]);
-            draw_line(img, x1, y1, x2, y2, out_of_hole_edge_color, 3);
+            draw_line(img, x1, y1, x2, y2, out_of_hole_edge_color, 5); // 3 is insufficient.
         }
         for (int eid = 0; eid < problem->edges.size(); eid++) {
             auto [u, v] = problem->edges[eid];
