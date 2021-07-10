@@ -13,7 +13,7 @@
     <tr data-row-id="problem{{ problem.id }}" class="mdc-data-table__row">
         <td class="mdc-data-table__cell">{{ problem.id }}</td>
         <td class="mdc-data-table__cell"><a href="https://poses.live/problems/{{ problems.id }}"><img src="{{ problem.image }}" height="100" width="100"></a></td>
-        <td class="mdc-data-table__cell">{{ problem.epsilon }}</td>
+        <td class="mdc-data-table__cell">{{ problem.epsilon }}<br>({{ problem.epsilon // 1000 / 10}}%)</td>
         <td class="mdc-data-table__cell">{{ problem.score_upperbound }}</td>
     </tr>
     {% endfor %}
