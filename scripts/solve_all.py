@@ -112,13 +112,16 @@ def main():
     parser.add_argument('overwrite_option', default='improvement', choices=[
                         'force', 'improvement', 'never'], help='when to overwite existing files')
     parser.add_argument(
-        '--output-dir', default=DEFAULT_SOLUTIONS_DIR, type=Path)
+        '--output-dir', default=None, type=Path)
     parser.add_argument(
         '--problems-dir', default=DEFAULT_PROBLEMS_DIR, type=Path)
-    parser.add_argument('-j', '--parallel', default=mp.cpu_count())
+    parser.add_argument('-j', '--parallel', type=int, default=mp.cpu_count())
     args = parser.parse_args()
 
     args.problems_dir = args.problems_dir.resolve()
+
+    if args.output_dir is None:
+        args.output_dir = SOLUTIONS_DIR / args.solver_name
     args.output_dir = args.output_dir.resolve()
     args.output_dir.mkdir(exist_ok=True)
 
