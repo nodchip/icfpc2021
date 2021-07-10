@@ -14,8 +14,8 @@ PROBLEMS_DIR = os.path.join(ROOT_DIR, 'data', 'problems')
 SOLUTIONS_DIR = os.path.join(ROOT_DIR, 'solutions')
 SUBMIT_DIR = os.path.join(SOLUTIONS_DIR, 'submit')  # TODO: Drop this
 
-# TODO: Update this CSV as frequently as possible.
-contest_infos = pd.read_csv(os.path.join(ROOT_DIR, 'www', 'minimal_dislikes.csv'), index_col=0).loc
+# TODO: Update this TSV as frequently as possible.
+contest_infos = pd.read_table(os.path.join(ROOT_DIR, 'www', 'contest_infos.tsv'), index_col=0).loc
 
 
 @app.route('/problems.html')
@@ -25,10 +25,11 @@ def show_problems():
     problem_contexts = []
 
     for id in ids:
+        dislikes = contest_infos[id]['your dislikes']
         problem = load_problem_json(id)
         problem.update({
             'best_dislikes': int(contest_infos[id]['minimal dislikes']),
-            'dislikes': None if math.isnan(contest_infos[id]['your dislikes']) else int(contest_infos[id]['your dislikes']),
+            'dislikes': int(dislikes) if not math.isnan(dislikes) else None,
             'max_score': get_score(problem),
         })
 
@@ -38,13 +39,30 @@ def show_problems():
             'epsilon': problem['epsilon'],
             'max_score': problem['max_score'],
             'best_dislikes': str(problem['best_dislikes']),
-            'dislikes': str(problem['dislikes']) if problem['dislikes'] else None,
+            'dislikes': str(problem['dislikes']) if problem['dislikes'] is not None else None,
             'solutions': [solution_context(problem, x) for x in solutions[id]],
         }
-        if problem['dislikes'] == problem['best_dislikes']:
-            context['state'] = 'success'
-        elif solutions[id] and problem['dislikes'] != solutions[id][0]['meta']['judge']['dislikes']:
-            context['state'] = 'danger'
+
+        def get_state(d, b, l):
+            if d is None:
+                if l is not None:
+                    return 'danger'
+            else:
+                if l is None:
+                    return 'warning'
+
+                if d < l:
+                    return 'warning'
+                if d > l:
+                    return 'danger'
+                if d == b:
+                    return 'success'
+            return None
+
+        best_dislikes = problem['best_dislikes']
+        local_dislikes = solutions[id][0]['meta']['judge']['dislikes'] if solutions[id] else None
+        context['state'] = get_state(dislikes, best_dislikes, local_dislikes)
+
         problem_contexts.append(context)
 
     context = {
