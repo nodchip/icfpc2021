@@ -48,6 +48,13 @@ struct SJudgeResult {
 
 SJudgeResult judge(const SProblem& problem, const SSolution& solution);
 
+// WARNING! arguments are not interchangeable!
+inline bool tolerate(integer d2_original, integer d2_moved, integer epsilon) {
+    // |d(moved) / d(original) - 1| <= eps / 1000000
+    constexpr integer denominator = 1000000;
+    return std::abs(denominator * d2_moved - denominator * d2_original) <= epsilon * d2_original;
+}
+
 bool update_judge(const SJudgeResult& res, nlohmann::json& solution_json);
 
 // geometry codes from..

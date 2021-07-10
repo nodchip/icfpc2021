@@ -41,17 +41,13 @@ SJudgeResult judge(const SProblem& problem, const SSolution& solution) {
   }
   
   // stretch
-  constexpr integer denominator = 1000000;
   for (size_t iedge = 0; iedge < problem.edges.size(); ++iedge) {
     const auto& edge = problem.edges[iedge];
     auto org_i = problem.vertices[edge.first];
     auto org_j = problem.vertices[edge.second];
     auto moved_i = solution.vertices[edge.first];
     auto moved_j = solution.vertices[edge.second];
-    auto a = distance2(moved_i, moved_j);
-    auto b = distance2(org_i, org_j);
-    // |d(moved) / d(original) - 1| <= eps / 1000000
-    if (std::abs(denominator * a - denominator * b) > problem.epsilon * b) {
+    if (!tolerate(distance2(org_i, org_j), distance2(moved_i, moved_j), problem.epsilon)) {
       res.stretch_violating_edges.push_back(iedge);
     }
   }

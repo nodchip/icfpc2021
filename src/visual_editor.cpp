@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "visual_editor.h"
 
+#include <set>
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
@@ -73,6 +74,7 @@ struct SCanvas {
     bool is_valid;
 
     bool draw_distant_hole_vertex = true;
+    bool draw_tolerated_vertex = true;
 
     std::vector<cv::Scalar> edge_colors;
 
@@ -151,6 +153,42 @@ struct SCanvas {
             draw_line(img, x1, y1, x2, y2, edge_colors[eid], 2);
         }
         if (selected_id != -1) {
+            if (draw_tolerated_vertex) {
+                auto bb = calc_bb(problem->hole_polygon);
+                auto edges = edges_from_vertex(*problem, selected_id);
+                std::vector<std::set<Point>> exact_grids;
+                for (auto eid : edges) {
+                    std::set<Point> exact_grid;
+                    auto [u, v] = problem->edges[eid];
+                    const int counter_vid = u == selected_id ? v : u;
+                    const auto org_d2 = distance2(problem->vertices[selected_id], problem->vertices[counter_vid]); 
+                    for (int y = bb.tl().y; y <= bb.br().y; ++y) {
+                        for (int x = bb.tl().x; x <= bb.br().x; ++x) {
+                            const auto moved_d2 = distance2({x, y}, solution->vertices[counter_vid]); 
+                            if (tolerate(org_d2, moved_d2, problem->epsilon)) {
+                                exact_grid.insert({x, y});
+                            }
+                        }
+                    }
+                    for (auto v : exact_grid) {
+                        auto [x, y] = cvt(v);
+                        draw_circle(img, x, y, 2, cv::Scalar(128, 0, 0), cv::FILLED);
+                    }
+                    exact_grids.emplace_back(std::move(exact_grid));
+                }
+                if (!exact_grids.empty()) { // common feasible position.
+                    std::set<Point> intersection = exact_grids[0];
+                    for (int i = 1; i < exact_grids.size(); ++i) {
+                        std::set<Point> tmp;
+                        std::set_intersection(intersection.begin(), intersection.end(), exact_grids[i].begin(), exact_grids[i].end(), std::inserter(tmp, tmp.end()));
+                        std::swap(intersection, tmp);
+                    }
+                    for (auto v : intersection) {
+                        auto [x, y] = cvt(v);
+                        draw_circle(img, x, y, 4, cv::Scalar(255, 0, 0), cv::FILLED);
+                    }
+                }
+            }
             auto [x, y] = cvt(solution->vertices[selected_id]);
             draw_circle(img, x, y, std::max(3, int(mag) / 2), cv::Scalar(0, 0, 255), cv::FILLED);
         }
@@ -256,6 +294,10 @@ int SVisualEditor::show(int wait) {
     if (c == 'd') {
         canvas->draw_distant_hole_vertex = !canvas->draw_distant_hole_vertex;
         canvas->update(-1);
+    }
+    if (c == 't') {
+        canvas->draw_tolerated_vertex = !canvas->draw_tolerated_vertex;
+        canvas->update(get_mouseover_node_id());
     }
     cv::imshow(window_name, canvas->img);
     return c;

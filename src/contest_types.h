@@ -24,6 +24,8 @@ struct SProblem {
     friend std::ostream& operator<<(std::ostream& o, const SProblem& obj);
 };
 
+std::vector<int> edges_from_vertex(const SProblem& problem, int vid);
+
 
 struct SSolution;
 using SSolutionPtr = std::shared_ptr<SSolution>;
