@@ -147,6 +147,18 @@ struct SCanvas {
         }
     }
 
+    void rotate_clockwise() {
+        auto rect_poly = calc_bb(problem->hole_polygon);
+        const int cx = rect_poly.x + rect_poly.width / 2;
+        const int cy = rect_poly.y + rect_poly.height / 2;
+        for (auto& p : solution->vertices) {
+          int x = p.first - cx;
+          int y = p.second - cy;
+          p.first = -y + cx;
+          p.second = x + cy;
+        }
+    }
+
     void update(int selected_id) {
         // judge
         auto res = judge(*problem, *solution);
@@ -366,6 +378,10 @@ int SVisualEditor::show(int wait) {
     }
     if (c == 'l') {
         canvas->shift(1, 0);
+        canvas->update(-1);
+    }
+    if (c == 'r') {
+        canvas->rotate_clockwise();
         canvas->update(-1);
     }
     cv::imshow(window_name, canvas->img);

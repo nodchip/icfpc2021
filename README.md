@@ -79,6 +79,7 @@ cd vs\solver
 * j : move down
 * k : move up
 * l : move right
+* r : rotate clockwise
 * ESC : save and exit
 
 ## Apply a solver to all problems
