@@ -59,6 +59,17 @@ SProblemPtr SProblem::load_file_ext(const std::string& path) {
     }
 }
 
+std::vector<std::vector<int>> edges_from_vertex(const SProblem& problem) {
+    std::vector<std::vector<int>> edges(problem.vertices.size());
+    for (int vid = 0; vid < problem.vertices.size(); ++vid) {
+      for (int eid = 0; eid < problem.edges.size(); ++eid) {
+          auto [u, v] = problem.edges[eid];
+          if (u == vid || v == vid) edges[vid].push_back(eid);
+      }
+    }
+    return edges;
+}
+
 std::vector<int> edges_from_vertex(const SProblem& problem, int vid) {
     std::vector<int> edges;
     for (int eid = 0; eid < problem.edges.size(); ++eid) {
