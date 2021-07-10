@@ -6,7 +6,7 @@
         <tr>
             <th data-column-id="id">ID</th>
             <th>問題</th>
-            <th>ε</th>
+            <th>#hole/#vert/ε</th>
             <th>dislike</th>
             <th>スコア</th>
             <th>Solutions</th>
@@ -17,7 +17,7 @@
     <tr{% if problem.state %} class="table-{{problem.state}}"{% endif %}>
         <td>{{ problem.id }}</td>
         <td><a href="https://poses.live/problems/{{ problem.id }}"><img src="{{ problem.image }}" height="100" width="100"></a></td>
-        <td>{{ problem.epsilon }}<br>({{ problem.epsilon // 1000 / 10}}%)</td>
+        <td>#hole {{ problem.num_holes }}<br>#vert {{ problem.num_verts }}<br>ε {{ problem.epsilon }}<br>({{ problem.epsilon // 1000 / 10}}%)</td>
         <td>{{ problem.dislikes or '-' }} / {{ problem.best_dislikes }}</td>
         <td>{{ problem.max_score }}</td>
         {% for solution in problem.solutions %}

@@ -40,6 +40,8 @@ def show_problems():
             'max_score': problem['max_score'],
             'best_dislikes': str(problem['best_dislikes']),
             'dislikes': str(problem['dislikes']) if problem['dislikes'] is not None else None,
+            'num_holes': len(problem['hole']),
+            'num_verts': len(problem['figure']['vertices']),
             'solutions': [solution_context(problem, x) for x in solutions[id]],
         }
 
