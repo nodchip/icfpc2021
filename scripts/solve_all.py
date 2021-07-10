@@ -19,10 +19,14 @@ def main():
     parser.add_argument('--problems-dir', default=DEFAULT_PROBLEMS_DIR, type=Path)
     args = parser.parse_args()
 
+    args.problems_dir = args.problems_dir.resolve()
+    args.output_dir = args.output_dir.resolve()
+    args.output_dir.mkdir(exist_ok=True)
+        
     rows = []
     for problem_json in tqdm.tqdm(glob.glob(str(args.problems_dir / '*.json'))):
         name = Path(problem_json).name
-        print(name)
+        print('\n' + name)
         mo = re.search(r'^(\d+)', name)
         if mo:
             num = int(mo.groups()[0])
@@ -38,9 +42,11 @@ def main():
         new_is_valid = j['meta']['judge']['is_valid']
         new_dislikes = j['meta']['judge']['dislikes']
 
+        row = {'name': name, 'new_is_valid': new_is_valid, 'new_dislikes': new_dislikes}
+
         if not new_is_valid:
             print(name, 'skip (invalid)')
-            rows.append({'name': name, 'result': 'invalid'})
+            rows.append(dict(row, result='invalid'))
             os.unlink(tmp_out_path)
             continue
 
@@ -62,12 +68,11 @@ def main():
         if action == 'skip':
             os.unlink(tmp_out_path)
             print(name, 'skip (never overwrite)')
-            rows.append({'name': name, 'result': 'skip (never overwrite)'})
-        
+            rows.append(dict(row, result='skip_never_overwrite'))
         elif action == 'force':
             shutil.move(tmp_out_path, out_path)
             print(name, 'wrote')
-            rows.append({'name': name, 'result': 'wrote'})
+            rows.append(dict(row, result='wrote'))
         
         elif action == 'compare':
             with open(out_path, 'r') as fi:
@@ -83,7 +88,8 @@ def main():
                 os.unlink(tmp2_out_path)
             old_is_valid = j['meta']['judge']['is_valid']
             old_dislikes = j['meta']['judge']['dislikes']
-
+            rows['old_is_valid'] = old_is_valid
+            rows['old_dislikes'] = old_dislikes
             
             improved = False
             if old_is_valid:
@@ -100,11 +106,11 @@ def main():
             if improved:
                 shutil.move(tmp_out_path, out_path)
                 print(name, 'wrote (improved)')
-                rows.append({'name': name, 'result': 'wrote_improve'})
+                rows.append(dict(row, result='wrote_improve'))
             else:
                 os.unlink(tmp_out_path)
                 print(name, 'skip (did not improve)')
-                rows.append({'name': name, 'result': 'skip_noimprove'})
+                rows.append(dict(row, result='skip_noimprove'))
 
     df = pd.DataFrame(rows)
     df.to_csv('solve_all.csv', index=False)
