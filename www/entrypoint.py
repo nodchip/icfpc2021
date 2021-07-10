@@ -35,7 +35,7 @@ def show_problems():
             vertices = len(prob['figure']['vertices'])
             edges = len(prob['figure']['edges'])
             hole = len(prob['hole'])
-            context['score_upperbound'] = int(math.ceil(1000 * math.log2(vertices * edges * hole)))
+            context['score']['upperbound'] = int(math.ceil(1000 * math.log2(vertices * edges * hole)))
             context['epsilon'] = prob['epsilon']
 
         best = df_minimial_dislikes.loc[id]['minimal dislikes']

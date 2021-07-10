@@ -15,8 +15,8 @@
         <td class="mdc-data-table__cell">{{ problem.id }}</td>
         <td class="mdc-data-table__cell"><a href="https://poses.live/problems/{{ problems.id }}"><img src="{{ problem.image }}" height="100" width="100"></a></td>
         <td class="mdc-data-table__cell">{{ problem.epsilon }}<br>({{ problem.epsilon // 1000 / 10}}%)</td>
-        <td class="mdc-data-table__cell">{{ problem.dislikes.submit if problem.dislikes.submit else '-'}} / {{ problem.dislikes.best }}</td>
-        <td class="mdc-data-table__cell">{{ problem.score.submit }} / {{ problem.score.upperbound }}</td>
+        <td class="mdc-data-table__cell">{{ problem.dislikes.submit or '-'}} / {{ problem.dislikes.best }}</td>
+        <td class="mdc-data-table__cell">{{ problem.score.submit or '-' }} / {{ problem.score.upperbound }}</td>
     </tr>
     {% endfor %}
     </tbody>
