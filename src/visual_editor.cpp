@@ -71,7 +71,8 @@ struct SCanvas {
     int num_no_fit_in_hole_vert = 0;
     int num_no_fit_in_hole_edge = 0;
     int num_no_satisfy_stretch = 0;
-    bool is_valid;
+    int num_gained_bonuses = 0;
+    bool is_valid = false;
 
     bool draw_distant_hole_vertex = true;
     bool draw_tolerated_vertex = true;
@@ -112,8 +113,8 @@ struct SCanvas {
     }
 
     void draw_stats(cv::Mat& img) {
-        std::string stat_str = fmt::format("dislikes={}, fit={}(NG edge {} vert {}), stretch={}(NG {}), is_valid={}",
-          dislikes, fit_in_hole, num_no_fit_in_hole_edge, num_no_fit_in_hole_vert, satisfy_stretch, num_no_satisfy_stretch, is_valid);
+        std::string stat_str = fmt::format("dislikes={}, fit={}(NG edge {} vert {}), stretch={}(NG {}), is_valid={}, bonus={}",
+          dislikes, fit_in_hole, num_no_fit_in_hole_edge, num_no_fit_in_hole_vert, satisfy_stretch, num_no_satisfy_stretch, is_valid, num_gained_bonuses);
         cv::putText(img, stat_str, cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 0.7, is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 128), 1, cv::LINE_AA);
     }
 
@@ -168,6 +169,7 @@ struct SCanvas {
         num_no_fit_in_hole_vert = res.out_of_hole_vertices.size();
         num_no_fit_in_hole_edge = res.out_of_hole_edges.size();
         num_no_satisfy_stretch = res.stretch_violating_edges.size();
+        num_gained_bonuses = res.gained_bonus_indices.size();
         for (int eid = 0; eid < problem->edges.size(); eid++) {
             edge_colors[eid] = get_edge_color(eid);
         }

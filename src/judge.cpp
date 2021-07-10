@@ -189,6 +189,17 @@ SJudgeResult judge(const SProblem& problem, const SSolution& solution) {
     res.dislikes += minval;
   }
 
+  // gain bonus
+  res.gained_bonus_indices.clear();
+  for (size_t ibonus = 0; ibonus < problem.bonuses.size(); ++ibonus) {
+    for (size_t ivert = 0; ivert < solution.vertices.size(); ++ivert) {
+      if (problem.bonuses[ibonus].position == solution.vertices[ivert]) {
+        res.gained_bonus_indices.push_back(ibonus);
+        break;
+      }
+    }
+  }
+
   return res;
 }
 

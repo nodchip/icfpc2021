@@ -53,6 +53,7 @@ struct SJudgeResult {
   std::vector<integer> out_of_hole_vertices;
   std::vector<integer> stretch_violating_edges;
   std::vector<integer> individual_dislikes;
+  std::vector<integer> gained_bonus_indices; // SProblem::bonus[gained_bonus_indices[i]]
   bool fit_in_hole() const { return out_of_hole_edges.empty() && out_of_hole_vertices.empty(); }
   bool satisfy_stretch() const { 
     if (is_globalist_mode) {
