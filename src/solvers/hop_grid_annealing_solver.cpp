@@ -239,7 +239,7 @@ class Solver : public SolverBase {
       for (const auto v : pose) {
         best = std::min(best, SquaredDistance(h, v));
       }
-      dislikes_cost += best * 1.0e-5;
+      dislikes_cost += best * 1.0e-2;
     }
 
     const bool feasible = deformation_cost + protrusion_cost == 0.0;
