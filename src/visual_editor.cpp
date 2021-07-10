@@ -179,7 +179,7 @@ struct SCanvas {
                     }
                     for (auto v : exact_grid) {
                         auto [x, y] = cvt(v);
-                        draw_circle(img, x, y, 4, cv::Scalar(128, 0, 0), cv::FILLED);
+                        draw_circle(img, x, y, std::max(4, int(mag) / 4), cv::Scalar(64, 0, 0), cv::FILLED);
                     }
                     exact_grids.emplace_back(std::move(exact_grid));
                 }
@@ -192,7 +192,7 @@ struct SCanvas {
                     }
                     for (auto v : intersection) {
                         auto [x, y] = cvt(v);
-                        draw_circle(img, x, y, 4, cv::Scalar(255, 0, 0), cv::FILLED);
+                        draw_circle(img, x, y, std::max(8, int(mag) / 2), cv::Scalar(255, 64, 64), cv::FILLED);
                     }
                 }
             }
