@@ -85,8 +85,8 @@ class Solver : public SolverBase {
 
     auto single_small_change = [&] { // ynasu87 original
       const int v = std::uniform_int_distribution(0, N - 1)(rng_);
-      const int dx = std::uniform_int_distribution(-3, 3)(rng_);
-      const int dy = std::uniform_int_distribution(-3, 3)(rng_);
+      const int dx = std::uniform_int_distribution(-1, 1)(rng_);
+      const int dy = std::uniform_int_distribution(-1, 1)(rng_);
       auto& [x, y] = pose[v];
       x += dx;
       y += dy;
