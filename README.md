@@ -66,6 +66,20 @@ cd vs\solver
 ..\x64\Release\solve NaiveAnnealingSolver 1 out.json                                           # shortcut
 ```
 
+## Manual solver
+
+'''
+./solver solve ManualSolver 52 output_53.pose.json [optional_input_pose_53.pose.json]
+'''
+
+* d : toggle individual dislike score (large red circle means bad dislike)
+* t : toggle "tolerated grid points" view (dark blue indicates some of the edges tolerate the point. light blue indicates all edges agree to the point.)
+* s : save current pose to intermediate.pose.json
+* h : move left
+* j : move down
+* k : move up
+* l : move right
+* ESC : save and exit
 
 ## Apply a solver to all problems
 
