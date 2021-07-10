@@ -159,7 +159,7 @@ struct SCanvas {
         img_base_size = std::max(x_max, y_max) + img_offset * 2;
         mag = 1200 / img_base_size;
         img_size = img_base_size * mag;
-        img_base = cv::Mat_<cv::Vec3b>(img_size, img_size, cv::Vec3b(192, 192, 192));
+        img_base = cv::Mat_<cv::Vec3b>(img_size, img_size, cv::Vec3b(160, 160, 160));
         std::vector<cv::Point> cv_hole_polygon;
         for (auto p : problem->hole_polygon) {
           auto [x, y] = cvt(p);
