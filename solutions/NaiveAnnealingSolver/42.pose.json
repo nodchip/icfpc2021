@@ -1,0 +1,1 @@
+{"meta":{"created_at":"2021/07/10 18:42:03","elapsed_s":2.7928859999999998,"git_commit":"4ca6ae6a60efb29003dad12837a265cea714b751","judge":{"dislikes":3011,"fit_in_hole":true,"is_valid":true,"satisfy_stretch":true},"solver":"NaiveAnnealingSolver"},"vertices":[[38,24],[45,47],[54,8],[22,42],[42,29],[5,20],[19,38]]}
