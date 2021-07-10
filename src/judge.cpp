@@ -137,14 +137,30 @@ SJudgeResult judge(const SProblem& problem, const SSolution& solution) {
   }
   
   // stretch
-  for (size_t iedge = 0; iedge < problem.edges.size(); ++iedge) {
-    const auto& edge = problem.edges[iedge];
-    auto org_i = problem.vertices[edge.first];
-    auto org_j = problem.vertices[edge.second];
-    auto moved_i = solution.vertices[edge.first];
-    auto moved_j = solution.vertices[edge.second];
-    if (!tolerate(distance2(org_i, org_j), distance2(moved_i, moved_j), problem.epsilon)) {
-      res.stretch_violating_edges.push_back(iedge);
+  res.is_globalist_mode = problem.is_globalist_mode;
+  if (problem.is_globalist_mode) {
+    double globalist = 0.0;
+    for (size_t iedge = 0; iedge < problem.edges.size(); ++iedge) {
+      const auto& edge = problem.edges[iedge];
+      auto org_i = problem.vertices[edge.first];
+      auto org_j = problem.vertices[edge.second];
+      auto moved_i = solution.vertices[edge.first];
+      auto moved_j = solution.vertices[edge.second];
+      globalist += std::abs(double(distance2(moved_i, moved_j)) / double(distance2(org_i, org_j)) - 1);
+    }
+    if (globalist * 1000000.0 > problem.edges.size() * problem.epsilon) {
+      res.violates_globalist = true;
+    }
+  } else {
+    for (size_t iedge = 0; iedge < problem.edges.size(); ++iedge) {
+      const auto& edge = problem.edges[iedge];
+      auto org_i = problem.vertices[edge.first];
+      auto org_j = problem.vertices[edge.second];
+      auto moved_i = solution.vertices[edge.first];
+      auto moved_j = solution.vertices[edge.second];
+      if (!tolerate(distance2(org_i, org_j), distance2(moved_i, moved_j), problem.epsilon)) {
+        res.stretch_violating_edges.push_back(iedge);
+      }
     }
   }
 

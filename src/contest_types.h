@@ -27,6 +27,7 @@ struct SProblem {
     std::vector<Point> hole_polygon;
     std::vector<Point> vertices;
     std::vector<Edge> edges;
+    bool is_globalist_mode = false;
     SProblem() {};
     SProblem(const nlohmann::json& json);
     static SProblemPtr load_file(const std::string& path);
