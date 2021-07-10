@@ -179,7 +179,7 @@ struct SCanvas {
               auto [x, y] = cvt(problem->hole_polygon[i]);
               auto r = 2.0 * std::log(double(res.individual_dislikes[i]) + 1e-6) + 1.0;
               if (r > 0.0) {
-                draw_circle(img, x, y, r, cv::Scalar(0, 0, 128), cv::FILLED);
+                draw_circle(img, x, y, r, cv::Scalar(0, 0, 128), 1);
               }
           }
         }
@@ -248,6 +248,7 @@ struct SCanvas {
     bool set_pose(SSolutionPtr pose) {
         CHECK(is_compatible(*problem, *pose));
         solution = pose;
+        // draw base image
         auto rect_poly = calc_bb(problem->hole_polygon);
         auto rect_fig = calc_bb(problem->vertices);
         integer x_min = std::min(rect_poly.x, rect_fig.x);
@@ -265,6 +266,16 @@ struct SCanvas {
           cv_hole_polygon.emplace_back(x, y);
         }
         cv::fillPoly(img_base, cv_hole_polygon, cv::Scalar(255, 255, 255));
+        for (auto& bonus : problem->bonuses) {
+            auto [x, y] = bonus.position;
+            cv::Scalar color;
+            if (bonus.type == SBonus::Type::GLOBALIST) {
+              color = cv::Scalar(32, 192, 192); 
+            } else if (bonus.type == SBonus::Type::BREAK_A_LEG) {
+              color = cv::Scalar(192, 192, 32); 
+            }
+            cv::circle(img_base, cvt(x, y), 20, color, cv::FILLED);
+        }
         for (int x = x_min; x <= x_max; x++) {
             for (int y = y_min; y <= y_max; y++) {
                 cv::circle(img_base, cvt(x, y), 2, cv::Scalar(200, 200, 200), cv::FILLED);
