@@ -67,11 +67,13 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opencv_world453d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>274877906944</StackReserveSize>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(SolutionDir)..\libs\glog_vsbuild\$(Configuration)\glogd.dll $(OutputPath)glogd.dll</Command>
+      <Command>XCOPY /D $(ProjectDir)..\..\libs\glog_vsbuild\$(Configuration)\glogd.* $(OutputPath)
+XCOPY /D $(ProjectDir)..\..\libs\opencv\build\x64\vc15\bin\opencv_world453d.* $(OutputPath)
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -93,11 +95,13 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opencv_world453.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>274877906944</StackReserveSize>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(SolutionDir)..\libs\glog_vsbuild\$(Configuration)\glog.dll $(OutputPath)glog.dll</Command>
+      <Command>XCOPY /D $(ProjectDir)..\..\libs\glog_vsbuild\$(Configuration)\glog.* $(OutputPath)
+XCOPY /D $(ProjectDir)..\..\libs\opencv\build\x64\vc15\bin\opencv_world453.* $(OutputPath)
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
