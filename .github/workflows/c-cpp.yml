@@ -14,10 +14,16 @@ jobs:
       uses: actions/checkout@v2
       with:
         submodules: true
+
+    - name: Install libopencv-dev
+      run: sudo apt install libopencv-dev
+
     - name: build libs
       run: libs/build.sh
+
     - name: make
       run: make -B -C src dirs solver test
+
     - name: test
       run: src/test
       
@@ -27,4 +33,4 @@ jobs:
       env:
         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
         SLACK_COLOR: ${{ job.status }}
-        
+

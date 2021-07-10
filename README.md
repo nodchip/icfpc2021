@@ -4,7 +4,7 @@ ICFPC2021 sanma team repository
 ## Prerequisites
 
 * Linux (Ubuntu 20.04 LTS (not 18.04 LTS which lacks g++-10)) / WSL1 on Windows 10
-  * `sudo apt install build-essential git-core cmake g++-10 libtool autoconf texinfo`
+  * `sudo apt install build-essential git-core cmake g++-10 libtool autoconf texinfo libopencv-dev`
 * Windows 10
   * Visual Studio 2019 (16.10.3)
   * CMake 3.17.3 (add to PATH)
