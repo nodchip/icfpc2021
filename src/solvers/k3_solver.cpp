@@ -195,8 +195,12 @@ public:
             stretch_cost += calc_violation(d2_orig[eid], distance2(u, v));
         }
         //return stretch_cost + res.dislikes * 3;
-        double weight = 0.5 * progress_rate + 0.5;
-        return weight * stretch_cost + (1.0 - weight) * res.dislikes;
+        // stretch_cost: 0.1 -> 0.9
+        // dislike: 0.9 -> 0.1
+        double weight = 0.8 * progress_rate;
+        double stretch_ratio = 0.1 + weight;
+        double dislike_ratio = 0.9 - weight;
+        return stretch_ratio * stretch_cost + dislike_ratio * res.dislikes;
     }
 
     SMovePtr calc_move_stat(Pose& pose, integer vid, const Point& to, double now_score) {
@@ -340,7 +344,6 @@ public:
                 transition(pose, trans);
                 now_score += trans->diff;
             }
-            loop++;
         }
 
         // do nothing.
