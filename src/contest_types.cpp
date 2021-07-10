@@ -10,9 +10,7 @@ SProblem::SProblem(const nlohmann::json& json) : json(json) {
     using std::endl;
     auto bs = json["bonuses"];
     for (auto b : bs) {
-        SBonus::Type type;
-        if (b["bonus"] == "GLOBALIST") type = SBonus::Type::GLOBALIST;
-        else if (b["bonus"] == "BREAK_A_LEG") type = SBonus::Type::BREAK_A_LEG;
+        SBonus::Type type = SBonus::parse_bonus_name(std::string(b["bonus"]));
         Point position = b["position"];
         integer problem_id = b["problem"];
         bonuses.emplace_back(type, position, problem_id);
@@ -95,6 +93,7 @@ std::vector<int> edges_from_vertex(const SProblem& problem, int vid) {
 
 
 SSolution::SSolution(const std::vector<Point>& vertices) : vertices(vertices) {}
+SSolution::SSolution(const std::vector<Point>& vertices, const std::vector<SBonus>& bonuses) : vertices(vertices), bonuses(bonuses) {}
 
 SSolutionPtr SSolution::load_file(const std::string& path) {
     if (!std::filesystem::exists(path)) {
@@ -103,12 +102,29 @@ SSolutionPtr SSolution::load_file(const std::string& path) {
     std::ifstream input_data_ifs(path);
     nlohmann::json j;
     input_data_ifs >> j;
-    return std::make_shared<SSolution>(j["vertices"]);
+
+    if (j.find("bonuses") != j.end()) {
+      std::vector<SBonus> bonuses;
+      for (auto& b : j["bonuses"]) {
+        SBonus bonus(SBonus::parse_bonus_name(std::string(b["bonus"])), Point(), b["problem"]);
+        bonuses.push_back(bonus);
+      }
+      return std::make_shared<SSolution>(j["vertices"], bonuses);
+    } else {
+      return std::make_shared<SSolution>(j["vertices"]);
+    }
 }
 
 nlohmann::json SSolution::json() const {
     nlohmann::json json;
     json["vertices"] = vertices;
+    json["bonuses"] = nlohmann::json::array();
+    for (const auto& b : bonuses) {
+      json["bonuses"].push_back({
+        {"bonus", SBonus::bonus_name(b.type)},
+        {"problem", b.problem_id},
+      });
+    }
     return json;
 }
 
