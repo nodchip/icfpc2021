@@ -26,15 +26,18 @@ def show_problems():
 
     for id in ids:
         problem = load_problem_json(id)
-        problem['dislikes'] = contest_infos[id]['minimal dislikes']
+        problem['best_dislikes'] = int(contest_infos[id]['minimal dislikes'])
+        if not math.isnan(contest_infos[id]['your dislikes']):
+            problem['dislikes'] = int(contest_infos[id]['your dislikes'])
         problem['max_score'] = get_score(problem)
 
         context = {
             'id': id,
             'image': 'images/{}.problem.png'.format(id),
             'epsilon': problem['epsilon'],
-            'score': problem['max_score'],
-            'dislikes': problem['dislikes'],
+            'max_score': problem['max_score'],
+            'best_dislikes': problem['best_dislikes'],
+            'dislikes': str(problem['dislikes']) if 'dislikes' in problem else None,
             'solutions': [solution_context(problem, x) for x in solutions[id]],
         }
         problem_contexts.append(context)
@@ -56,10 +59,9 @@ def solution_context(problem, solution):
     if judge:
         mine = meta['judge']['dislikes']
         context['dislikes'] = str(mine)
-        context['score'] = str(get_score(problem, mine, problem['max_score']))
+        context['score'] = str(get_score(problem, mine))
  
     return context
-
 
 
 def get_all_solutions(ids):
@@ -100,13 +102,14 @@ def load_pose_json(id, type='submit'):
         return None
 
 
-def get_score(problem, dislikes=None, best=None):
+def get_score(problem, dislikes=None):
     vertices = len(problem['figure']['vertices'])
     edges = len(problem['figure']['edges'])
     hole = len(problem['hole'])
     score = 1000 * math.log2(vertices * edges * hole)
 
-    if dislikes is not None and best is not None:
+    if dislikes is not None:
+        best = problem['best_dislikes']
         score = score * math.sqrt((best + 1) / (dislikes + 1))
 
     return int(math.ceil(score))

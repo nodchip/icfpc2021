@@ -1,9 +1,6 @@
 {% extends "common.html" %}
+{% block additional_header %}{% endblock %}
 {% block content %}
-<script>
-import {MDCDataTable} from '@material/data-table';
-const dataTable = new MDCDataTable(document.querySelector('.mdc-data-table'));
-</script>
 <table class="mdc-data-table__table">
     <thead>
         <tr class="mdc-data-table__header-row">
@@ -17,15 +14,17 @@ const dataTable = new MDCDataTable(document.querySelector('.mdc-data-table'));
     {% for problem in problems %}
     <tr data-row-id="problem{{ problem.id }}" class="mdc-data-table__row">
         <td class="mdc-data-table__cell">{{ problem.id }}</td>
-        <td class="mdc-data-table__cell"><a href="https://poses.live/problems/{{ problems.id }}"><img src="{{ problem.image }}" height="100" width="100"></a></td>
+        <td class="mdc-data-table__cell"><a href="https://poses.live/problems/{{ problem.id }}"><img src="{{ problem.image }}" height="100" width="100"></a></td>
         <td class="mdc-data-table__cell">{{ problem.epsilon }}<br>({{ problem.epsilon // 1000 / 10}}%)</td>
-        <td class="mdc-data-table__cell">{{ problem.dislikes }}</td>
-        <td class="mdc-data-table__cell">{{ problem.score }}</td>
+        <td class="mdc-data-table__cell">
+            {{ problem.dislikes or '-' }} / {{ problem.best_dislikes }}
+        </td>
+        <td class="mdc-data-table__cell">{{ problem.max_score }}</td>
         {% for solution in problem.solutions %}
             <td class="mdc-data-table__cell">
                 <span>{{ solution.solver }}</span><br>
-                <span>{{ solution.dislikes or '-'}}</span><br>
-                <span>{{ solution.score or '-'}}</span>
+                <span>{{ solution.dislikes }}</span><br>
+                <span>({{ solution.score }})</span>
             </td>
         {% endfor %}
     </tr>
