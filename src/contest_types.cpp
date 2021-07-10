@@ -8,6 +8,15 @@
 SProblem::SProblem(const nlohmann::json& json) : json(json) {
     using std::cerr;
     using std::endl;
+    auto bs = json["bonuses"];
+    for (auto b : bs) {
+        SBonus::Type type;
+        if (b["bonus"] == "GLOBALIST") type = SBonus::Type::GLOBALIST;
+        else if (b["bonus"] == "BREAK_A_LEG") type = SBonus::Type::BREAK_A_LEG;
+        Point position = b["position"];
+        integer problem_id = b["problem"];
+        bonuses.emplace_back(type, position, problem_id);
+    }
     epsilon = json["epsilon"];
     auto hs = json["hole"];
     for (auto h : hs) {
@@ -30,6 +39,11 @@ std::string SProblem::str() const {
 
 std::ostream& operator<<(std::ostream& o, const SProblem& obj) {
     o << obj.str();
+    return o;
+}
+
+std::ostream& operator<<(std::ostream& o, const SProblemPtr& obj) {
+    o << obj->str();
     return o;
 }
 
@@ -104,6 +118,11 @@ std::string SSolution::str() const {
 
 std::ostream& operator<<(std::ostream& o, const SSolution& obj) {
     o << obj.str();
+    return o;
+}
+
+std::ostream& operator<<(std::ostream& o, const SSolutionPtr& obj) {
+    o << obj->str();
     return o;
 }
 
