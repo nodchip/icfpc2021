@@ -239,6 +239,7 @@ struct SCanvas {
         }
         edge_colors.resize(problem->edges.size(), cv::Scalar(0, 255, 0));
         update(-1);
+        return true;
     }
 
     SCanvas(SProblemPtr problem) : problem(problem) {
