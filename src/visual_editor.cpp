@@ -315,7 +315,10 @@ int SVisualEditor::show(int wait) {
     if (c == 's') {
         const std::string file_path = "intermediate.pose.json";
         std::ofstream ofs(file_path);
-        ofs << canvas->solution->json();
+        auto json = canvas->solution->json();
+        update_meta(json, "ManualSolver");
+        update_judge(judge(*canvas->problem, *canvas->solution), json);
+        ofs << json;
         LOG(INFO) << "saved: " << file_path;
     }
     if (c == 'h') {
