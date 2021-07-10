@@ -421,5 +421,27 @@ void SVisualEditor::callback(int e, int x, int y, int f, void* param) {
     }
 }
 
+SSolutionPtr visualize_and_edit(SProblemPtr problem, SSolutionPtr solution) {
+    SVisualEditorPtr editor = std::make_shared<SVisualEditor>(problem, "visualize");
+    editor->set_pose(solution);
+    SSolutionPtr editor_solution = std::make_shared<SSolution>();
+    *editor_solution = *solution;
+    while (true) {
+        int c = editor->show(15);
+        if (c == 27) {
+            editor_solution = editor->get_pose();
+            const std::string file_path = "editor.pose.json";
+            std::ofstream ofs(file_path);
+            auto json = editor_solution->json();
+            update_meta(json, "ManualPostEditor");
+            update_judge(judge(*problem, *editor_solution), json);
+            ofs << json;
+            LOG(INFO) << "saved editor solution: " << file_path;
+            break;
+        }
+    }
+    return editor_solution;
+}
+
 // vim:ts=2 sw=2 sts=2 et ci
 

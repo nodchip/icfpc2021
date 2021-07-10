@@ -27,5 +27,7 @@ struct SVisualEditor {
 };
 using SVisualEditorPtr = std::shared_ptr<SVisualEditor>;
 
+SSolutionPtr visualize_and_edit(SProblemPtr problem, SSolutionPtr solution);
+
 // vim:ts=2 sw=2 sts=2 et ci
 

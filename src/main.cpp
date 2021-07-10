@@ -97,22 +97,7 @@ int main(int argc, char* argv[]) {
       }
 
       if (visualize_output) {
-        SVisualEditorPtr editor = std::make_shared<SVisualEditor>(problem, "visualize");
-        editor->set_pose(out.solution);
-        while (true) {
-            int c = editor->show(15);
-            if (c == 27) {
-                auto editor_solution = editor->get_pose();
-                const std::string file_path = "editor.pose.json";
-                std::ofstream ofs(file_path);
-                auto json = editor_solution->json();
-                update_meta(json, "ManualSolver");
-                update_judge(judge(*problem, *editor_solution), json);
-                ofs << json;
-                LOG(INFO) << "saved editor solution: " << file_path;
-                break;
-            }
-        }
+        visualize_and_edit(problem, out.solution);
       }
 
       return 0;
