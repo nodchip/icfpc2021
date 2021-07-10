@@ -6,7 +6,7 @@
 #include "judge.h"
 #include "fmt/format.h"
 
-#if 0
+#if 1
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
@@ -280,7 +280,7 @@ class ManualSolver : public SolverBase {
 public:
     ManualSolver() { }
     SolverOutputs solve(const SolverArguments &args) override {
-#if 0
+#if 1
         using namespace NManualSolver;
         SolverOutputs ret;
 
