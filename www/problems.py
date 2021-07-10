@@ -14,12 +14,11 @@ PROBLEMS_DIR = os.path.join(ROOT_DIR, 'data', 'problems')
 SOLUTIONS_DIR = os.path.join(ROOT_DIR, 'solutions')
 SUBMIT_DIR = os.path.join(SOLUTIONS_DIR, 'submit')  # TODO: Drop this
 
-# TODO: Update this TSV as frequently as possible.
-contest_infos = pd.read_table(os.path.join(ROOT_DIR, 'www', 'contest_infos.tsv'), index_col=0).loc
-
 
 @app.route('/problems.html')
 def show_problems():
+    # TODO: Update this TSV as frequently as possible.
+    contest_infos = pd.read_table(os.path.join(ROOT_DIR, 'www', 'contest_infos.tsv'), index_col=0).loc
     ids = sorted([int(re.sub(r'\D', '', x)) for x in os.listdir(path=PROBLEMS_DIR)])
     solutions = get_all_solutions(ids)
     problem_contexts = []

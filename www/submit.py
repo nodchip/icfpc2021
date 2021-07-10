@@ -28,7 +28,7 @@ def submit_pose():
     url = 'https://poses.live/api/problems/{}/solutions'.format(id)
     response = requests.post(url, headers=headers, data=solution)
     print(response)
-    return response
+    return response.text
 
 
 def load_pose_json(id, type='submit'):
