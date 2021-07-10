@@ -40,6 +40,7 @@ struct SJudgeResult {
   std::vector<integer> out_of_hole_edges;
   std::vector<integer> out_of_hole_vertices;
   std::vector<integer> stretch_violating_edges;
+  std::vector<integer> individual_dislikes;
   bool fit_in_hole() const { return out_of_hole_edges.empty() && out_of_hole_vertices.empty(); }
   bool satisfy_stretch() const { return stretch_violating_edges.empty(); }
   bool is_valid() const { return fit_in_hole() && satisfy_stretch(); }

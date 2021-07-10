@@ -75,6 +75,8 @@ struct SCanvas {
     int num_no_satisfy_stretch = 0;
     bool is_valid;
 
+    bool draw_distant_hole_vertex = true;
+
     std::vector<cv::Scalar> edge_colors;
 
     cv::Scalar violating_vertex_color = cv::Scalar(128, 0, 128);
@@ -130,6 +132,15 @@ struct SCanvas {
         is_valid = res.is_valid();
         // draw
         img = img_base.clone();
+        if (draw_distant_hole_vertex) {
+          for (int i = 0; i < problem->hole_polygon.size(); i++) {
+              auto [x, y] = cvt(problem->hole_polygon[i]);
+              auto r = 2.0 * std::log(double(res.individual_dislikes[i]) + 1e-6) + 1.0;
+              if (r > 0.0) {
+                draw_circle(img, x, y, r, cv::Scalar(0, 0, 128), cv::FILLED);
+              }
+          }
+        }
         for (int eid : res.out_of_hole_edges) {
             auto [u, v] = problem->edges[eid];
             auto [x1, y1] = cvt(solution->vertices[u]);
@@ -291,6 +302,10 @@ struct SManualSolver {
             int c = cv::waitKey(15);
             if (c == 27) {
                 return canvas->solution;
+            }
+            if (c == 'd') {
+                canvas->draw_distant_hole_vertex = !canvas->draw_distant_hole_vertex;
+                canvas->update(-1);
             }
             cv::imshow(window_name, canvas->img);
         }
