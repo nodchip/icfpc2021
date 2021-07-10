@@ -6,6 +6,8 @@ using integer = int64_t;
 using Edge = std::pair<integer, integer>;
 
 using Point = std::pair<integer, integer>;
+using Point2d = std::pair<double, double>;
+
 using Line = std::array<Point, 2>;
 
 struct SBonus {

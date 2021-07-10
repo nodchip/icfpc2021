@@ -82,6 +82,8 @@ class Solver : public SolverBase {
         return true; // rejected
       }
     };
+    evaluate_and_descide_rollback();
+
 
     auto single_small_change = [&] { // ynasu87 original
       const int v = std::uniform_int_distribution(0, N - 1)(rng_);
