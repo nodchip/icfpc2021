@@ -100,7 +100,6 @@ public:
         }
     };
 
-
     void initialize(const SolverArguments& args) {
         // master data
         prob = args.problem;
@@ -172,20 +171,11 @@ public:
         return nearest_point;
     }
 
-    double evaluate(const std::vector<Point>& vertices, bool verbose = false) const {
+    double evaluate(const std::vector<Point>& pose) const {
         SSolutionPtr sol = std::make_shared<SSolution>();
-        sol->vertices = vertices;
+        sol->vertices = pose;
         auto res = judge(*prob, *sol);
-        if (verbose) {
-            LOG(INFO) << "dislikes = " << res.dislikes;
-            LOG(INFO) << "fit_in_hole = " << res.fit_in_hole();
-            LOG(INFO) << "satisfy_stretch = " << res.satisfy_stretch();
-            LOG(INFO) << "is_valid = " << res.is_valid();
-            LOG(INFO) << "out_of_hole_vertices = " << res.out_of_hole_vertices;
-            LOG(INFO) << "out_of_hole_edges = " << res.out_of_hole_edges;
-            LOG(INFO) << "stretch_violating_edges = " << res.stretch_violating_edges;
-        }
-        if (!res.fit_in_hole()) return std::numeric_limits<integer>::max();
+        if (!res.fit_in_hole()) return std::numeric_limits<double>::max();
         double stretch_cost = 0.0;
         auto calc_violation = [this](integer orig_g2, integer mod_g2) {
             double window = epsilon * orig_g2 / 1000000.0;
@@ -196,16 +186,13 @@ public:
             if (orig_g2 + window < mod_g2) {
                 penalty = mod_g2 - orig_g2 - window;
             }
-            return penalty;
+            return penalty * penalty;
             //return abs(orig_g2 - mod_g2);
         };
         for (int eid : res.stretch_violating_edges) {
             auto [uid, vid] = edges[eid];
-            auto u = vertices[uid], v = vertices[vid];
+            auto u = pose[uid], v = pose[vid];
             stretch_cost += calc_violation(d2_orig[eid], distance2(u, v));
-        }
-        if (verbose) {
-            LOG(INFO) << "stretch_cost = " << stretch_cost;
         }
         return stretch_cost + res.dislikes * 3;
     }
@@ -233,7 +220,20 @@ public:
     }
 
     STransPtr create_random_trans(double now_score) {
-        if (rnd.next_int(10)) {
+        // TODO: vertices ‚Å‚Í‚È‚­ pose ‚Å
+        static constexpr int di[] = { 0, -1, 0, 1 };
+        static constexpr int dj[] = { 1, 0, -1, 0 };
+        int r = rnd.next_int(10);
+        if (r < 8) {
+            // adjacent move
+            int vid = rnd.next_int(vertices.size());
+            auto [x, y] = vertices[vid];
+            int dir = rnd.next_int(4);
+            if (!is_inside_polygon(x + dj[dir], y + di[dir])) return nullptr;
+            return calc_move_stat(vid, Point(x + dj[dir], y + di[dir]), now_score);
+        }
+        if (r < 9) {
+            // completely random warp
             int vid = rnd.next_int(vertices.size());
             int to_id = rnd.next_int(inner_polygon_points.size());
             return calc_move_stat(vid, inner_polygon_points[to_id], now_score);
@@ -311,23 +311,23 @@ public:
             return etemp + (stemp - etemp) * (num_loop - loop) / num_loop;
         };
 
-        vertices = scatter(vertices, 10000);
+        //vertices = scatter(vertices, 10000);
 
         double now_score = evaluate(vertices);
         integer loop = 0, num_loop = 3000000;
         for(integer loop = 0; loop < num_loop; loop++) {
-            STransPtr trans = create_random_trans(now_score);
-            if (!trans) continue;
-            double temp = get_temp(100.0, 0.0, loop, num_loop);
-            double prob = exp(-trans->diff / temp);
-            if (rnd.next_double() < prob) {
-                transition(vertices, trans);
-                now_score += trans->diff;
-            }
             if (editor && loop % 1000 == 0) {
                 LOG(INFO) << "loop = " << loop << ", score = " << now_score;
                 editor->set_pose(std::make_shared<SSolution>(vertices));
                 int c = editor->show(1);
+            }
+            STransPtr trans = create_random_trans(now_score);
+            if (!trans) continue;
+            double temp = get_temp(30.0, 0.0, loop, num_loop);
+            double prob = exp(-trans->diff / temp);
+            if (rnd.next_double() < prob) {
+                transition(vertices, trans);
+                now_score += trans->diff;
             }
             loop++;
         }
