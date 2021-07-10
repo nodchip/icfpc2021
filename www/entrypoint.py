@@ -47,8 +47,8 @@ def show_problems():
                 try:
                     if pose['meta']['judge']['is_valid']:
                         mine = pose['meta']['judge']['dislikes']
-                        context['dislikes']['submit'] = mine
-                        context['score']['submit'] = int(math.ceil(1000 * math.log2(vertices * edges * hole) * math.sqrt((best + 1) / (mine + 1))))
+                        context['dislikes']['submit'] = str(mine)
+                        context['score']['submit'] = str(int(math.ceil(1000 * math.log2(vertices * edges * hole) * math.sqrt((best + 1) / (mine + 1)))))
                     else:
                         context['dislikes']['submit'] = 'infeasible'
                 except:

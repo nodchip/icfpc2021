@@ -1,13 +1,17 @@
 {% extends "common.html" %}
 {% block content %}
+<script>
+import {MDCDataTable} from '@material/data-table';
+const dataTable = new MDCDataTable(document.querySelector('.mdc-data-table'));
+</script>
 <table class="mdc-data-table__table">
     <thead>
         <tr class="mdc-data-table__header-row">
-            <th class="mdc-data-table__header-cell">ID</th>
+            <th class="mdc-data-table__header-cell" data-column-id="id">ID</th>
             <th class="mdc-data-table__header-cell">問題</th>
-            <th class="mdc-data-table__header-cell">ε</th>
-            <th class="mdc-data-table__header-cell">dislike</th>
-            <th class="mdc-data-table__header-cell">スコア</th>
+            <th class="mdc-data-table__header-cell" data-column-id="epsilon">ε</th>
+            <th class="mdc-data-table__header-cell" data-column-id="max-dislike">dislike</th>
+            <th class="mdc-data-table__header-cell" data-column-score="max-score">スコア</th>
     </thead>
     <tbody class="mdc-data-table__content">
     {% for problem in problems %}

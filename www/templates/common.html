@@ -12,22 +12,27 @@
 </head>
 
 <body>
-    <div style="display: inline-block;">
-        <aside class="mdc-drawer">
-            <div class="mdc-drawer__content">
-                <nav class="mdc-list">
-                    <a class="mdc-list-item" href="{{ url_for('home') }}" aria-current="page">
-                        <i class="material-icons mdc-list-item__graphic" aria-hidden="true">home</i>
-                        <span class="mdc-list-item__text">Home</span>
-                    </a>
-                </nav>
-            </div>
-        </aside>
-    </div>
-    <div style="display: inline-block;">
+    <header class="mdc-top-app-bar">
+        <div class="mdc-top-app-bar__row">
+            <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
+                <button class="material-icons mdc-top-app-bar__navigation-icon mdc-icon-button"
+                    aria-label="Open navigation menu">menu</button>
+                <span class="mdc-top-app-bar__title">{{ title }}</span>
+            </section>
+            <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-end" role="toolbar">
+                <button class="material-icons mdc-top-app-bar__action-item mdc-icon-button"
+                    aria-label="Favorite">favorite</button>
+                <button class="material-icons mdc-top-app-bar__action-item mdc-icon-button"
+                    aria-label="Search">search</button>
+                <button class="material-icons mdc-top-app-bar__action-item mdc-icon-button"
+                    aria-label="Options">more_vert</button>
+            </section>
+        </div>
+    </header>
+    <main class="mdc-top-app-bar--fixed-adjust">
         {% block content %}
         {% endblock %}
-    </div>
+    </main>
 </body>
 
 </html>
