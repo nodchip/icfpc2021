@@ -31,8 +31,10 @@ std::string get_git_commit_id() {
 bool update_meta(nlohmann::json& solution_json, const std::string& solver_name) {
   auto now = std::chrono::system_clock::now();
   auto in_time_t = std::chrono::system_clock::to_time_t(now);
+  tm local_tm;
+  localtime_s(&local_tm, &in_time_t);
   std::ostringstream oss;
-  oss << std::put_time(std::localtime(&in_time_t), "%Y/%m/%d %H:%M:%S");
+  oss << std::put_time(&local_tm, "%Y/%m/%d %H:%M:%S");
 
   if (solution_json.find("meta") == solution_json.end()) solution_json["meta"] = {};
   solution_json["meta"]["created_at"] = oss.str();

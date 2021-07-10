@@ -33,6 +33,9 @@
     <ClInclude Include="..\..\src\judge.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\visual_editor.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\main.cpp">
@@ -67,6 +70,9 @@
     </ClCompile>
     <ClCompile Include="..\..\src\solvers\flip_annealing_solver.cpp">
       <Filter>ソース ファイル\solvers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\visual_editor.cpp">
+      <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

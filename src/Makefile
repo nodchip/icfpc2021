@@ -36,7 +36,7 @@ LDFLAGS+=-lpthread
 #CXXFLAGS+=-DNDEBUG
 
 # add your cpp files here:
-SRCS+=util.cpp contest_types.cpp judge.cpp solver_registry.cpp
+SRCS+=util.cpp contest_types.cpp judge.cpp solver_registry.cpp visual_editor.cpp
 OBJS=$(SRCS:%.cpp=$(BUILD_PATH)/%.o)
 DEPS=$(SRCS:%.cpp=$(BUILD_PATH)/%.d)
 
