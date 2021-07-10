@@ -60,9 +60,8 @@ class Solver : public SolverBase {
     epsilon_ = args.problem->epsilon;
     hole_polygon_ = ToBoostPolygon(hole_);
 
-    constexpr bool visualize = false;
     SVisualEditorPtr editor;
-    if (visualize) {
+    if (args.visualize) {
       editor = std::make_shared<SVisualEditor>(args.problem, "visualize");
     }
 
