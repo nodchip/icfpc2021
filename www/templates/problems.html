@@ -1,11 +1,12 @@
 {% extends "common.html" %}
 {% block additional_header %}
 <script>
-function submit(id, solver) {
-    const button_id = "button_" + solver+ "_" + id;
+function submit(id, subdir) {
+    const button_id = "button_" + subdir + "_" + id;
     let button = document.getElementById(button_id);
     button.disabled = 'disabled';
     button.innerText = 'Submitting';
+    console.log('Clicked ' + subdir + ' for ' + id)
 
     let xhr = new XMLHttpRequest();
     xhr.open('POST', '/submit');
@@ -18,7 +19,7 @@ function submit(id, solver) {
             button.innerText = xhr.response;
         }
     };
-    xhr.send('{"id": ' + id + ', "solver": "' + solver + '"}');
+    xhr.send('{"id": ' + id + ', "subdir": "' + subdir + '"}');
 }
 </script>
 <style>
@@ -67,7 +68,7 @@ function submit(id, solver) {
                 <span class="line">DL {{ solution.dislikes }}</span><br>
                 <span class="line">SC ({{ solution.score }})</span>
                 {% if problem.state == 'danger' and loop.index == 1 and solution.eligible %}
-                <button type="button" id="button_{{solution.solver}}_{{problem.id}}" onclick="submit({{problem.id}}, '{{solution.solver}}')">Submit</button>
+                <button type="button" id="button_{{solution.subdir}}_{{problem.id}}" onclick="submit({{problem.id}}, '{{solution.subdir}}')">Submit</button>
                 {% endif %}
             </td>
         {% endfor %}

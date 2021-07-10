@@ -85,6 +85,7 @@ def solution_context(problem, solution):
 
     context = {
         'solver': meta['solver'],
+        'subdir': meta['subdir'],
     }
 
     if judge:
@@ -104,15 +105,16 @@ def get_all_solutions(ids):
         type = os.path.basename(subdir)
         for filename in files:
             id = int(re.sub(r'\D', '', filename))
-            pose = load_pose_json(type=type, id=id)
-            if not pose:
+            solution = load_pose_json(type=type, id=id)
+            if not solution:
                 continue
-            assert 'meta' in pose, 'No meta info in {}/{}.pose.json'.format(type, id)
-            if not pose['meta']['judge']['is_valid']:
+            assert 'meta' in solution, 'No meta info in {}/{}.pose.json'.format(type, id)
+            if not solution['meta']['judge']['is_valid']:
                 continue
-            if 'solver' not in pose['meta']:
-                pose['meta']['solver'] = type
-            solutions[id].append(pose)
+            if 'solver' not in solution['meta']:
+                solution['meta']['solver'] = type
+            solution['meta']['subdir'] = type
+            solutions[id].append(solution)
     for id in ids:
         solutions[id] = sorted(solutions[id], key=lambda x: x['meta']['judge']['dislikes'])
     return solutions
