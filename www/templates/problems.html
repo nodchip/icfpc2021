@@ -21,16 +21,19 @@ function submit(id, solver) {
     xhr.send('{"id": ' + id + ', "solver": "' + solver + '"}');
 }
 </script>
+<style>
+  .line { white-space: nowrap; }
+</style>
 {% endblock %}
 {% block content %}
 <table class="table">
     <thead>
         <tr>
-            <th data-column-id="id">ID</th>
+            <th>ID</th>
             <th>問題</th>
             <th>#hole/#vert/ε</th>
-            <th>dislike</th>
-            <th>スコア</th>
+            <th>min dislike<br>score</th>
+            <th>Bonus</th>
             <th>Solutions</th>
         </tr>
     </thead>
@@ -39,14 +42,30 @@ function submit(id, solver) {
     <tr{% if problem.state %} class="table-{{problem.state}}"{% endif %}>
         <td>{{ problem.id }}</td>
         <td><a href="https://poses.live/problems/{{ problem.id }}"><img src="{{ problem.image }}" height="100" width="100"></a></td>
-        <td>#hole {{ problem.num_holes }}<br>#vert {{ problem.num_verts }}<br>ε {{ problem.epsilon }}<br>({{ problem.epsilon // 1000 / 10}}%)</td>
-        <td>{{ problem.dislikes or '-' }} / {{ problem.best_dislikes }}</td>
-        <td>{{ problem.max_score }}</td>
+        <td>
+            #hole {{ problem.num_holes }}<br>
+            #vert {{ problem.num_verts }}<br>
+            ε {{ problem.epsilon }}<br>
+            ({{ problem.epsilon // 1000 / 10}}%)
+        </td>
+        <td>
+            <span class="line">DL: {{ problem.best_dislikes }}</span><br>
+            <span class="line">SC: {{ problem.max_score }}</span>
+        </td>
+        <td>
+            {% for bonus in problem.bonuses %}
+                {% if 'problem' in bonus %}
+                <span class="line">{{ emojis[bonus.bonus] }}→{{ bonus.problem }}</span>
+                {% else %}
+                <span class="line">{{ bonus.from }}→{{ emojis[bonus.bonus] }}</span>
+                {% endif %}
+            {% endfor %}
+        </td>
         {% for solution in problem.solutions %}
             <td>
                 <span>{{ solution.solver }}</span><br>
-                <span>DL {{ solution.dislikes }}</span><br>
-                <span>SC ({{ solution.score }})</span>
+                <span class="line">DL {{ solution.dislikes }}</span><br>
+                <span class="line">SC ({{ solution.score }})</span>
                 {% if problem.state == 'danger' and loop.index == 1 and solution.eligible %}
                 <button type="button" id="button_{{solution.solver}}_{{problem.id}}" onclick="submit({{problem.id}}, '{{solution.solver}}')">Submit</button>
                 {% endif %}
