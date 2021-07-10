@@ -107,9 +107,10 @@ def get_all_solutions(ids):
             pose = load_pose_json(type=type, id=id)
             if not pose:
                 continue
-            assert 'meta' in pose, 'No meta info in {}-{}'.format(id, type)
+            assert 'meta' in pose, 'No meta info in {}/{}.pose.json'.format(type, id)
             if not pose['meta']['judge']['is_valid']:
                 continue
+            print(pose['meta']['judge']['is_valid'])
             if 'solver' not in pose['meta']:
                 pose['meta']['solver'] = type
             solutions[id].append(pose)
