@@ -6,10 +6,8 @@
             <th class="mdc-data-table__header-cell">ID</th>
             <th class="mdc-data-table__header-cell">問題</th>
             <th class="mdc-data-table__header-cell">ε</th>
-            <th class="mdc-data-table__header-cell">submit dislike</th>
-            <th class="mdc-data-table__header-cell">best dislike</th>
-            <th class="mdc-data-table__header-cell">submit スコア</th>
-            <th class="mdc-data-table__header-cell">最大スコア</th>
+            <th class="mdc-data-table__header-cell">dislike</th>
+            <th class="mdc-data-table__header-cell">スコア</th>
     </thead>
     <tbody class="mdc-data-table__content">
     {% for problem in problems %}
@@ -17,10 +15,8 @@
         <td class="mdc-data-table__cell">{{ problem.id }}</td>
         <td class="mdc-data-table__cell"><a href="https://poses.live/problems/{{ problems.id }}"><img src="{{ problem.image }}" height="100" width="100"></a></td>
         <td class="mdc-data-table__cell">{{ problem.epsilon }}<br>({{ problem.epsilon // 1000 / 10}}%)</td>
-        <td class="mdc-data-table__cell">{{ problem.dislikes_submit }}</td>
-        <td class="mdc-data-table__cell">{{ problem.dislikes_best }}</td>
-        <td class="mdc-data-table__cell">{{ problem.score_submit }}</td>
-        <td class="mdc-data-table__cell">{{ problem.score_upperbound }}</td>
+        <td class="mdc-data-table__cell">{{ problem.dislikes.submit if problem.dislikes.submit else '-'}} / {{ problem.dislikes.best }}</td>
+        <td class="mdc-data-table__cell">{{ problem.score.submit }} / {{ problem.score.upperbound }}</td>
     </tr>
     {% endfor %}
     </tbody>

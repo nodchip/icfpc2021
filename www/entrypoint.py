@@ -27,6 +27,8 @@ def show_problems():
         context = {
             'id': id,
             'image': 'images/{}.problem.png'.format(id),
+            'score': {},
+            'dislikes': {},
         }
         with open(os.path.join(PROBLEMS_DIR, '{}.problem.json'.format(id))) as f:
             prob = json.load(f)
@@ -37,23 +39,20 @@ def show_problems():
             context['epsilon'] = prob['epsilon']
 
         best = df_minimial_dislikes.loc[id]['minimal dislikes']
-        context['dislikes_best'] = best
-
-        context['score_submit'] = 'no solution'
-        context['dislikes_submit'] = 'no solution'
+        context['dislikes']['best'] = best
         pose_path = os.path.join(SUBMIT_DIR, '{}.pose.json'.format(id)) 
         if os.path.isfile(pose_path):
             with open(pose_path) as f:
-                prob = json.load(f)
+                pose = json.load(f)
                 try:
-                    if prob['meta']['judge']['is_valid']:
-                        mine = prob['meta']['judge']['dislikes']
-                        context['dislikes_submit'] = mine
-                        context['score_submit'] = int(math.ceil(1000 * math.log2(vertices * edges * hole) * math.sqrt((best + 1) / (mine + 1))))
+                    if pose['meta']['judge']['is_valid']:
+                        mine = pose['meta']['judge']['dislikes']
+                        context['dislikes']['submit'] = mine
+                        context['score']['submit'] = int(math.ceil(1000 * math.log2(vertices * edges * hole) * math.sqrt((best + 1) / (mine + 1))))
                     else:
-                        context['dislikes_submit'] = 'infeasible'
+                        context['dislikes']['submit'] = 'infeasible'
                 except:
-                    context['dislikes_submit'] = 'missing meta'
+                    context['dislikes']['submit'] = 'missing meta'
 
         problems.append(context)
 
