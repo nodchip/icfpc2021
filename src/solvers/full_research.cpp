@@ -115,8 +115,9 @@ std::vector<Point> able_points(SProblemPtr problem, SSolutionPtr solution, int v
 }
 
 
-SSolutionPtr dfs_able_points(SProblemPtr problem, SSolutionPtr solution, std::vector<int> decided_points, std::vector<int> restriction_edges, const mat& vertices_distances, int V) {
-
+SSolutionPtr dfs_able_points(SProblemPtr problem, SSolutionPtr solution, std::vector<int> decided_points, std::vector<int> restriction_edges, const mat& vertices_distances, int V, long long& counter) {
+	counter++;
+	if (counter > 1e10) return nullptr;
 	if (decided_points.size() == V) {
 		auto judgement = judge(*problem, *solution);
 		if (judgement.is_valid()) return solution;
@@ -135,7 +136,7 @@ SSolutionPtr dfs_able_points(SProblemPtr problem, SSolutionPtr solution, std::ve
 	restriction_edges[most_restricted_point] = -10000000;
 	for (auto point : cands) {
 		solution->vertices[most_restricted_point] = point;
-		auto sol = dfs_able_points(problem, solution, decided_points, restriction_edges, vertices_distances, V);
+		auto sol = dfs_able_points(problem, solution, decided_points, restriction_edges, vertices_distances, V, counter);
 		if (sol) return sol;
 	}
 	return nullptr;
@@ -143,8 +144,10 @@ SSolutionPtr dfs_able_points(SProblemPtr problem, SSolutionPtr solution, std::ve
 
 }
 
-SSolutionPtr dfs_holes(SProblemPtr problem, const mat& hole_distances, const mat& vertices_distances, const mat& upperlimit_distances, std::vector<int> v, int V, int H, Timer& timer) {
+SSolutionPtr dfs_holes(SProblemPtr problem, const mat& hole_distances, const mat& vertices_distances, const mat& upperlimit_distances, std::vector<int> v, int V, int H, Timer& timer, long long& counter) {
 	constexpr int one_min = 1000 * 60;
+	counter++;
+	if (counter > 1e10) return nullptr;
 	//LOG(INFO) << "v.size is : " << v.size();
 	//if (timer.elapsed_ms() > one_min) return nullptr;
  	if (v.size() >= H) {
@@ -157,7 +160,7 @@ SSolutionPtr dfs_holes(SProblemPtr problem, const mat& hole_distances, const mat
 			points[e] = problem->hole_polygon[i];
 		}
 		SSolutionPtr solution(new SSolution(points));
-		return dfs_able_points(problem, solution, v, restriction_edges, vertices_distances, V);
+		return dfs_able_points(problem, solution, v, restriction_edges, vertices_distances, V, counter);
 
 	}
 	else {
@@ -183,7 +186,7 @@ SSolutionPtr dfs_holes(SProblemPtr problem, const mat& hole_distances, const mat
 			if (okay) {
 				//LOG(INFO) << "dfs_holes:: v is ";
 				//for (auto e : v) LOG(INFO) << e;
-				auto sol = dfs_holes(problem, hole_distances, vertices_distances, upperlimit_distances, v, V, H, timer);
+				auto sol = dfs_holes(problem, hole_distances, vertices_distances, upperlimit_distances, v, V, H, timer, counter);
 				if (sol) return sol;
 			}
 			v.pop_back();
@@ -221,10 +224,10 @@ bool full_research(SProblemPtr problem, SSolutionPtr& solution, Timer& timer) {
 	}
 	mat hole_distances(H, vec(H, 0));
 	for (int i = 0; i < H; i++) for (int j = 0; j < H; j++) if (i != j) hole_distances[i][j] = distance2(problem->hole_polygon[i], problem->hole_polygon[j]);
-
+	long long counter = 0;
 	std::vector<std::vector<int>> ret;
 	std::vector<int> v = {};
-	auto sol = dfs_holes(problem, hole_distances, vertices_distances, upperlimit_distances, v, V, H, timer);
+	auto sol = dfs_holes(problem, hole_distances, vertices_distances, upperlimit_distances, v, V, H, timer, counter);
 	if (sol) {
 		solution = sol;
 		return true;
