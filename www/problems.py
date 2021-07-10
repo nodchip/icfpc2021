@@ -33,6 +33,22 @@ def show_problems():
             'max_score': get_score(problem),
         })
 
+        def get_state(p, l):
+            d = p['dislikes']
+            b = p['best_dislikes']
+            if d is None:
+                if l is not None:
+                    return 'danger'
+            else:
+                if l is None or d < l:
+                    return 'warning'
+                if d > l:
+                    return 'danger'
+                if d == b:
+                    return 'success'
+            return None
+
+        local_dislikes = solutions[id][0]['meta']['judge']['dislikes'] if solutions[id] else None
         context = {
             'id': id,
             'image': 'images/{}.problem.png'.format(id),
@@ -43,27 +59,8 @@ def show_problems():
             'num_holes': len(problem['hole']),
             'num_verts': len(problem['figure']['vertices']),
             'solutions': [solution_context(problem, x) for x in solutions[id]],
+            'state': get_state(problem, local_dislikes),
         }
-
-        def get_state(d, b, l):
-            if d is None:
-                if l is not None:
-                    return 'danger'
-            else:
-                if l is None:
-                    return 'warning'
-
-                if d < l:
-                    return 'warning'
-                if d > l:
-                    return 'danger'
-                if d == b:
-                    return 'success'
-            return None
-
-        best_dislikes = problem['best_dislikes']
-        local_dislikes = solutions[id][0]['meta']['judge']['dislikes'] if solutions[id] else None
-        context['state'] = get_state(dislikes, best_dislikes, local_dislikes)
 
         problem_contexts.append(context)
 
