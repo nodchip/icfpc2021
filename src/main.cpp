@@ -69,6 +69,7 @@ int main(int argc, char* argv[]) {
     CLI11_PARSE(app, argc, argv);
 
     if (sub_solve->parsed()) {
+      solver_name = SolverRegistry::getCanonicalSolverName(solver_name);
       LOG(ERROR) << fmt::format("Solver   : {}", solver_name);
 
       auto solver = SolverRegistry::getSolver(solver_name);
@@ -146,6 +147,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (sub_try_globalist->parsed()) {
+      solver_name = SolverRegistry::getCanonicalSolverName(solver_name);
       LOG(ERROR) << fmt::format("Solver   : {}", solver_name);
 
       auto solver = SolverRegistry::getSolver(solver_name);
