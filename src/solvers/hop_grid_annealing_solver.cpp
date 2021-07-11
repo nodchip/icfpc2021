@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include <cmath>
+#include <fmt/format.h>
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/geometries/polygon.hpp>
@@ -35,6 +36,9 @@ BoostPolygon ToBoostPolygon(const std::vector<T>& points) {
   BoostPolygon polygon;
   for (std::size_t i = 0; i <= points.size(); ++i) {
     polygon.outer().push_back(ToBoostPoint(points[i % points.size()]));
+  }
+  if (bg::area(polygon) < 0.0) {
+    bg::reverse(polygon);
   }
   return polygon;
 }
@@ -118,6 +122,7 @@ class Solver : public SolverBase {
       if (feasible && updated_cost < best_feasible_cost) {
         best_feasible_cost = updated_cost;
         best_feasible_pose = pose;
+        if (editor) editor->set_persistent_custom_stat(fmt::format("best_cost = {}", best_feasible_cost));
       }
       const double T = std::pow(T0, 1.0 - progress) * std::pow(T1, progress);
       if (std::uniform_real_distribution(0.0, 1.0)(rng_) < std::exp(-(updated_cost - cost) / T)) {
@@ -276,6 +281,7 @@ class Solver : public SolverBase {
       }
 
       if (editor && iter % 100 == 0) {
+        editor->set_oneshot_custom_stat(fmt::format("iter = {}/{}", iter, num_iters));
         editor->set_pose(std::make_shared<SSolution>(pose));
         if (auto show_result = editor->show(1); show_result.edit_result) {
           pose = show_result.edit_result->pose_after_edit->vertices;

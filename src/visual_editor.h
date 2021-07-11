@@ -41,6 +41,9 @@ struct SVisualEditor {
     int get_mouseover_node_id() const;
     static void callback(int e, int x, int y, int f, void* param);
 
+    void set_oneshot_custom_stat(const std::string& stat_str);
+    void set_persistent_custom_stat(const std::string& stat_str);
+
     bool set_pose(SSolutionPtr pose);
     SSolutionPtr get_pose() const;
     SShowResult show(int wait);

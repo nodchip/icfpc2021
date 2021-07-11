@@ -7,7 +7,8 @@
 #include "timer.h"
 #include "judge.h"
 
-#if 0
+#define USE_BOOST_GEOMETRY
+#if defined(USE_BOOST_GEOMETRY)
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/geometries/polygon.hpp>
@@ -28,6 +29,9 @@ BoostPolygon ToBoostPolygon(const std::vector<T>& points) {
   BoostPolygon polygon;
   for (std::size_t i = 0; i <= points.size(); ++i) {
     polygon.outer().push_back(ToBoostPoint(points[i % points.size()]));
+  }
+  if (bg::area(polygon) < 0.0) {
+    bg::reverse(polygon);
   }
   return polygon;
 }
@@ -52,12 +56,13 @@ void test_bg() {
     boost::geometry::read_wkt(
         "POLYGON((0 0, 10 0, 10 5, 5 5, 5 10, 0 10))", blue);
 
+    if (bg::area(blue) < 0.0) {
+      bg::reverse(blue);
+    }
+
     BoostLinestring ls({ToBoostPoint(Point(5.0, 8.0)), ToBoostPoint(Point(8.0, 5.0))});
 
-    std::vector<BoostLinestring> output;
-    boost::geometry::difference(ls, blue, output);
-
-    LOG(INFO) << "linestring - blue:" << output.size(); // zero ...
+    LOG(INFO) << "linestring coverd by blue?:" << boost::geometry::covered_by(ls, blue);
 
 }
 #endif
@@ -66,20 +71,14 @@ SJudgeResult judge(const SProblem& problem, const SSolution& solution) {
   SJudgeResult res;
 
   // figure does not intersect with edges of the hole.
-#if 0
-  test_bg();
+#if defined(USE_BOOST_GEOMETRY)
+  //test_bg();
 
   auto hole_polygon_ = ToBoostPolygon(problem.hole_polygon);
   for (size_t iedge = 0; iedge < problem.edges.size(); ++iedge) {
     const auto [a, b] = problem.edges[iedge];
     BoostLinestring linestring{ToBoostPoint(solution.vertices[a]), ToBoostPoint(solution.vertices[b])};
-    std::vector<BoostLinestring> differences;
-    bg::difference(linestring, hole_polygon_, differences);
-    bool intersects = false;
-    for (const auto& segment : differences) {
-      intersects = true;
-    }
-    if (intersects) {
+    if (!bg::covered_by(linestring, hole_polygon_)) {
       res.out_of_hole_edges.push_back(iedge);
     }
   }

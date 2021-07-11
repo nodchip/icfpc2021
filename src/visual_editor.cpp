@@ -73,6 +73,8 @@ struct SCanvas {
     int num_no_satisfy_stretch = 0;
     int num_gained_bonuses = 0;
     bool is_valid = false;
+    std::string oneshot_custom_stat;
+    std::string persistent_custom_stat;
 
     bool draw_distant_hole_vertex = true;
     bool draw_tolerated_vertex = true;
@@ -112,10 +114,22 @@ struct SCanvas {
         return cv::Scalar(0, 255, 0);
     }
 
+    void set_oneshot_custom_stat(const std::string& stat_str) { oneshot_custom_stat = stat_str; }
+    void set_persistent_custom_stat(const std::string& stat_str) { persistent_custom_stat = stat_str; }
+
     void draw_stats(cv::Mat& img) {
         std::string stat_str = fmt::format("dislikes={}, fit={}(NG edge {} vert {}), stretch={}(NG {}), is_valid={}, bonus={}",
           dislikes, fit_in_hole, num_no_fit_in_hole_edge, num_no_fit_in_hole_vert, satisfy_stretch, num_no_satisfy_stretch, is_valid, num_gained_bonuses);
-        cv::putText(img, stat_str, cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 0.7, is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 128), 1, cv::LINE_AA);
+        int y = 30;
+        cv::putText(img, stat_str, cv::Point(20, y), cv::FONT_HERSHEY_SIMPLEX, 0.7, is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 128), 1, cv::LINE_AA);
+        y += 30;
+        if (!persistent_custom_stat.empty()) {
+          cv::putText(img, persistent_custom_stat, cv::Point(20, y), cv::FONT_HERSHEY_SIMPLEX, 0.7, is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 128), 1, cv::LINE_AA);
+        }
+        y += 30;
+        if (!oneshot_custom_stat.empty()) {
+          cv::putText(img, oneshot_custom_stat, cv::Point(20, y), cv::FONT_HERSHEY_SIMPLEX, 0.7, is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 128), 1, cv::LINE_AA);
+        }
     }
 
     void draw_edge_lengths(cv::Mat& img) {
@@ -342,6 +356,13 @@ SVisualEditor::SVisualEditor(SProblemPtr problem, const std::string& solver_name
 SVisualEditor::~SVisualEditor() {
 }
 
+void SVisualEditor::set_oneshot_custom_stat(const std::string& stat_str) {
+  canvas->set_oneshot_custom_stat(stat_str);
+}
+void SVisualEditor::set_persistent_custom_stat(const std::string& stat_str) {
+  canvas->set_persistent_custom_stat(stat_str);
+}
+
 bool SVisualEditor::set_pose(SSolutionPtr pose) {
     canvas->set_pose(pose);
     return false;
@@ -434,6 +455,9 @@ SShowResult SVisualEditor::show(int wait) {
       }
     }
     cv::imshow(window_name, canvas->img);
+    if (!in_internal_edit_loop()) {
+      canvas->oneshot_custom_stat.clear();
+    }
     return res;
 }
 
