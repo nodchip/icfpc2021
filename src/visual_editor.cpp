@@ -351,24 +351,28 @@ SSolutionPtr SVisualEditor::get_pose() const {
     return canvas->solution;
 }
 
-int SVisualEditor::show(int wait) {
-    int c = cv::waitKey(wait);
-    if (c == 27) {
-        return c;
+SShowResult SVisualEditor::show(int wait) {
+    SShowResult res(cv::waitKey(wait));
+    if (res.key == 27) {
+      if (in_internal_edit_loop()) {
+        res.key = 'm';
+      } else {
+        return res.key;
+      }
     }
-    if (c == 'd') {
+    if (res.key == 'd') {
         canvas->draw_distant_hole_vertex = !canvas->draw_distant_hole_vertex;
         canvas->update(-1);
     }
-    if (c == 'e') {
+    if (res.key == 'e') {
         canvas->draw_edge_lengths_mode = !canvas->draw_edge_lengths_mode;
         canvas->update(-1);
     }
-    if (c == 't') {
+    if (res.key == 't') {
         canvas->draw_tolerated_vertex = !canvas->draw_tolerated_vertex;
         canvas->update(get_mouseover_node_id());
     }
-    if (c == 's') {
+    if (res.key == 's') {
         const std::string file_path = "intermediate.pose.json";
         std::ofstream ofs(file_path);
         auto json = canvas->solution->json();
@@ -377,28 +381,60 @@ int SVisualEditor::show(int wait) {
         ofs << json;
         LOG(INFO) << "saved: " << file_path;
     }
-    if (c == 'h') {
+    if (res.key == 'h') {
         canvas->shift(-1, 0);
         canvas->update(-1);
     }
-    if (c == 'j') {
+    if (res.key == 'j') {
         canvas->shift(0, 1);
         canvas->update(-1);
     }
-    if (c == 'k') {
+    if (res.key == 'k') {
         canvas->shift(0, -1);
         canvas->update(-1);
     }
-    if (c == 'l') {
+    if (res.key == 'l') {
         canvas->shift(1, 0);
         canvas->update(-1);
     }
-    if (c == 'r') {
+    if (res.key == 'r') {
         canvas->rotate_clockwise();
         canvas->update(-1);
     }
+    if (res.key == 'm') { // toggle internal edit mode.
+      LOG(INFO) << "in internal edit loop? " << in_internal_edit_loop();
+      if (in_internal_edit_loop()) {
+        LOG(INFO) << "leaving internal edit loop.";
+        CHECK(edit_info);
+        edit_info->pose_after_edit = get_pose()->clone();
+        edit_info->moved_vertex_indices.clear();
+        for (int i = 0; i < edit_info->pose_before_edit->vertices.size(); ++i) {
+          if (edit_info->pose_before_edit->vertices[i] != edit_info->pose_after_edit->vertices[i]) {
+            edit_info->moved_vertex_indices.push_back(i);
+          }
+        }
+        LOG(INFO) << "leaving internal edit loop. edited = " << edit_info->moved_vertex_indices.size();
+        edit_info = nullptr;
+        res.key = 27; // ESC
+      } else {
+        LOG(INFO) << "entering internal edit loop.";
+        CHECK(!edit_info);
+        res.edit_result = SShowResult::SEditResult();
+        res.edit_result->pose_before_edit = get_pose()->clone();
+        edit_info = &res.edit_result.value();
+        while (true) {
+          SShowResult res_internal = show(wait);
+          if (res_internal.key == 27) {
+            break;
+          }
+        }
+        CHECK(!edit_info);
+        CHECK(res.edit_result->pose_before_edit);
+        CHECK(res.edit_result->pose_after_edit);
+      }
+    }
     cv::imshow(window_name, canvas->img);
-    return c;
+    return res;
 }
 
 int SVisualEditor::get_mouseover_node_id() const {

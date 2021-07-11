@@ -333,7 +333,9 @@ public:
                     << ", accept_rate = " << double(accepted) / loop
                     << ", score = " << now_score;
                 editor->set_pose(std::make_shared<SSolution>(pose));
-                int c = editor->show(1);
+                if (auto show_result = editor->show(1); show_result.edit_result) {
+                  pose = show_result.edit_result->pose_after_edit->vertices;
+                }
             }
             STransPtr trans = create_random_trans(pose, now_score);
             if (!trans) continue;
