@@ -11,7 +11,7 @@ using Point2d = std::pair<double, double>;
 using Line = std::array<Point, 2>;
 
 struct SBonus {
-    enum class Type { GLOBALIST, BREAK_A_LEG, INVALID };
+    enum class Type { GLOBALIST, BREAK_A_LEG, WALLHACK, INVALID };
     static constexpr integer DUMMY_PROBLEM_ID = -1;
 
     Type type;
@@ -22,11 +22,13 @@ struct SBonus {
     static Type parse_bonus_name(const std::string& name) {
       if (name == "GLOBALIST") return Type::GLOBALIST;
       if (name == "BREAK_A_LEG") return Type::BREAK_A_LEG;
+      if (name == "WALLHACK") return Type::WALLHACK;
       return Type::INVALID;
     }
     static const char* bonus_name(Type type) {
       if (type == Type::GLOBALIST) return "GLOBALIST";
       if (type == Type::BREAK_A_LEG) return "BREAK_A_LEG";
+      if (type == Type::WALLHACK) return "WALLHACK";
       return "INVALID";
     }
 };
@@ -41,6 +43,7 @@ struct SProblem {
     std::vector<Point> vertices;
     std::vector<Edge> edges;
     bool is_globalist_mode = false; // solve this problem in GLOBALIST mode.
+    bool is_wallhack_mode = false; // solve this problem in WALLHACK mode.
     SProblem() {};
     SProblem(const nlohmann::json& json);
     static SProblemPtr load_file(const std::string& path);

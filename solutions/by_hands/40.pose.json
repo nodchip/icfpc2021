@@ -1,1 +1,1 @@
-{"meta":{"created_at":"2021/07/10 20:14:16","git_commit":"3f2bd1b7d7c8d796d1a6ae5682b4c197839a662e","judge":{"dislikes":6412,"fit_in_hole":true,"is_valid":true,"satisfy_stretch":true},"solver":"ManualSolver"},"vertices":[[31,1],[26,33],[37,65],[59,17],[3,59],[24,30]]}
+{"meta":{"created_at":"2021/07/10 20:14:16","git_commit":"3f2bd1b7d7c8d796d1a6ae5682b4c197839a662e","judge":{"dislikes":6412,"fit_in_hole":true,"gained_bonuses":[],"is_valid":true,"satisfy_stretch":true},"solver":"ManualSolver"},"vertices":[[31,1],[26,33],[37,65],[59,17],[3,59],[24,30]]}

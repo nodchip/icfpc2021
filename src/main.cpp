@@ -35,12 +35,16 @@ int main(int argc, char* argv[]) {
     bool output_judge = true;
     bool visualize = false;
     bool post_edit = false;
+    bool offer_globalist_bonus = false;
+    bool offer_wallhack_bonus = false;
     sub_solve->add_option("solver_name", solver_name, "solver name");
     sub_solve->add_option("problem_json", problem_json, "problem JSON file path");
     sub_solve->add_option("solution_json", solution_json, "output solution JSON file path (optional)");
     sub_solve->add_option("initial_solution_json", initial_solution_json, "input solution JSON file path (optional)");
     sub_solve->add_flag("-m,--output-meta,!--no-output-meta", output_meta, "output meta info to solution JSON");
     sub_solve->add_flag("-j,--output-judge,!--no-output-judge", output_judge, "output judge info to solution JSON");
+    sub_solve->add_flag("--offer-globalist", offer_globalist_bonus, "offer GLOBALIST bonus from nowhere");
+    sub_solve->add_flag("--offer-wallhack", offer_wallhack_bonus, "offer WALLHACK bonus from nowhere");
     sub_solve->add_flag("--visualize", visualize, "realtime visualize");
     sub_solve->add_flag("--post-edit", post_edit, "post edit output");
 
@@ -68,7 +72,10 @@ int main(int argc, char* argv[]) {
         return 0;
       }
       SProblemPtr problem = SProblem::load_file_ext(problem_json);
+      problem->is_globalist_mode = offer_globalist_bonus;
+      problem->is_wallhack_mode = offer_wallhack_bonus;
       LOG(INFO) << fmt::format("Problem  : {}", problem_json);
+      LOG(INFO) << fmt::format("Offerred bonuses: GLOBALIST={}, WALLHACK={}", offer_globalist_bonus, offer_wallhack_bonus);
 
       SSolutionPtr initial_solution;
       if (std::filesystem::exists(initial_solution_json)) {

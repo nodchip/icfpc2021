@@ -118,17 +118,21 @@ struct SCanvas {
     void set_persistent_custom_stat(const std::string& stat_str) { persistent_custom_stat = stat_str; }
 
     void draw_stats(cv::Mat& img) {
-        std::string stat_str = fmt::format("dislikes={}, fit={}(NG edge {} vert {}), stretch={}(NG {}), is_valid={}, bonus={}",
-          dislikes, fit_in_hole, num_no_fit_in_hole_edge, num_no_fit_in_hole_vert, satisfy_stretch, num_no_satisfy_stretch, is_valid, num_gained_bonuses);
+        std::string stat_str = fmt::format("[{}] dislikes={}, fit={}(NG edge {} vert {}), stretch={}(NG {}), bonuses[offerred={}{}, gained={}]",
+          is_valid ? "O" : "X",
+          dislikes, fit_in_hole, num_no_fit_in_hole_edge, num_no_fit_in_hole_vert, satisfy_stretch, num_no_satisfy_stretch,
+          problem->is_globalist_mode ? "GLOBALIST ": "",
+          problem->is_wallhack_mode ? "WALLHACK": "",
+          num_gained_bonuses);
         int y = 30;
-        cv::putText(img, stat_str, cv::Point(20, y), cv::FONT_HERSHEY_SIMPLEX, 0.7, is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 128), 1, cv::LINE_AA);
+        cv::putText(img, stat_str, cv::Point(20, y), cv::FONT_HERSHEY_SIMPLEX, 0.5, is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 128), 1, cv::LINE_AA);
         y += 30;
         if (!persistent_custom_stat.empty()) {
-          cv::putText(img, persistent_custom_stat, cv::Point(20, y), cv::FONT_HERSHEY_SIMPLEX, 0.7, is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 128), 1, cv::LINE_AA);
+          cv::putText(img, persistent_custom_stat, cv::Point(20, y), cv::FONT_HERSHEY_SIMPLEX, 0.5, is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 128), 1, cv::LINE_AA);
         }
         y += 30;
         if (!oneshot_custom_stat.empty()) {
-          cv::putText(img, oneshot_custom_stat, cv::Point(20, y), cv::FONT_HERSHEY_SIMPLEX, 0.7, is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 128), 1, cv::LINE_AA);
+          cv::putText(img, oneshot_custom_stat, cv::Point(20, y), cv::FONT_HERSHEY_SIMPLEX, 0.5, is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 128), 1, cv::LINE_AA);
         }
     }
 
@@ -178,10 +182,10 @@ struct SCanvas {
         // judge
         auto res = judge(*problem, *solution);
         dislikes = res.dislikes;
-        fit_in_hole = res.fit_in_hole();
+        fit_in_hole = res.fit_in_hole_except_wallhack();
         satisfy_stretch = res.satisfy_stretch();
-        num_no_fit_in_hole_vert = res.out_of_hole_vertices.size();
-        num_no_fit_in_hole_edge = res.out_of_hole_edges.size();
+        num_no_fit_in_hole_vert = res.out_of_hole_vertices.size() - (res.wallhacking_index.has_value() ? 1 : 0);
+        num_no_fit_in_hole_edge = res.out_of_hole_edges_except_wallhack.size();
         num_no_satisfy_stretch = res.stretch_violating_edges.size();
         num_gained_bonuses = res.gained_bonus_indices.size();
         for (int eid = 0; eid < problem->edges.size(); eid++) {
@@ -199,7 +203,7 @@ struct SCanvas {
               }
           }
         }
-        for (int eid : res.out_of_hole_edges) {
+        for (int eid : res.out_of_hole_edges_except_wallhack) {
             auto [u, v] = problem->edges[eid];
             auto [x1, y1] = cvt(solution->vertices[u]);
             auto [x2, y2] = cvt(solution->vertices[v]);
@@ -210,6 +214,10 @@ struct SCanvas {
             auto [x1, y1] = cvt(solution->vertices[u]);
             auto [x2, y2] = cvt(solution->vertices[v]);
             draw_line(img, x1, y1, x2, y2, edge_colors[eid], 2);
+        }
+        if (res.wallhacking_index) {
+            auto [x, y] = cvt(solution->vertices[*res.wallhacking_index]);
+            draw_circle(img, x, y, std::max(12, int(mag)), cv::Scalar(32, 64, 128), 3);
         }
         if (selected_id != -1) {
             if (draw_tolerated_vertex) {
@@ -289,6 +297,8 @@ struct SCanvas {
               color = cv::Scalar(32, 192, 192); 
             } else if (bonus.type == SBonus::Type::BREAK_A_LEG) {
               color = cv::Scalar(192, 192, 32); 
+            } else if (bonus.type == SBonus::Type::WALLHACK) {
+              color = cv::Scalar(64, 128, 255); 
             }
             cv::circle(img_base, cvt(x, y), 20, color, cv::FILLED);
         }

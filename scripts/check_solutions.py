@@ -32,7 +32,9 @@ def main():
         with open(path, 'r') as fi:
             j = json.load(fi)
 
-        print(path, j['meta']['judge']['is_valid'], j['meta']['judge']['dislikes'] if j['meta']['judge']['is_valid'] else 'N/A')
+        result = j['meta']['judge']
+        print(path, result['is_valid'], result['dislikes'] if result['is_valid'] else 'N/A',
+            'Bonus' if result['gained_bonuses'] else '')
 
 if __name__ == '__main__':
     main()

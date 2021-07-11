@@ -1,11 +1,37 @@
 #include "stdafx.h"
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/point_xy.hpp>
+#include <boost/geometry/geometries/polygon.hpp>
 #include "contest_types.h"
 #include "solver_registry.h"
 
 namespace SimpleMatchingSolver {
 
+namespace bg = boost::geometry;
+using BoostPoint = bg::model::d2::point_xy<double>;
+using BoostPolygon = bg::model::polygon<BoostPoint>;
+using BoostLinestring = bg::model::linestring<BoostPoint>;
+
+template <typename T>
+BoostPoint ToBoostPoint(const T& point) {
+  const auto [x, y] = point;
+  return BoostPoint(x, y);
+}
+
+template <typename T>
+BoostPolygon ToBoostPolygon(const std::vector<T>& points) {
+  BoostPolygon polygon;
+  for (std::size_t i = 0; i <= points.size(); ++i) {
+    polygon.outer().push_back(ToBoostPoint(points[i % points.size()]));
+  }
+  if (bg::area(polygon) < 0.0) {
+    bg::reverse(polygon);
+  }
+  return polygon;
+}
+
 template <typename T, typename U>
-double SquaredDistance(const T& vertex0, const U& vertex1) {
+auto SquaredDistance(const T& vertex0, const U& vertex1) {
   const auto [x0, y0] = vertex0;
   const auto [x1, y1] = vertex1;
   return (x0 - x1) * (x0 - x1) + (y0 - y1) * (y0 - y1);
@@ -18,6 +44,7 @@ class Solver : public SolverBase {
     vertices_ = args.problem->vertices;
     edges_ = args.problem->edges;
     epsilon_ = args.problem->epsilon;
+    const auto hole_polygon = ToBoostPolygon(hole_);
 
     N_ = vertices_.size();
     queued_.assign(N_, -1);
@@ -39,7 +66,12 @@ class Solver : public SolverBase {
       hole_candidates_.push_back(i);
       hole_distances_[i].resize(M_);
       for (int j = 0; j < M_; ++j) {
-        hole_distances_[i][j] = SquaredDistance(hole_[i], hole_[j]);
+        const BoostLinestring linestring{ToBoostPoint(hole_[i]), ToBoostPoint(hole_[j])};
+        if (bg::covered_by(linestring, hole_polygon)) {
+          hole_distances_[i][j] = SquaredDistance(hole_[i], hole_[j]);
+        } else {
+          hole_distances_[i][j] = -1;
+        }
       }
     }
 
