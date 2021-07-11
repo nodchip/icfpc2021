@@ -57,6 +57,7 @@ cv::Mat_<cv::Vec3b> create_image(SProblemPtr prob) {
 struct SCanvas {
     SProblemPtr problem;
     SSolutionPtr solution;
+    std::set<int> marked_vertex_indices;
 
     integer img_offset;
     integer img_base_size;
@@ -84,7 +85,7 @@ struct SCanvas {
 
     cv::Scalar violating_vertex_color = cv::Scalar(128, 0, 128);
     cv::Scalar out_of_hole_edge_color = cv::Scalar(128, 0, 128);
-
+    cv::Scalar marked_vartex_color = cv::Scalar(128, 128, 0);
     inline cv::Point cvt(int x, int y) { return cv::Point((x + img_offset) * mag, (y + img_offset) * mag); };
     inline cv::Point cvt(const Point& p) { return cvt(p.first, p.second); }
     inline Point icvt(int x, int y) { return { x / mag - img_offset, y / mag - img_offset }; }
@@ -128,10 +129,10 @@ struct SCanvas {
           oss_using_bonus << SBonus::bonus_name(b.type);
           oss_using_bonus << " ";
         }
-        std::string stat_str = fmt::format("[{}] dislikes={}, fit={}(NG edge {} vert {}), stretch={}(NG {}), bonuses[offerred={}, using={}, gained={}]",
+        std::string stat_str = fmt::format("[{}] DL={}, fit={}(NG edge {} vert {}), stretch={}(NG {}), B[offerred={}, using={}, gained={}], mark {}",
           is_valid ? "O" : "X",
           dislikes, fit_in_hole, num_no_fit_in_hole_edge, num_no_fit_in_hole_vert, satisfy_stretch, num_no_satisfy_stretch,
-          oss_bonus.str(), oss_using_bonus.str(), num_gained_bonuses);
+          oss_bonus.str(), oss_using_bonus.str(), num_gained_bonuses, marked_vertex_indices.size());
         int y = 30;
         cv::putText(img, stat_str, cv::Point(20, y), cv::FONT_HERSHEY_SIMPLEX, 0.5, is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 128), 1, cv::LINE_AA);
         y += 30;
@@ -271,6 +272,10 @@ struct SCanvas {
             auto [x, y] = cvt(solution->vertices[vid]);
             draw_circle(img, x, y, std::max(2, int(mag) / 3), violating_vertex_color, cv::FILLED);
         }
+        for (int vid : marked_vertex_indices) {
+          auto [x, y] = cvt(solution->vertices[vid]);
+          draw_circle(img, x, y, std::max(12, int(mag) / 2), marked_vartex_color, 3);
+        }
         draw_stats(img);
         if (draw_edge_lengths_mode) {
             draw_edge_lengths(img);
@@ -379,6 +384,17 @@ void SVisualEditor::set_oneshot_custom_stat(const std::string& stat_str) {
 }
 void SVisualEditor::set_persistent_custom_stat(const std::string& stat_str) {
   canvas->set_persistent_custom_stat(stat_str);
+}
+
+void SVisualEditor::set_marked_indices(const std::vector<int>& marked_indices) {
+  canvas->marked_vertex_indices.clear();
+  std::copy(marked_indices.begin(), marked_indices.end(), std::inserter(canvas->marked_vertex_indices, canvas->marked_vertex_indices.end()));
+}
+
+std::vector<int> SVisualEditor::get_marked_indices() const {
+  std::vector<int> idx;
+  std::copy(canvas->marked_vertex_indices.begin(), canvas->marked_vertex_indices.end(), std::back_inserter(idx));
+  return idx;
 }
 
 bool SVisualEditor::set_pose(SSolutionPtr pose) {
@@ -506,6 +522,14 @@ void SVisualEditor::callback(int e, int x, int y, int f, void* param) {
         if (mouseover_id != -1) {
             s->selected_vertex_id = mouseover_id;
         }
+    }
+    if (mp->clicked_right()) {
+      auto it = s->canvas->marked_vertex_indices.find(mouseover_id);
+      if (it == s->canvas->marked_vertex_indices.end()) {
+        s->canvas->marked_vertex_indices.insert(mouseover_id);
+      } else {
+        s->canvas->marked_vertex_indices.erase(it);
+      }
     }
     if (mp->drugging_left()) {
         int id = s->selected_vertex_id;
