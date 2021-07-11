@@ -1,0 +1,1 @@
+{"bonuses":[],"meta":{"created_at":"2021/07/12 02:23:12","elapsed_s":718.721428,"git_commit":"d784e38a8683b03fad8da1fe78fd0c38690a9153","judge":{"dislikes":10457,"fit_in_hole":true,"gained_bonuses":[],"is_valid":true,"satisfy_stretch":true},"solver":"NaiveSearchSolver"},"vertices":[[0,11],[32,0],[28,35],[57,20],[26,34]]}
