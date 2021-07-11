@@ -18,16 +18,14 @@ WWW_DIR = os.path.join(ROOT_DIR, 'www')
 @app.route('/problems.html')
 def show_problems():
     problems = struct_problems()
-    ids = list(range(1, len(problems) + 1))
-    assert len(ids) == len(problems)
-
-    solutions = get_all_solutions(ids)
+    solutions = get_all_solutions()
     problem_contexts = [make_problem_context(id, problem, solutions.get(id, []))
                         for id, problem in enumerate(problems, start=1)]
 
+    # TODO(peria): Drop the entry for 'INVALID'.
     context = {
         'problems': problem_contexts,
-        'emojis': {'GLOBALIST': '🌏', 'BREAK_A_LEG': '🦵', 'WALLHACK': '🧱'},
+        'emojis': {'GLOBALIST': '🌏', 'BREAK_A_LEG': '🦵', 'WALLHACK': '🧱', 'INVALID': '🧱'},
     }
     return flask.render_template('problems.html', title='Problems', **context)
 
@@ -63,42 +61,44 @@ def make_problem_context(id, problem, solutions):
 
 def solution_context(problem, solution):
     meta = solution['meta']
-    judge = meta.get('judge', None)
 
     context = {
         'solver': meta['solver'],
         'subdir': meta['subdir'],
     }
-
-    if judge:
-        mine = meta['judge']['dislikes']
-        context['dislikes'] = str(mine)
-        context['score'] = str(get_score(problem, mine))
-        context['eligible'] = is_eligible_for_submit(solution)
+    assert 'judge' in meta, '"judge" is not found'
+    judge = meta['judge']
+    dislikes = judge['dislikes']
+    context.update({
+        'gained_bonuses': judge['gained_bonuses'],
+        'dislikes': str(dislikes),
+        'score': str(get_score(problem, dislikes)),
+        'eligible': is_eligible_for_submit(solution),
+    })
  
     return context
 
 
-def get_all_solutions(ids):
-    solutions = dict(zip(ids, [[] for _ in ids]))
-    for subdir, _, files in os.walk(SOLUTIONS_DIR):
-        if not files:
-            continue
-        type = os.path.basename(subdir)
+def get_all_solutions():
+    solutions = {}
+    for base_dir, _, files in os.walk(SOLUTIONS_DIR):
+        subdir = os.path.basename(base_dir)
         for filename in files:
             id = int(re.sub(r'\D', '', filename))
-            solution = load_pose_json(type=type, id=id)
+            solution = load_pose_json(type=subdir, id=id)
             if not solution:
                 continue
-            assert 'meta' in solution, 'No meta info in {}/{}.pose.json'.format(type, id)
+            assert 'meta' in solution, 'No meta info in {}/{}.pose.json'.format(subdir, id)
             if not solution['meta']['judge']['is_valid']:
                 continue
             if 'solver' not in solution['meta']:
-                solution['meta']['solver'] = type
-            solution['meta']['subdir'] = type
+                solution['meta']['solver'] = subdir
+            solution['meta']['subdir'] = subdir
+            if id not in solutions:
+                solutions[id] = []
             solutions[id].append(solution)
-    for id in ids:
-        solutions[id] = sorted(solutions[id], key=lambda x: x['meta']['judge']['dislikes'])
+    for id in solutions.keys():
+        solutions[id].sort(key=lambda x: x['meta']['judge']['dislikes'] * 10 + len(x['meta']['judge']['gained_bonuses']))
     return solutions
 
 
