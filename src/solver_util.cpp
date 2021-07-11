@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "solver_util.h"
 #include "contest_types.h"
+#include "util.h"
+#include "judge.h"
 
 SPinnedIndex::SPinnedIndex(std::mt19937& rng, int N, SVisualEditorPtr editor) : editor(editor), rng(rng), N(N) {
   update_movable_index();
@@ -21,3 +23,11 @@ void SPinnedIndex::update_movable_index() {
   }
 }
 
+void save_solution(SProblemPtr problem, SSolutionPtr solution, const std::string& solver_name, const std::string& file_path) {
+  std::ofstream ofs(file_path);
+  auto json = solution->json();
+  update_meta(json, solver_name);
+  update_judge(*problem, judge(*problem, *solution), json);
+  ofs << json;
+  LOG(INFO) << "saved: " << file_path;
+}

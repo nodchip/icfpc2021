@@ -9,6 +9,7 @@
 #include <boost/geometry/geometries/polygon.hpp>
 #include "contest_types.h"
 #include "solver_registry.h"
+#include "solver_util.h"
 #include "visual_editor.h"
 #include "timer.h"
 #include "judge.h"
@@ -93,8 +94,9 @@ public:
     ret.solution = args.optional_initial_solution ? args.optional_initial_solution : args.problem->create_solution();
 
     // develop.
-    constexpr int report_every_iter = 100000;
+    constexpr int report_every_iter = 10000;
     constexpr int editor_sleep = 1;
+    constexpr bool exhaustive_search = true;
     SVisualEditorPtr editor;
     if (args.visualize) {
       editor = std::make_shared<SVisualEditor>(args.problem, "NaiveSearchSolver", "visualize");
@@ -192,13 +194,17 @@ public:
       }
     }
 
+    integer best_dislikes = std::numeric_limits<integer>::max();
     bool found = false;
     int64_t root_counter = 0;
     int64_t counter = 0;
     int max_depth = 1;
     Timer timer;
     double lazy_elapsed_ms = 0.0; // not always updated.
-    while (!found && !stack.empty()) {
+    while (!stack.empty()) {
+      if (!exhaustive_search && found) {
+        break;
+      }
       StatePtr s = stack.top(); stack.pop();
 
       if (s->depth == 1) {
@@ -212,7 +218,12 @@ public:
         auto temp_solution = args.problem->create_solution(s->vertices);
         auto judge_res = judge(*args.problem, *temp_solution);
         if (judge_res.is_valid()) {
-          ret.solution = temp_solution;
+          if (judge_res.dislikes < best_dislikes) {
+            LOG(INFO) << fmt::format("#{} foud better solution {} -> {}", root_counter, best_dislikes, judge_res.dislikes);
+            ret.solution = temp_solution;
+            best_dislikes = judge_res.dislikes;
+            save_solution(args.problem, ret.solution, "NaiveSearchSolver", "bestsofar.pose.json");
+          }
           found = true;
           report = true;
         }
@@ -220,7 +231,8 @@ public:
 
       if (report) {
         lazy_elapsed_ms = timer.elapsed_ms();
-        const auto stat = fmt::format("root {}/{}({:.2f}%), visited {}, max depth {}, {:.2f} ms, {:.2f} node/s, cache {:.2f} MB",
+        const auto stat = fmt::format("[{}][best DL={}] root {}/{}({:.2f}%), visited {}, max depth {}, {:.2f} ms, {:.2f} node/s, cache {:.2f} MB",
+          found ? "O" : "X", found ? best_dislikes : -1,
           root_counter, interior_points.size(), 100.0 * root_counter / interior_points.size(),
           counter, max_depth, lazy_elapsed_ms, counter / lazy_elapsed_ms * 1e3,
           movable_cache_count * sizeof(Point) / 1024.0 / 1024.0
