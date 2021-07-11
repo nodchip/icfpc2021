@@ -14,12 +14,13 @@ def get_y(point):
     return point[1]
 
 
-def visualize(problem_file_path, pose_file_path, output_file_path):
+def visualize(problem_file_path, pose_file_path=None, output_file_path=None, does_draw_figure=True):
     '''一つの問題を視覚化する。
 
     problem_file_path [必須] 問題ファイルパス。
     pose_file_path [任意] ポーズ (解答) ファイルパス。指定した場合、ポーズも描画する。
     output_file_path [任意] 出力画像ファイルパス。指定しない場合、ウィンドウに出力する。指定した場合、画像ファイルに出力する。
+    does_draw_figure [任意] False にすると problem 内の figure を描画しない。
     '''
     with open(problem_file_path, 'r') as file:
         problem = json.load(file)
@@ -51,11 +52,12 @@ def visualize(problem_file_path, pose_file_path, output_file_path):
         axes.add_patch(plt.Circle(bonus['position'], radius=5, color=color, alpha=0.5))
 
     # figureを描画する
-    for edge in problem['figure']['edges']:
-        src = problem['figure']['vertices'][edge[0]]
-        dst = problem['figure']['vertices'][edge[1]]
-        color = 'gray' if pose_file_path else 'red'
-        plt.plot(*zip(src, dst), color=color)
+    if does_draw_figure:
+        for edge in problem['figure']['edges']:
+            src = problem['figure']['vertices'][edge[0]]
+            dst = problem['figure']['vertices'][edge[1]]
+            color = 'gray' if pose_file_path else 'red'
+            plt.plot(*zip(src, dst), color=color)
 
     # poseを描画する
     if pose_file_path:
@@ -92,20 +94,32 @@ def main():
     parser.add_argument('--problems', action='store', type=str,
                         help='Problem folder path. Use to convert json files to image files.')
     parser.add_argument('--output_image_directory_path', action='store', type=str,
+                        default='.',
                         help='Problem folder path. Use to convert json files to image files.')
+    parser.add_argument('--no_draw_figure', action='store_false',
+                        default=True, dest='does_draw_figure',
+                        help='Do not draw figure in problem.')
     args = parser.parse_args()
 
     if args.problem:
-        visualize(args.problem, args.pose, None)
+        assert args.pose, 'You have to specify --pose'
+        output_file_path = None
+        if args.output_image_directory_path:
+            pose_file_name = os.path.basename(args.pose)
+            output_file_name = os.path.splitext(pose_file_name)[0] + ".png"
+            output_file_path = os.path.join(
+                args.output_image_directory_path, output_file_name)
+        visualize(args.problem, args.pose, output_file_path, args.does_draw_figure)
 
     if args.problems:
+        assert args.output_image_directory_path, 'You have to specify --output_image_directory_path'
         for problem_file_name in os.listdir(args.problems):
             print(problem_file_name)
             problem_file_path = os.path.join(args.problems, problem_file_name)
             output_file_name = os.path.splitext(problem_file_name)[0] + ".png"
             output_file_path = os.path.join(
                 args.output_image_directory_path, output_file_name)
-            visualize(problem_file_path, None, output_file_path)
+            visualize(problem_file_path, None, output_file_path, args.does_draw_figure)
 
 
 if __name__ == '__main__':
