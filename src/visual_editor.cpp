@@ -12,6 +12,8 @@
 #include "solver_registry.h"
 #include "util.h"
 
+namespace {
+
 cv::Rect calc_bb(const std::vector<Point>& points) {
   integer x_min = INT64_MAX, x_max = INT64_MIN;
   integer y_min = INT64_MAX, y_max = INT64_MIN;
@@ -24,60 +26,26 @@ cv::Rect calc_bb(const std::vector<Point>& points) {
   return cv::Rect(x_min, y_min, x_max - x_min, y_max - y_min);
 }
 
-cv::Mat_<cv::Vec3b> create_image(SProblemPtr prob) {
-  auto rect_poly = calc_bb(prob->hole_polygon);
-  auto rect_fig = calc_bb(prob->vertices);
-  integer x_min = std::min(rect_poly.x, rect_fig.x);
-  integer x_max =
-      std::max(rect_poly.x + rect_poly.width, rect_fig.x + rect_fig.width);
-  integer y_min = std::min(rect_poly.y, rect_fig.y);
-  integer y_max =
-      std::max(rect_poly.y + rect_poly.height, rect_fig.y + rect_fig.height);
-  integer img_offset = 5;
-  integer img_base_size = std::max(x_max, y_max) + img_offset * 2;
-  integer mag = 1200 / img_base_size;
-  cv::Mat_<cv::Vec3b> img(img_base_size * mag, img_base_size * mag,
-                          cv::Vec3b(255, 255, 255));
-  auto cvt = [&img_offset, &mag](int x, int y) {
-    return cv::Point((x + img_offset) * mag, (y + img_offset) * mag);
-  };
-  for (int x = x_min; x <= x_max; x++) {
-    for (int y = y_min; y <= y_max; y++) {
-      cv::circle(img, cvt(x, y), 2, cv::Scalar(200, 200, 200), cv::FILLED);
-    }
-  }
-  for (auto [u, v] : prob->edges) {
-    auto [x1, y1] = prob->vertices[u];
-    auto [x2, y2] = prob->vertices[v];
-    cv::line(img, cvt(x1, y1), cvt(x2, y2), cv::Scalar(0, 0, 255), 2);
-  }
-  int nh = prob->hole_polygon.size();
-  for (int i = 0; i < nh; i++) {
-    auto [x1, y1] = prob->hole_polygon[i];
-    auto [x2, y2] = prob->hole_polygon[(i + 1) % nh];
-    cv::line(img, cvt(x1, y1), cvt(x2, y2), cv::Scalar(0, 0, 0), 2);
-  }
-  return img;
-}
+}  // namespace
 
 struct SCanvas {
  private:
   static constexpr int kBaseOffset = 5;
-  static constexpr int kWindowWidthPx = 1200;
-  static constexpr int kWindowHeightPx = 1200;
+  static constexpr int kImageWidthPx = 1000;
+  static constexpr int kImageHeightPx = 1000;
+  static constexpr int kInfoBufferHeightPx = 100;
 
  public:
   SProblemPtr problem;
   SSolutionPtr solution;
   std::set<int> marked_vertex_indices;
 
-  // TODO(peria): Make these const.
   integer img_width;
   integer img_height;
   integer mag;
 
   integer offset_x{kBaseOffset};
-  integer offset_y{kBaseOffset + kBaseOffset};
+  integer offset_y{kBaseOffset};
   cv::Mat_<cv::Vec3b> base_img;
   cv::Mat_<cv::Vec3b> img;
 
@@ -104,11 +72,12 @@ struct SCanvas {
   cv::Scalar marked_vartex_color = cv::Scalar(128, 128, 0);
 
   inline cv::Point cvt(int x, int y) {
-    return cv::Point((x + offset_x) * mag, (y + offset_y) * mag);
+    return cv::Point((x + offset_x) * mag,
+                     (y + offset_y) * mag + kInfoBufferHeightPx);
   };
   inline cv::Point cvt(const Point& p) { return cvt(p.first, p.second); }
   inline Point icvt(int x, int y) {
-    return {x / mag - offset_x, y / mag - offset_y};
+    return {x / mag - offset_x, (y - kInfoBufferHeightPx) / mag - offset_y};
   }
 
   void draw_circle(cv::Mat& img,
@@ -391,7 +360,7 @@ struct SCanvas {
 
   void draw_base_image() {
     integer img_width_px = img_width * mag;
-    integer img_height_px = img_height * mag;
+    integer img_height_px = img_height * mag + kInfoBufferHeightPx;
     base_img = cv::Mat_<cv::Vec3b>(img_height_px, img_width_px,
                                    cv::Vec3b(160, 160, 160));
 
@@ -430,8 +399,7 @@ struct SCanvas {
 
     // Draw grid points.
     for (integer x = -offset_x; x <= -offset_x + img_width; ++x) {
-      for (integer y = -offset_y + kBaseOffset; y <= -offset_y + img_height;
-           ++y) {
+      for (integer y = -offset_y; y <= -offset_y + img_height; ++y) {
         cv::circle(base_img, cvt(x, y), 2, cv::Scalar(200, 200, 200),
                    cv::FILLED);
       }
@@ -456,9 +424,9 @@ struct SCanvas {
         std::max(rect_poly.y + rect_poly.height, rect_fig.y + rect_fig.height);
 
     img_width = x_max + kBaseOffset * 2;
-    img_height = y_max + kBaseOffset * 3;
-    integer mag_x = kWindowWidthPx / img_width;
-    integer mag_y = kWindowHeightPx / img_height;
+    img_height = y_max + kBaseOffset * 2;
+    integer mag_x = kImageWidthPx / img_width;
+    integer mag_y = kImageHeightPx / img_height;
     mag = std::min(mag_x, mag_y);
     edge_colors.resize(problem->edges.size(), cv::Scalar(0, 255, 0));
   }
