@@ -23,6 +23,14 @@ make solver # or if you wish to build only the solver
 make test # or if you wish to build only tests
 ```
 
+### GUI on WSL
+
+1. start a X Server in Windows (VcXsrv https://sourceforge.net/projects/vcxsrv/)
+2. ```
+   export DISPLAY=0.0.0.0:0.0
+   ./solver solve ManualSolver 2
+   ````
+
 ## Build (Visual Studio)
 
 ```

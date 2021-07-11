@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include <cmath>
+#include <iostream>
 #include <fmt/format.h>
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
@@ -7,10 +8,9 @@
 #include "contest_types.h"
 #include "solver_registry.h"
 #include "visual_editor.h"
-#include "solver_util.h"
 #include "judge.h"
 
-namespace HopGridAnnealingSolver {
+namespace HopGridAnnealingSolver2 {
 
 namespace bg = boost::geometry;
 using BoostPoint = bg::model::d2::point_xy<double>;
@@ -57,7 +57,6 @@ double SquaredEdgeLength(const T& vertices, const Edge& edge) {
   return SquaredDistance(vertices[a], vertices[b]);
 }
 
-
 class Solver : public SolverBase {
  public:
   SolverOutputs solve(const SolverArguments& args) override {
@@ -69,16 +68,15 @@ class Solver : public SolverBase {
 
     SVisualEditorPtr editor;
     if (args.visualize) {
-      editor = std::make_shared<SVisualEditor>(args.problem, "HopGridAnnealingSolver", "visualize");
+      editor = std::make_shared<SVisualEditor>(args.problem, "HopGridAnnealingSolver2", "visualize");
     }
 
+    bool show(true);
     const int N = vertices_.size();
     auto pose = vertices_;
-    double cost = std::numeric_limits<double>::infinity();
+    double cost = 1.0e10;
     double best_feasible_cost = std::numeric_limits<double>::infinity();
     std::vector<Point> best_feasible_pose;
-
-    SPinnedIndex pinned_index(rng_, N, editor);
 
     const int num_iters = 100000;
     const double T0 = 1.0e1;
@@ -94,18 +92,40 @@ class Solver : public SolverBase {
       ymax = std::max(ymax, get_y(p));
     }
 
+    std::vector<std::vector<int>> emat(vertices_.size());
+    for (const auto &e : edges_) {
+      emat[e.first].emplace_back(e.second);
+      emat[e.second].emplace_back(e.first);
+    }
+    neighbors_.resize(vertices_.size());
+    for (int i = 0; i < vertices_.size(); ++i) {
+      std::set<int> neighbors;
+      for (const auto &v : emat[i]) {
+        neighbors.emplace(v);
+        for (const auto &v2 : emat[v]) {
+          neighbors.emplace(v2);
+          for (const auto &v3 : emat[v2]) {
+            neighbors.emplace(v3);
+          }
+        }
+      }
+      for (auto v : neighbors) {
+        neighbors_[i].emplace_back(v);
+      }
+    }
+
     // lesser version of tonagi's idea
-    for (auto& p : pose) { p = hole_[0]; }
+//    for (auto& p : pose) { p = hole_[0]; }
 
     auto evaluate_and_descide_rollback = [&]() -> bool {
-      auto [feasible, updated_cost] = Evaluate(pose);
+      auto [feasible, updated_cost] = Evaluate(pose, show);
 
       // tonagi's idea.
       if (false || !best_feasible_pose.empty()) {
         auto res = judge(*args.problem, pose);
         if (!res.fit_in_hole()) {
           feasible = false;
-          updated_cost = DBL_MAX;
+//          updated_cost = DBL_MAX;
         }
       }
 
@@ -123,7 +143,7 @@ class Solver : public SolverBase {
       }
 #endif
 
-      if (feasible && updated_cost < best_feasible_cost) {
+      if (updated_cost < best_feasible_cost) {
         best_feasible_cost = updated_cost;
         best_feasible_pose = pose;
         if (editor) editor->set_persistent_custom_stat(fmt::format("best_cost = {}", best_feasible_cost));
@@ -139,7 +159,7 @@ class Solver : public SolverBase {
     evaluate_and_descide_rollback();
 
     auto single_small_change = [&] { // ynasu87 original
-      const int v = pinned_index.sample_movable_index();
+      const int v = std::uniform_int_distribution(0, N - 1)(rng_);
       const int dx = std::uniform_int_distribution(-1, 1)(rng_);
       const int dy = std::uniform_int_distribution(-1, 1)(rng_);
       auto& [x, y] = pose[v];
@@ -155,9 +175,9 @@ class Solver : public SolverBase {
       const int dx = std::uniform_int_distribution(-1, 1)(rng_);
       const int dy = std::uniform_int_distribution(-1, 1)(rng_);
       auto pose_bak = pose;
-      for (int i : pinned_index.movable_indices) {
-        pose[i].first += dx;
-        pose[i].second += dy;
+      for (auto& p : pose) {
+        p.first += dx;
+        p.second += dy;
       }
       if (evaluate_and_descide_rollback()) {
         pose = pose_bak;
@@ -165,7 +185,7 @@ class Solver : public SolverBase {
     };
 
     auto slight_rotate = [&] {
-      const double deg = std::uniform_real_distribution(-2.0, 2.0)(rng_);
+      const double deg = std::uniform_real_distribution(-180.0, 180.0)(rng_);
       auto pose_bak = pose;
 
       integer curr_ymin = INT_MAX, curr_ymax = INT_MIN;
@@ -181,8 +201,7 @@ class Solver : public SolverBase {
       const double cy = double(curr_ymin + curr_ymax) / 2;
       const double sin = std::sin(deg * 3.1415 / 180.0);
       const double cos = std::cos(deg * 3.1415 / 180.0);
-      for (int i : pinned_index.movable_indices) {
-        auto& p = pose[i];
+      for (auto& p : pose) {
         const double dx = p.first - cx;
         const double dy = p.second - cy;
         p.first  = std::round(dx * cos - dy * sin + cx);
@@ -194,8 +213,8 @@ class Solver : public SolverBase {
     };
 
     auto flip = [&] { // from FlipAnnealingSolver
-      const int v0 = pinned_index.sample_movable_index();
-      const int v1 = pinned_index.sample_movable_index();
+      const int v0 = std::uniform_int_distribution(0, N - 1)(rng_);
+      const int v1 = std::uniform_int_distribution(0, N - 1)(rng_);
       if (v0 == v1) return;
       auto pose_bak = pose;
       auto reflect = [](Point a, Point c, Point v) {
@@ -203,7 +222,7 @@ class Solver : public SolverBase {
       };
       auto diff = pose[v1] - pose[v0];
       Point n = {get_y(diff), -get_x(diff)};
-      for (int v2 : pinned_index.movable_indices) {
+      for (int v2 = 0; v2 < pose.size(); ++v2) {
         if (ccw(pose[v0], pose[v1], pose[v2])) {
           pose[v2] = reflect(n, pose[v0], pose[v2]);
         }
@@ -215,7 +234,7 @@ class Solver : public SolverBase {
 
     auto edges_cache = edges_from_vertex(*args.problem);
     auto hop_grid = [&] { // jump to a tolerated (by at least one edge) point.
-      const int pivot = pinned_index.sample_movable_index();
+      const int pivot = std::uniform_int_distribution(0, N - 1)(rng_);
       const auto pivot_bak = pose[pivot];
       const auto& edges = edges_cache[pivot];
       std::map<Point, double> good_pos; // position -> number of good grid vote.
@@ -260,11 +279,11 @@ class Solver : public SolverBase {
 
     using Action = std::function<void()>;
     std::vector<std::pair<double, Action>> action_probs = {
-      {0.9, single_small_change},
-      {0.01, slight_rotate},
-      {0.01, shift},
-      {0.01, hop_grid},
-      {0.03, flip},
+      {0.98, single_small_change},
+      {0.005, slight_rotate},
+      {0.005, shift},
+      {0.005, hop_grid},
+      {0.005, flip},
     };
     {
       // normalize probs
@@ -285,12 +304,17 @@ class Solver : public SolverBase {
         }
       }
 
+      if (iter % 1000 == 0) {
+        show = true;
+        std::cerr << cost << ", " << best_feasible_cost << std::endl;
+      } else {
+        show = false;
+      }
       if (editor && iter % 100 == 0) {
         editor->set_oneshot_custom_stat(fmt::format("iter = {}/{}", iter, num_iters));
         editor->set_pose(args.problem->create_solution(pose));
         if (auto show_result = editor->show(1); show_result.edit_result) {
           pose = show_result.edit_result->pose_after_edit->vertices;
-          pinned_index.update_movable_index();
         }
       }
     }
@@ -305,14 +329,20 @@ class Solver : public SolverBase {
   }
 
   template <typename P>
-  std::tuple<bool, double> Evaluate(const std::vector<P>& pose) const {
+  std::tuple<bool, double> Evaluate(const std::vector<P>& pose, bool show) const {
     double deformation_cost = 0.0;
     double protrusion_cost = 0.0;
     double dislikes_cost = 0.0;
+    double neighbor_cost = 0.0;
 
     const double tolerance = epsilon_ / 1'000'000.0;
+    int vidx(0);
     for (const auto& vertex : pose) {
       protrusion_cost += bg::distance(ToBoostPoint(vertex), hole_polygon_);
+      for (const auto &v : neighbors_[vidx]) {
+        neighbor_cost += SquaredDistance(vertex, pose[v]);
+      }
+      ++vidx;
     }
     for (const auto& edge : edges_) {
       const auto [a, b] = edge;
@@ -323,7 +353,7 @@ class Solver : public SolverBase {
       std::vector<BoostLinestring> differences;
       bg::difference(linestring, hole_polygon_, differences);
       for (const auto& segment : differences) {
-        protrusion_cost += 1.0e-2 * bg::length(segment);
+        protrusion_cost += bg::length(segment);
       }
 
       const auto d0 = SquaredEdgeLength(vertices_, edge);
@@ -339,8 +369,11 @@ class Solver : public SolverBase {
       dislikes_cost += best * 1.0e-2;
     }
 
+    if (show) {
+      std::cerr << deformation_cost << ", " << protrusion_cost << ", " << dislikes_cost << ", " << neighbor_cost << std::endl;
+    }
     const bool feasible = deformation_cost + protrusion_cost == 0.0;
-    const double cost = deformation_cost + protrusion_cost + dislikes_cost;
+    const double cost = 1.0e2 * deformation_cost + 1.0e3 * protrusion_cost + 1e-1 * dislikes_cost + neighbor_cost * 1e-4;
 
     return {feasible, cost};
   }
@@ -350,11 +383,12 @@ class Solver : public SolverBase {
   std::vector<Point> hole_;
   std::vector<Point> vertices_;
   std::vector<Edge> edges_;
+  std::vector<std::vector<int>> neighbors_;
   integer epsilon_;
   BoostPolygon hole_polygon_;
 };
 
 }
 
-REGISTER_SOLVER("HopGridAnnealingSolver", HopGridAnnealingSolver::Solver);
+REGISTER_SOLVER("HopGridAnnealingSolver2", HopGridAnnealingSolver2::Solver);
 // vim:ts=2 sw=2 sts=2 et ci
