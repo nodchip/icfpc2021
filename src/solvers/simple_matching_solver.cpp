@@ -9,6 +9,9 @@
 
 namespace SimpleMatchingSolver {
 
+constexpr int kNumTrialsPerComponent = 100000;
+constexpr int kMinComponentSize = 10;
+
 namespace bg = boost::geometry;
 using BoostPoint = bg::model::d2::point_xy<double>;
 using BoostPolygon = bg::model::polygon<BoostPoint>;
@@ -101,9 +104,9 @@ class Solver : public SolverBase {
       }
     }
 
-    component_sizes_ = {M_};
-    //component_sizes_ = {17, 25, 12};  // for 80
-    //component_sizes_ = {23, 22, 18}; // for 106
+    last_updated_ = 0;
+    component_sizes_.assign(M_, M_);
+    best_sizes_.assign(M_, 0);
     auto pose = vertices_;
     for (int i = 0; i < N_; ++i) {
       queued_[i] = N_;
@@ -136,6 +139,13 @@ class Solver : public SolverBase {
       editor_->set_marked_indices(marked);
       editor_->set_persistent_custom_stat(fmt::format("assigned counts = {}", fmt::join(assigned_counts_, ", ")));
       editor_->show(1);
+    }
+    const int component_index = assigned_counts_.size() - 1;
+    best_sizes_[component_index] = std::max(best_sizes_[component_index], assigned_counts_[component_index]);
+    if (counter_ > last_updated_ + kNumTrialsPerComponent) {
+      last_updated_ = counter_;
+      component_sizes_[component_index] = best_sizes_[component_index];
+      if (component_sizes_[component_index] < kMinComponentSize) return true;
     }
     for (int i = vertex_candidates_.size() - 1; i >= 0; --i) {
       const int vertex = vertex_candidates_[i];
@@ -180,7 +190,6 @@ class Solver : public SolverBase {
       }
       vertex_candidates_.insert(vertex_candidates_.begin() + i, vertex);
     }
-    const int component_index = assigned_counts_.size() - 1;
     if (assigned_counts_.back() >= component_sizes_[component_index]) {
       if (assigned_counts_.size() == component_sizes_.size()) return true;
       for (int i = 0; i < N_; ++i) {
@@ -198,7 +207,6 @@ class Solver : public SolverBase {
   }
 
  private:
-  std::mt19937 rng_;
   std::vector<Point> hole_;
   std::vector<Point> vertices_;
   std::vector<Edge> edges_;
@@ -216,8 +224,10 @@ class Solver : public SolverBase {
   std::vector<std::vector<integer>> vertex_max_distances_;
   std::vector<int> assigned_counts_;
   std::vector<int> component_sizes_;
-  SVisualEditorPtr editor_;
+  std::vector<int> best_sizes_;
+  std::size_t last_updated_;
   std::size_t counter_;
+  SVisualEditorPtr editor_;
 };
 
 }
