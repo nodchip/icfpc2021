@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#pragma once
 #include <optional>
 #include "contest_types.h"
 

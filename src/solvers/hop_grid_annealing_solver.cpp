@@ -7,6 +7,7 @@
 #include "contest_types.h"
 #include "solver_registry.h"
 #include "visual_editor.h"
+#include "solver_util.h"
 #include "judge.h"
 
 namespace HopGridAnnealingSolver {
@@ -56,6 +57,7 @@ double SquaredEdgeLength(const T& vertices, const Edge& edge) {
   return SquaredDistance(vertices[a], vertices[b]);
 }
 
+
 class Solver : public SolverBase {
  public:
   SolverOutputs solve(const SolverArguments& args) override {
@@ -75,6 +77,8 @@ class Solver : public SolverBase {
     double cost = std::numeric_limits<double>::infinity();
     double best_feasible_cost = std::numeric_limits<double>::infinity();
     std::vector<Point> best_feasible_pose;
+
+    SPinnedIndex pinned_index(rng_, N, editor);
 
     const int num_iters = 100000;
     const double T0 = 1.0e1;
@@ -135,7 +139,7 @@ class Solver : public SolverBase {
     evaluate_and_descide_rollback();
 
     auto single_small_change = [&] { // ynasu87 original
-      const int v = std::uniform_int_distribution(0, N - 1)(rng_);
+      const int v = pinned_index.sample_movable_index();
       const int dx = std::uniform_int_distribution(-1, 1)(rng_);
       const int dy = std::uniform_int_distribution(-1, 1)(rng_);
       auto& [x, y] = pose[v];
@@ -151,9 +155,9 @@ class Solver : public SolverBase {
       const int dx = std::uniform_int_distribution(-1, 1)(rng_);
       const int dy = std::uniform_int_distribution(-1, 1)(rng_);
       auto pose_bak = pose;
-      for (auto& p : pose) {
-        p.first += dx;
-        p.second += dy;
+      for (int i : pinned_index.movable_indices) {
+        pose[i].first += dx;
+        pose[i].second += dy;
       }
       if (evaluate_and_descide_rollback()) {
         pose = pose_bak;
@@ -177,7 +181,8 @@ class Solver : public SolverBase {
       const double cy = double(curr_ymin + curr_ymax) / 2;
       const double sin = std::sin(deg * 3.1415 / 180.0);
       const double cos = std::cos(deg * 3.1415 / 180.0);
-      for (auto& p : pose) {
+      for (int i : pinned_index.movable_indices) {
+        auto& p = pose[i];
         const double dx = p.first - cx;
         const double dy = p.second - cy;
         p.first  = std::round(dx * cos - dy * sin + cx);
@@ -189,8 +194,8 @@ class Solver : public SolverBase {
     };
 
     auto flip = [&] { // from FlipAnnealingSolver
-      const int v0 = std::uniform_int_distribution(0, N - 1)(rng_);
-      const int v1 = std::uniform_int_distribution(0, N - 1)(rng_);
+      const int v0 = pinned_index.sample_movable_index();
+      const int v1 = pinned_index.sample_movable_index();
       if (v0 == v1) return;
       auto pose_bak = pose;
       auto reflect = [](Point a, Point c, Point v) {
@@ -198,7 +203,7 @@ class Solver : public SolverBase {
       };
       auto diff = pose[v1] - pose[v0];
       Point n = {get_y(diff), -get_x(diff)};
-      for (int v2 = 0; v2 < pose.size(); ++v2) {
+      for (int v2 : pinned_index.movable_indices) {
         if (ccw(pose[v0], pose[v1], pose[v2])) {
           pose[v2] = reflect(n, pose[v0], pose[v2]);
         }
@@ -210,7 +215,7 @@ class Solver : public SolverBase {
 
     auto edges_cache = edges_from_vertex(*args.problem);
     auto hop_grid = [&] { // jump to a tolerated (by at least one edge) point.
-      const int pivot = std::uniform_int_distribution(0, N - 1)(rng_);
+      const int pivot = pinned_index.sample_movable_index();
       const auto pivot_bak = pose[pivot];
       const auto& edges = edges_cache[pivot];
       std::map<Point, double> good_pos; // position -> number of good grid vote.
@@ -285,6 +290,7 @@ class Solver : public SolverBase {
         editor->set_pose(args.problem->create_solution(pose));
         if (auto show_result = editor->show(1); show_result.edit_result) {
           pose = show_result.edit_result->pose_after_edit->vertices;
+          pinned_index.update_movable_index();
         }
       }
     }
