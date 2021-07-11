@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
       std::ifstream ifs(solution_json);
       ifs >> json;
     }
-    update_judge(res, json);
+    update_judge(*problem, res, json);
     {
       std::ofstream ofs(solution_json);
       ofs << json;

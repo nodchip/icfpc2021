@@ -373,7 +373,7 @@ int SVisualEditor::show(int wait) {
         std::ofstream ofs(file_path);
         auto json = canvas->solution->json();
         update_meta(json, solver_name);
-        update_judge(judge(*canvas->problem, *canvas->solution), json);
+        update_judge(*canvas->problem, judge(*canvas->problem, *canvas->solution), json);
         ofs << json;
         LOG(INFO) << "saved: " << file_path;
     }
@@ -463,7 +463,7 @@ SSolutionPtr visualize_and_edit(SProblemPtr problem, SSolutionPtr solution, cons
             std::ofstream ofs(file_path);
             auto json = editor_solution->json();
             update_meta(json, base_solver_name + "PostEdit");
-            update_judge(judge(*problem, *editor_solution), json);
+            update_judge(*problem, judge(*problem, *editor_solution), json);
             ofs << json;
             LOG(INFO) << "saved editor solution: " << file_path;
             break;

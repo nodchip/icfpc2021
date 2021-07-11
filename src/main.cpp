@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
           LOG(INFO) << "judge : fit_in_hole = " << res.fit_in_hole();
           LOG(INFO) << "judge : satisfy_stretch = " << res.satisfy_stretch();
           LOG(INFO) << "judge : is_valid = " << res.is_valid();
-          update_judge(res, json);
+          update_judge(*problem, res, json);
         }
         if (solution_json.empty()) {
           LOG(INFO) << "No output";
@@ -170,7 +170,7 @@ int main(int argc, char* argv[]) {
             LOG(INFO) << "judge : fit_in_hole = " << res[trial].fit_in_hole();
             LOG(INFO) << "judge : satisfy_stretch = " << res[trial].satisfy_stretch();
             LOG(INFO) << "judge : is_valid = " << res[trial].is_valid();
-            update_judge(res[trial], json);
+            update_judge(*problem, res[trial], json);
           }
           out_json[trial] = json;
 
