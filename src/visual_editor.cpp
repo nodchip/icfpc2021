@@ -566,11 +566,13 @@ void SVisualEditor::callback(int e, int x, int y, int f, void* param) {
         }
     }
     if (mp->clicked_right()) {
-      auto it = s->canvas->marked_vertex_indices.find(mouseover_id);
-      if (it == s->canvas->marked_vertex_indices.end()) {
-        s->canvas->marked_vertex_indices.insert(mouseover_id);
-      } else {
-        s->canvas->marked_vertex_indices.erase(it);
+      if (mouseover_id != -1) {
+        auto it = s->canvas->marked_vertex_indices.find(mouseover_id);
+        if (it == s->canvas->marked_vertex_indices.end()) {
+          s->canvas->marked_vertex_indices.insert(mouseover_id);
+        } else {
+          s->canvas->marked_vertex_indices.erase(it);
+        }
       }
     }
     if (mp->drugging_left()) {
