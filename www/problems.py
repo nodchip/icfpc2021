@@ -74,7 +74,7 @@ def show_problems():
 
     context = {
         'problems': problem_contexts,
-        'emojis': {'GLOBALIST': '🌏', 'BREAK_A_LEG': '🦵'},
+        'emojis': {'GLOBALIST': '🌏', 'BREAK_A_LEG': '🦵', 'WALLHACK': '🧱'},
     }
     return flask.render_template('problems.html', title='Problems', **context)
 
