@@ -69,8 +69,14 @@ void test_bg() {
 
 SJudgeResult judge(const SProblem& problem, const SSolution& solution) {
   SJudgeResult res;
-  res.is_wallhack_mode = problem.is_wallhack_mode;
-  res.is_globalist_mode = problem.is_globalist_mode;
+  for (auto& b : solution.bonuses) {
+    if (b.type == SBonus::Type::GLOBALIST) {
+      res.is_globalist_mode = true;
+    }
+    if (b.type == SBonus::Type::WALLHACK) {
+      res.is_wallhack_mode = true;
+    }
+  }
 
   // all figure points are inside the hole.
   for (size_t ivert = 0; ivert < solution.vertices.size(); ++ivert) {
@@ -160,7 +166,7 @@ SJudgeResult judge(const SProblem& problem, const SSolution& solution) {
 #endif
   
   // stretch
-  if (problem.is_globalist_mode) {
+  if (res.is_globalist_mode) {
     double globalist = 0.0;
     for (size_t iedge = 0; iedge < problem.edges.size(); ++iedge) {
       const auto& edge = problem.edges[iedge];

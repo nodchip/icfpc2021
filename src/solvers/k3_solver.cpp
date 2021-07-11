@@ -57,11 +57,10 @@ public:
     struct STrans;
     using STransPtr = std::shared_ptr<STrans>;
     struct STrans {
-        enum class Type { MOVE, SLIDE };
+        enum class Type { MOVE, SLIDE, SWAP };
         Type type;
         double diff;
-        bool is_valid;
-        STrans(Type type, double diff, bool valid) : type(type), diff(diff), is_valid(valid) {}
+        STrans(Type type, double diff) : type(type), diff(diff) {}
     };
 
     struct SMove;
@@ -69,10 +68,10 @@ public:
     struct SMove : STrans {
         integer vid;
         Point from, to;
-        SMove(integer vid, const Point& from, const Point& to, double diff, bool is_valid) 
-            : STrans(Type::MOVE, diff, is_valid), vid(vid), from(from), to(to) {}
+        SMove(integer vid, const Point& from, const Point& to, double diff) 
+            : STrans(Type::MOVE, diff), vid(vid), from(from), to(to) {}
         std::string str() const {
-            return fmt::format("SMove [vid={}, from=({}, {}), to=({}, {}), diff={}, is_valid={}]", vid, from.first, from.second, to.first, to.second, diff, is_valid);
+            return fmt::format("SMove [vid={}, from=({}, {}), to=({}, {}), diff={}]", vid, from.first, from.second, to.first, to.second, diff);
         }
         friend std::ostream& operator<<(std::ostream& o, const SMove& obj) {
             o << obj.str();
@@ -83,14 +82,33 @@ public:
             return o;
         }
     };
+
+    struct SSwap;
+    using SSwapPtr = std::shared_ptr<SSwap>;
+    struct SSwap : STrans {
+        integer uid, vid;
+        SSwap(integer uid, integer vid, double diff)
+            : STrans(Type::SWAP, diff), uid(uid), vid(vid) {}
+        std::string str() const {
+            return fmt::format("SSwap [uid={}, vid={}, diff={}]", uid, vid, diff);
+        }
+        friend std::ostream& operator<<(std::ostream& o, const SSwap& obj) {
+            o << obj.str();
+            return o;
+        }
+        friend std::ostream& operator<<(std::ostream& o, const SSwapPtr& obj) {
+            o << obj->str();
+            return o;
+        }
+    };
     
     struct SSlide;
     using SSlidePtr = std::shared_ptr<SSlide>;
     struct SSlide : STrans {
         int dir;
-        SSlide(int dir, double diff, bool is_valid) : STrans(Type::SLIDE, diff, is_valid), dir(dir) {}
+        SSlide(int dir, double diff) : STrans(Type::SLIDE, diff), dir(dir) {}
         std::string str() const {
-            return fmt::format("SSlide [dir={}, diff={}, is_valid={}]", dir, diff, is_valid);
+            return fmt::format("SSlide [dir={}, diff={}]", dir, diff);
         }
         friend std::ostream& operator<<(std::ostream& o, const SSlide& obj) {
             o << obj.str();
@@ -172,8 +190,7 @@ public:
     }
 
     double evaluate(const Pose& pose) const {
-        SSolutionPtr sol = std::make_shared<SSolution>();
-        sol->vertices = pose;
+        SSolutionPtr sol = prob->create_solution(pose);
         auto res = judge(*prob, *sol);
         if (!res.fit_in_hole()) return std::numeric_limits<double>::max();
         double stretch_cost = 0.0;
@@ -186,8 +203,8 @@ public:
             if (orig_g2 + window < mod_g2) {
                 penalty = mod_g2 - orig_g2 - window;
             }
-            return penalty * penalty;
-            //return abs(orig_g2 - mod_g2);
+            //return penalty * penalty;
+            return abs(orig_g2 - mod_g2);
         };
         for (int eid : res.stretch_violating_edges) {
             auto [uid, vid] = edges[eid];
@@ -209,7 +226,7 @@ public:
         double new_score = evaluate(pose);
         pose[vid] = from;
         if (new_score == std::numeric_limits<double>::max()) return nullptr;
-        return std::make_shared<SMove>(vid, from, to, new_score - now_score, true);
+        return std::make_shared<SMove>(vid, from, to, new_score - now_score);
     }
 
     SSlidePtr calc_slide_stat(const Pose& pose, int dir, double now_score) const {
@@ -222,14 +239,28 @@ public:
         }
         double new_score = evaluate(pose_cpy);
         if (new_score == std::numeric_limits<double>::max()) return nullptr;
-        return std::make_shared<SSlide>(dir, new_score - now_score, true);
+        return std::make_shared<SSlide>(dir, new_score - now_score);
     }
 
-    STransPtr create_random_trans(Pose& pose, double now_score) {
-        // TODO: vertices ‚Å‚Í‚È‚­ pose ‚Å
+    SSwapPtr calc_swap_stat(Pose& pose, int uid, int vid, double now_score) {
+        swap(pose[uid], pose[vid]);
+        double new_score = evaluate(pose);
+        swap(pose[uid], pose[vid]);
+        if (new_score == std::numeric_limits<double>::max()) return nullptr;
+        return std::make_shared<SSwap>(uid, vid, new_score - now_score);
+    }
+
+    STransPtr create_random_trans(Pose& pose, double now_score, Xorshift& rnd) {
         static constexpr int di[] = { 0, -1, 0, 1 };
         static constexpr int dj[] = { 1, 0, -1, 0 };
         int r = rnd.next_int(10);
+        if (r < 4) {
+            int uid = rnd.next_int(pose.size()), vid;
+            do {
+                vid = rnd.next_int(pose.size());
+            } while (uid == vid);
+            return calc_swap_stat(pose, uid, vid, now_score);
+        }
         if (r < 8) {
             // adjacent move
             int vid = rnd.next_int(pose.size());
@@ -276,24 +307,30 @@ public:
             slide_all_vertices(pose, sl->dir);
         }
             break;
+        case K3Solver::STrans::Type::SWAP:
+        {
+            SSwapPtr sw = std::static_pointer_cast<SSwap>(trans);
+            swap(pose[sw->uid], pose[sw->vid]);
+            break;
+        }
         default:
             break;
         }
     }
 
-    std::vector<Point> scatter(std::vector<Point> pose, integer num_loop) {
+    std::vector<Point> scatter(std::vector<Point> pose, integer num_loop, Xorshift& rnd) {
         double now_score = evaluate(pose);
         for (integer loop = 0; loop < num_loop; loop++) {
             int vid = rnd.next_int(pose.size());
             int to_id = rnd.next_int(inner_polygon_points.size());
             SMovePtr mv = calc_move_stat(pose, vid, inner_polygon_points[to_id], now_score);
-            if (mv->is_valid) {
+            if (mv) {
                 move_vertex(pose, mv->vid, mv->to);
                 now_score += mv->diff;
             }
             if (editor && loop % 1000 == 0) {
                 LOG(INFO) << "loop = " << loop << ", score = " << now_score;
-                editor->set_pose(std::make_shared<SSolution>(pose));
+                editor->set_pose(prob->create_solution(pose));
                 int c = editor->show(1);
             }
             loop++;
@@ -304,7 +341,10 @@ public:
     SolverOutputs solve(const SolverArguments& args) override {
         initialize(args);
         
-        auto pose = vertices_orig;
+        int seed = 3;
+        Xorshift rnd; rnd.set_seed(1);
+
+        auto pose = vertices_orig; // TODO: ï¿½rï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
         // initial state
         auto representative_point = calc_representative_polygon_point(inner_polygon_points);
@@ -319,7 +359,7 @@ public:
             return etemp + (stemp - etemp) * (num_loop - loop) / num_loop;
         };
 
-        //vertices = scatter(vertices, 10000);
+        //pose = scatter(pose, 100000, rnd);
 
         progress_rate = 0.0;
         double now_score = evaluate(pose);
@@ -327,19 +367,20 @@ public:
         for(integer loop = 0; loop < num_loop; loop++) {
             if (editor && loop % 1000 == 0) {
                 progress_rate = double(loop) / num_loop;
-                LOG(INFO) 
-                    << "loop = " << loop 
+                now_score = evaluate(pose);
+                LOG(INFO)
+                    << "loop = " << loop
                     << ", progress_rate = " << progress_rate
                     << ", accept_rate = " << double(accepted) / loop
                     << ", score = " << now_score;
-                editor->set_pose(std::make_shared<SSolution>(pose));
+                editor->set_pose(prob->create_solution(pose));
                 if (auto show_result = editor->show(1); show_result.edit_result) {
                   pose = show_result.edit_result->pose_after_edit->vertices;
                 }
             }
-            STransPtr trans = create_random_trans(pose, now_score);
+            STransPtr trans = create_random_trans(pose, now_score, rnd);
             if (!trans) continue;
-            double temp = get_temp(30.0, 0.0, loop, num_loop);
+            double temp = get_temp(100.0, 0.0, loop, num_loop);
             double prob = exp(-trans->diff / temp);
             if (rnd.next_double() < prob) {
                 accepted++;
@@ -347,16 +388,13 @@ public:
                 now_score += trans->diff;
             }
         }
-
         // do nothing.
         SolverOutputs ret;
-        ret.solution = std::make_shared<SSolution>();
-        ret.solution->vertices = pose;
+        ret.solution = prob->create_solution(pose);
         return ret;
     }
 
 private:
-    Xorshift rnd;
     // master data
     SProblemPtr prob;
     std::vector<SBonus> bonuses;

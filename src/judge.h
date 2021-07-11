@@ -57,7 +57,8 @@ struct SJudgeResult {
   std::vector<integer> out_of_hole_edges_except_wallhack; // wall hacking edges are NOT included. if !is_wallhack_mode, identical to out_of_hole_edges.
   std::vector<integer> stretch_violating_edges;
   std::vector<integer> individual_dislikes;
-  std::vector<integer> gained_bonus_indices; // SProblem::bonus[gained_bonus_indices[i]]
+  std::vector<integer> gained_bonus_indices; // SProblem::bonuses[gained_bonus_indices[i]]
+  std::vector<integer> used_bonus_indices; // SProblem::available_bonuses[gained_bonus_indices[i]]
   bool fit_in_hole() const { return out_of_hole_edges.empty() && out_of_hole_vertices.empty(); }
   bool fit_in_hole_except_wallhack() const {
     return out_of_hole_edges_except_wallhack.empty() && (
@@ -72,6 +73,8 @@ struct SJudgeResult {
     }
   }
   bool is_valid() const {
+    if (is_globalist_mode && is_wallhack_mode) return false; // multiple bonuses
+
     if (is_wallhack_mode) {
       return fit_in_hole_except_wallhack() && satisfy_stretch();
     } else {

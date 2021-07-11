@@ -110,7 +110,7 @@ class Solver : public SolverBase {
       if (feasible != judge_valid) {
         LOG(INFO) << feasible << " " << judge_valid;
         if (editor) {
-          editor->set_pose(std::make_shared<SSolution>(pose));
+          editor->set_pose(args.problem->create_solution(pose));
           while (true) {
             int c = editor->show(1);
             if (c == 27) break;
@@ -282,7 +282,7 @@ class Solver : public SolverBase {
 
       if (editor && iter % 100 == 0) {
         editor->set_oneshot_custom_stat(fmt::format("iter = {}/{}", iter, num_iters));
-        editor->set_pose(std::make_shared<SSolution>(pose));
+        editor->set_pose(args.problem->create_solution(pose));
         if (auto show_result = editor->show(1); show_result.edit_result) {
           pose = show_result.edit_result->pose_after_edit->vertices;
         }
@@ -291,9 +291,9 @@ class Solver : public SolverBase {
 
     SolverOutputs outputs;
     if (best_feasible_pose.empty()) {
-      outputs.solution = std::make_shared<SSolution>(pose);
+      outputs.solution = args.problem->create_solution(pose);
     } else {
-      outputs.solution = std::make_shared<SSolution>(best_feasible_pose);
+      outputs.solution = args.problem->create_solution(best_feasible_pose);
     }
     return outputs;
   }

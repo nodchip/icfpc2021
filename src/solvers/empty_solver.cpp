@@ -12,7 +12,7 @@ public:
     SolverOutputs ret;
 
     // do nothing.
-    ret.solution = std::make_shared<SSolution>();
+    ret.solution = args.problem->create_solution();
     ret.solution->vertices = args.problem->vertices;
 
     // dummy.

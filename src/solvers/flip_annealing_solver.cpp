@@ -114,9 +114,9 @@ class Solver : public SolverBase {
 
     SolverOutputs outputs;
     if (best_feasible_pose.empty()) {
-      outputs.solution = std::make_shared<SSolution>(pose);
+      outputs.solution = args.problem->create_solution(pose);
     } else {
-      outputs.solution = std::make_shared<SSolution>(best_feasible_pose);
+      outputs.solution = args.problem->create_solution(best_feasible_pose);
     }
     return outputs;
   }
