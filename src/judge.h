@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <optional>
 #include <array>
 #include "contest_types.h"
 
@@ -47,13 +48,23 @@ inline auto distance2(const TPoint& p, const TPoint& q) {
 
 struct SJudgeResult {
   bool is_globalist_mode = false;
+  bool is_wallhack_mode = false;
   bool violates_globalist = false;
   integer dislikes = 0;
-  std::vector<integer> out_of_hole_edges;
-  std::vector<integer> out_of_hole_vertices;
+  std::optional<int> wallhacking_index; // nullopt if not using wallhack (always nullopt when !is_wallhack_mode)
+  std::vector<integer> out_of_hole_edges; // wall hacking edges are included
+  std::vector<integer> out_of_hole_vertices; // even when wallhacking is used, wall hacking vertex is included
+  std::vector<integer> out_of_hole_edges_except_wallhack; // wall hacking edges are NOT included. if !is_wallhack_mode, identical to out_of_hole_edges.
   std::vector<integer> stretch_violating_edges;
   std::vector<integer> individual_dislikes;
+  std::vector<integer> gained_bonus_indices; // SProblem::bonuses[gained_bonus_indices[i]]
+  std::vector<integer> used_bonus_indices; // SProblem::available_bonuses[gained_bonus_indices[i]]
   bool fit_in_hole() const { return out_of_hole_edges.empty() && out_of_hole_vertices.empty(); }
+  bool fit_in_hole_except_wallhack() const {
+    return out_of_hole_edges_except_wallhack.empty() && (
+      out_of_hole_vertices.empty() || out_of_hole_vertices.size() == 1 && wallhacking_index && *wallhacking_index == out_of_hole_vertices[0]
+      );
+  }
   bool satisfy_stretch() const { 
     if (is_globalist_mode) {
       return !violates_globalist;
@@ -61,7 +72,15 @@ struct SJudgeResult {
       return stretch_violating_edges.empty();
     }
   }
-  bool is_valid() const { return fit_in_hole() && satisfy_stretch(); }
+  bool is_valid() const {
+    if (is_globalist_mode && is_wallhack_mode) return false; // multiple bonuses
+
+    if (is_wallhack_mode) {
+      return fit_in_hole_except_wallhack() && satisfy_stretch();
+    } else {
+      return fit_in_hole() && satisfy_stretch();
+    }
+  }
   // better is smaller.
   friend bool operator<(const SJudgeResult& lhs, const SJudgeResult& rhs) {
     if (lhs.is_valid() != rhs.is_valid()) {
@@ -80,7 +99,7 @@ inline bool tolerate(integer d2_original, integer d2_moved, integer epsilon) {
     return std::abs(denominator * d2_moved - denominator * d2_original) <= epsilon * d2_original;
 }
 
-bool update_judge(const SJudgeResult& res, nlohmann::json& solution_json);
+bool update_judge(const SProblem& problem, const SJudgeResult& res, nlohmann::json& solution_json);
 
 // geometry codes from..
 // http://www.prefield.com

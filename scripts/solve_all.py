@@ -24,9 +24,14 @@ def job(problem_json, args):
     else:
         out_path = args.output_dir / (Path(problem_json).stem + '.pose.json')
 
+    solver_subcommand = 'solve'
+    if args.try_globalist:
+        solver_subcommand = 'try_globalist'
+    print(f'subcommand: {solver_subcommand}')
+
     # solve.
     tmp_out_path = out_path.with_suffix(out_path.suffix + '.tmp')
-    subprocess.run([str(EXE_DIR / 'solver'), 'solve', args.solver_name, str(Path(problem_json).resolve()),
+    subprocess.run([str(EXE_DIR / 'solver'), solver_subcommand, args.solver_name, str(Path(problem_json).resolve()),
                     str(tmp_out_path)], cwd=EXE_DIR, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     with open(tmp_out_path, 'r') as fi:
         j = json.load(fi)
@@ -111,6 +116,8 @@ def main():
     parser.add_argument('solver_name', help='Solver to use')
     parser.add_argument('overwrite_option', default='improvement', choices=[
                         'force', 'improvement', 'never'], help='when to overwite existing files')
+    parser.add_argument(
+        '--try-globalist', action='store_true', help='try GLOBALIST mode')
     parser.add_argument(
         '--output-dir', default=None, type=Path)
     parser.add_argument(

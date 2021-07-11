@@ -2,6 +2,7 @@
 #include <string>
 #include <functional>
 #include <map>
+#include <optional>
 #include <cassert>
 
 #include "contest_types.h"
@@ -11,6 +12,11 @@ struct SolverArguments {
   SSolutionPtr optional_initial_solution;
 
   bool visualize = false;
+
+  /// <summary>
+  /// パラメーターファイルのパス。OptunaAnnealingSolverのみで使用する。
+  /// </summary>
+  std::string parameters_file_path;
 };
 
 struct SolverOutputs {

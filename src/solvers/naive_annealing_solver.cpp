@@ -25,6 +25,9 @@ BoostPolygon ToBoostPolygon(const std::vector<T>& points) {
   for (std::size_t i = 0; i <= points.size(); ++i) {
     polygon.outer().push_back(ToBoostPoint(points[i % points.size()]));
   }
+  if (bg::area(polygon) < 0.0) {
+    bg::reverse(polygon);
+  }
   return polygon;
 }
 
@@ -59,8 +62,8 @@ class Solver : public SolverBase {
     const int num_iters = 100000;
     const double T0 = 1.0e1;
     const double T1 = 1.0e-2;
-    for (int i = 0; i < num_iters; ++i) {
-      const double progress = 1.0 * i / num_iters;
+    for (int iter = 0; iter < num_iters; ++iter) {
+      const double progress = 1.0 * iter / num_iters;
       const int v = std::uniform_int_distribution(0, N - 1)(rng_);
       const int dx = std::uniform_int_distribution(-3, 3)(rng_);
       const int dy = std::uniform_int_distribution(-3, 3)(rng_);
@@ -83,9 +86,9 @@ class Solver : public SolverBase {
 
     SolverOutputs outputs;
     if (best_feasible_pose.empty()) {
-      outputs.solution = std::make_shared<SSolution>(pose);
+      outputs.solution = args.problem->create_solution(pose);
     } else {
-      outputs.solution = std::make_shared<SSolution>(best_feasible_pose);
+      outputs.solution = args.problem->create_solution(best_feasible_pose);
     }
     return outputs;
   }

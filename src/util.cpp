@@ -8,6 +8,11 @@
 #include <fstream>
 #include <fmt/core.h>
 
+#ifdef ALLOW_UNUSED_RESULT
+#undef ALLOW_UNUSED_RESULT
+#endif
+#define ALLOW_UNUSED_RESULT(x) { auto _ = x; (void)(_); }
+
 std::filesystem::path default_data_path() {
 #ifdef _MSC_VER
   return std::filesystem::current_path().parent_path().parent_path() / "data";
@@ -21,7 +26,7 @@ std::filesystem::path default_problem_path(int num) {
 }
 
 std::string get_git_commit_id() {
-  std::system("git rev-parse HEAD > _HEAD.txt");
+  ALLOW_UNUSED_RESULT(std::system("git rev-parse HEAD > _HEAD.txt"));
   std::ifstream ifs("_HEAD.txt");
   std::string commit_id;
   ifs >> commit_id;

@@ -57,6 +57,7 @@ cv::Mat_<cv::Vec3b> create_image(SProblemPtr prob) {
 struct SCanvas {
     SProblemPtr problem;
     SSolutionPtr solution;
+    std::set<int> marked_vertex_indices;
 
     integer img_offset;
     integer img_base_size;
@@ -71,7 +72,10 @@ struct SCanvas {
     int num_no_fit_in_hole_vert = 0;
     int num_no_fit_in_hole_edge = 0;
     int num_no_satisfy_stretch = 0;
-    bool is_valid;
+    int num_gained_bonuses = 0;
+    bool is_valid = false;
+    std::string oneshot_custom_stat;
+    std::string persistent_custom_stat;
 
     bool draw_distant_hole_vertex = true;
     bool draw_tolerated_vertex = true;
@@ -81,7 +85,7 @@ struct SCanvas {
 
     cv::Scalar violating_vertex_color = cv::Scalar(128, 0, 128);
     cv::Scalar out_of_hole_edge_color = cv::Scalar(128, 0, 128);
-
+    cv::Scalar marked_vartex_color = cv::Scalar(128, 128, 0);
     inline cv::Point cvt(int x, int y) { return cv::Point((x + img_offset) * mag, (y + img_offset) * mag); };
     inline cv::Point cvt(const Point& p) { return cvt(p.first, p.second); }
     inline Point icvt(int x, int y) { return { x / mag - img_offset, y / mag - img_offset }; }
@@ -111,10 +115,34 @@ struct SCanvas {
         return cv::Scalar(0, 255, 0);
     }
 
+    void set_oneshot_custom_stat(const std::string& stat_str) { oneshot_custom_stat = stat_str; }
+    void set_persistent_custom_stat(const std::string& stat_str) { persistent_custom_stat = stat_str; }
+
     void draw_stats(cv::Mat& img) {
-        std::string stat_str = fmt::format("dislikes={}, fit={}(NG edge {} vert {}), stretch={}(NG {}), is_valid={}",
-          dislikes, fit_in_hole, num_no_fit_in_hole_edge, num_no_fit_in_hole_vert, satisfy_stretch, num_no_satisfy_stretch, is_valid);
-        cv::putText(img, stat_str, cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 0.7, is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 128), 1, cv::LINE_AA);
+        std::ostringstream oss_bonus;
+        for (auto& b : problem->available_bonuses) {
+          oss_bonus << SBonus::bonus_name(b.type);
+          oss_bonus << " ";
+        }
+        std::ostringstream oss_using_bonus;
+        for (auto& b : solution->bonuses) {
+          oss_using_bonus << SBonus::bonus_name(b.type);
+          oss_using_bonus << " ";
+        }
+        std::string stat_str = fmt::format("[{}] DL={}, fit={}(NG edge {} vert {}), stretch={}(NG {}), B[offerred={}, using={}, gained={}], mark {}",
+          is_valid ? "O" : "X",
+          dislikes, fit_in_hole, num_no_fit_in_hole_edge, num_no_fit_in_hole_vert, satisfy_stretch, num_no_satisfy_stretch,
+          oss_bonus.str(), oss_using_bonus.str(), num_gained_bonuses, marked_vertex_indices.size());
+        int y = 30;
+        cv::putText(img, stat_str, cv::Point(20, y), cv::FONT_HERSHEY_SIMPLEX, 0.5, is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 128), 1, cv::LINE_AA);
+        y += 30;
+        if (!persistent_custom_stat.empty()) {
+          cv::putText(img, persistent_custom_stat, cv::Point(20, y), cv::FONT_HERSHEY_SIMPLEX, 0.5, is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 128), 1, cv::LINE_AA);
+        }
+        y += 30;
+        if (!oneshot_custom_stat.empty()) {
+          cv::putText(img, oneshot_custom_stat, cv::Point(20, y), cv::FONT_HERSHEY_SIMPLEX, 0.5, is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 128), 1, cv::LINE_AA);
+        }
     }
 
     void draw_edge_lengths(cv::Mat& img) {
@@ -163,11 +191,12 @@ struct SCanvas {
         // judge
         auto res = judge(*problem, *solution);
         dislikes = res.dislikes;
-        fit_in_hole = res.fit_in_hole();
+        fit_in_hole = res.fit_in_hole_except_wallhack();
         satisfy_stretch = res.satisfy_stretch();
-        num_no_fit_in_hole_vert = res.out_of_hole_vertices.size();
-        num_no_fit_in_hole_edge = res.out_of_hole_edges.size();
+        num_no_fit_in_hole_vert = res.out_of_hole_vertices.size() - (res.wallhacking_index.has_value() ? 1 : 0);
+        num_no_fit_in_hole_edge = res.out_of_hole_edges_except_wallhack.size();
         num_no_satisfy_stretch = res.stretch_violating_edges.size();
+        num_gained_bonuses = res.gained_bonus_indices.size();
         for (int eid = 0; eid < problem->edges.size(); eid++) {
             edge_colors[eid] = get_edge_color(eid);
         }
@@ -179,11 +208,11 @@ struct SCanvas {
               auto [x, y] = cvt(problem->hole_polygon[i]);
               auto r = 2.0 * std::log(double(res.individual_dislikes[i]) + 1e-6) + 1.0;
               if (r > 0.0) {
-                draw_circle(img, x, y, r, cv::Scalar(0, 0, 128), cv::FILLED);
+                draw_circle(img, x, y, r, cv::Scalar(0, 0, 128), 1);
               }
           }
         }
-        for (int eid : res.out_of_hole_edges) {
+        for (int eid : res.out_of_hole_edges_except_wallhack) {
             auto [u, v] = problem->edges[eid];
             auto [x1, y1] = cvt(solution->vertices[u]);
             auto [x2, y2] = cvt(solution->vertices[v]);
@@ -194,6 +223,10 @@ struct SCanvas {
             auto [x1, y1] = cvt(solution->vertices[u]);
             auto [x2, y2] = cvt(solution->vertices[v]);
             draw_line(img, x1, y1, x2, y2, edge_colors[eid], 2);
+        }
+        if (res.wallhacking_index) {
+            auto [x, y] = cvt(solution->vertices[*res.wallhacking_index]);
+            draw_circle(img, x, y, std::max(12, int(mag)), cv::Scalar(32, 64, 128), 3);
         }
         if (selected_id != -1) {
             if (draw_tolerated_vertex) {
@@ -239,6 +272,10 @@ struct SCanvas {
             auto [x, y] = cvt(solution->vertices[vid]);
             draw_circle(img, x, y, std::max(2, int(mag) / 3), violating_vertex_color, cv::FILLED);
         }
+        for (int vid : marked_vertex_indices) {
+          auto [x, y] = cvt(solution->vertices[vid]);
+          draw_circle(img, x, y, std::max(12, int(mag) / 2), marked_vartex_color, 3);
+        }
         draw_stats(img);
         if (draw_edge_lengths_mode) {
             draw_edge_lengths(img);
@@ -248,6 +285,7 @@ struct SCanvas {
     bool set_pose(SSolutionPtr pose) {
         CHECK(is_compatible(*problem, *pose));
         solution = pose;
+        // draw base image
         auto rect_poly = calc_bb(problem->hole_polygon);
         auto rect_fig = calc_bb(problem->vertices);
         integer x_min = std::min(rect_poly.x, rect_fig.x);
@@ -265,6 +303,18 @@ struct SCanvas {
           cv_hole_polygon.emplace_back(x, y);
         }
         cv::fillPoly(img_base, cv_hole_polygon, cv::Scalar(255, 255, 255));
+        for (auto& bonus : problem->bonuses) {
+            auto [x, y] = bonus.position;
+            cv::Scalar color;
+            if (bonus.type == SBonus::Type::GLOBALIST) {
+              color = cv::Scalar(32, 192, 192); 
+            } else if (bonus.type == SBonus::Type::BREAK_A_LEG) {
+              color = cv::Scalar(192, 192, 32); 
+            } else if (bonus.type == SBonus::Type::WALLHACK) {
+              color = cv::Scalar(64, 128, 255); 
+            }
+            cv::circle(img_base, cvt(x, y), 20, color, cv::FILLED);
+        }
         for (int x = x_min; x <= x_max; x++) {
             for (int y = y_min; y <= y_max; y++) {
                 cv::circle(img_base, cvt(x, y), 2, cv::Scalar(200, 200, 200), cv::FILLED);
@@ -282,7 +332,7 @@ struct SCanvas {
     }
 
     SCanvas(SProblemPtr problem) : problem(problem) {
-        auto pose = std::make_shared<SSolution>();
+        auto pose = problem->create_solution();
         pose->vertices = problem->vertices;
         set_pose(pose);
     }
@@ -317,8 +367,8 @@ struct SMouseParams {
     }
 };
 
-SVisualEditor::SVisualEditor(SProblemPtr problem, const std::string window_name)
-  : window_name(window_name) {
+SVisualEditor::SVisualEditor(SProblemPtr problem, const std::string& solver_name, const std::string window_name)
+  : window_name(window_name), solver_name(solver_name) {
     canvas = std::make_shared<SCanvas>(problem);
     mp = std::make_shared<SMouseParams>();
     cv::namedWindow(window_name, cv::WINDOW_AUTOSIZE);
@@ -327,6 +377,24 @@ SVisualEditor::SVisualEditor(SProblemPtr problem, const std::string window_name)
 }
 
 SVisualEditor::~SVisualEditor() {
+}
+
+void SVisualEditor::set_oneshot_custom_stat(const std::string& stat_str) {
+  canvas->set_oneshot_custom_stat(stat_str);
+}
+void SVisualEditor::set_persistent_custom_stat(const std::string& stat_str) {
+  canvas->set_persistent_custom_stat(stat_str);
+}
+
+void SVisualEditor::set_marked_indices(const std::vector<int>& marked_indices) {
+  canvas->marked_vertex_indices.clear();
+  std::copy(marked_indices.begin(), marked_indices.end(), std::inserter(canvas->marked_vertex_indices, canvas->marked_vertex_indices.end()));
+}
+
+std::vector<int> SVisualEditor::get_marked_indices() const {
+  std::vector<int> idx;
+  std::copy(canvas->marked_vertex_indices.begin(), canvas->marked_vertex_indices.end(), std::back_inserter(idx));
+  return idx;
 }
 
 bool SVisualEditor::set_pose(SSolutionPtr pose) {
@@ -338,54 +406,93 @@ SSolutionPtr SVisualEditor::get_pose() const {
     return canvas->solution;
 }
 
-int SVisualEditor::show(int wait) {
-    int c = cv::waitKey(wait);
-    if (c == 27) {
-        return c;
+SShowResult SVisualEditor::show(int wait) {
+    SShowResult res(cv::waitKey(wait));
+    if (res.key == 27) {
+      if (in_internal_edit_loop()) {
+        res.key = 'm';
+      } else {
+        return res.key;
+      }
     }
-    if (c == 'd') {
+    if (res.key == 'd') {
         canvas->draw_distant_hole_vertex = !canvas->draw_distant_hole_vertex;
         canvas->update(-1);
     }
-    if (c == 'e') {
+    if (res.key == 'e') {
         canvas->draw_edge_lengths_mode = !canvas->draw_edge_lengths_mode;
         canvas->update(-1);
     }
-    if (c == 't') {
+    if (res.key == 't') {
         canvas->draw_tolerated_vertex = !canvas->draw_tolerated_vertex;
         canvas->update(get_mouseover_node_id());
     }
-    if (c == 's') {
+    if (res.key == 's') {
         const std::string file_path = "intermediate.pose.json";
         std::ofstream ofs(file_path);
         auto json = canvas->solution->json();
-        update_meta(json, "ManualSolver");
-        update_judge(judge(*canvas->problem, *canvas->solution), json);
+        update_meta(json, solver_name);
+        update_judge(*canvas->problem, judge(*canvas->problem, *canvas->solution), json);
         ofs << json;
         LOG(INFO) << "saved: " << file_path;
     }
-    if (c == 'h') {
+    if (res.key == 'h') {
         canvas->shift(-1, 0);
         canvas->update(-1);
     }
-    if (c == 'j') {
+    if (res.key == 'j') {
         canvas->shift(0, 1);
         canvas->update(-1);
     }
-    if (c == 'k') {
+    if (res.key == 'k') {
         canvas->shift(0, -1);
         canvas->update(-1);
     }
-    if (c == 'l') {
+    if (res.key == 'l') {
         canvas->shift(1, 0);
         canvas->update(-1);
     }
-    if (c == 'r') {
+    if (res.key == 'r') {
         canvas->rotate_clockwise();
         canvas->update(-1);
     }
+    if (res.key == 'm') { // toggle internal edit mode.
+      LOG(INFO) << "in internal edit loop? " << in_internal_edit_loop();
+      if (in_internal_edit_loop()) {
+        LOG(INFO) << "leaving internal edit loop.";
+        CHECK(edit_info);
+        edit_info->pose_after_edit = get_pose()->clone();
+        edit_info->moved_vertex_indices.clear();
+        for (int i = 0; i < edit_info->pose_before_edit->vertices.size(); ++i) {
+          if (edit_info->pose_before_edit->vertices[i] != edit_info->pose_after_edit->vertices[i]) {
+            edit_info->moved_vertex_indices.push_back(i);
+          }
+        }
+        LOG(INFO) << "leaving internal edit loop. edited = " << edit_info->moved_vertex_indices.size();
+        edit_info = nullptr;
+        res.key = 27; // ESC
+      } else {
+        LOG(INFO) << "entering internal edit loop.";
+        CHECK(!edit_info);
+        res.edit_result = SShowResult::SEditResult();
+        res.edit_result->pose_before_edit = get_pose()->clone();
+        edit_info = &res.edit_result.value();
+        while (true) {
+          SShowResult res_internal = show(wait);
+          if (res_internal.key == 27) {
+            break;
+          }
+        }
+        CHECK(!edit_info);
+        CHECK(res.edit_result->pose_before_edit);
+        CHECK(res.edit_result->pose_after_edit);
+      }
+    }
     cv::imshow(window_name, canvas->img);
-    return c;
+    if (!in_internal_edit_loop()) {
+      canvas->oneshot_custom_stat.clear();
+    }
+    return res;
 }
 
 int SVisualEditor::get_mouseover_node_id() const {
@@ -416,6 +523,14 @@ void SVisualEditor::callback(int e, int x, int y, int f, void* param) {
             s->selected_vertex_id = mouseover_id;
         }
     }
+    if (mp->clicked_right()) {
+      auto it = s->canvas->marked_vertex_indices.find(mouseover_id);
+      if (it == s->canvas->marked_vertex_indices.end()) {
+        s->canvas->marked_vertex_indices.insert(mouseover_id);
+      } else {
+        s->canvas->marked_vertex_indices.erase(it);
+      }
+    }
     if (mp->drugging_left()) {
         int id = s->selected_vertex_id;
         if (id != -1) {
@@ -437,10 +552,10 @@ void SVisualEditor::callback(int e, int x, int y, int f, void* param) {
     }
 }
 
-SSolutionPtr visualize_and_edit(SProblemPtr problem, SSolutionPtr solution) {
-    SVisualEditorPtr editor = std::make_shared<SVisualEditor>(problem, "visualize");
+SSolutionPtr visualize_and_edit(SProblemPtr problem, SSolutionPtr solution, const std::string& base_solver_name) {
+    SVisualEditorPtr editor = std::make_shared<SVisualEditor>(problem, base_solver_name + "Edit", "visualize");
     editor->set_pose(solution);
-    SSolutionPtr editor_solution = std::make_shared<SSolution>();
+    SSolutionPtr editor_solution = problem->create_solution();
     *editor_solution = *solution;
     while (true) {
         int c = editor->show(15);
@@ -449,8 +564,8 @@ SSolutionPtr visualize_and_edit(SProblemPtr problem, SSolutionPtr solution) {
             const std::string file_path = "editor.pose.json";
             std::ofstream ofs(file_path);
             auto json = editor_solution->json();
-            update_meta(json, "ManualPostEditor");
-            update_judge(judge(*problem, *editor_solution), json);
+            update_meta(json, base_solver_name + "PostEdit");
+            update_judge(*problem, judge(*problem, *editor_solution), json);
             ofs << json;
             LOG(INFO) << "saved editor solution: " << file_path;
             break;

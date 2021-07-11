@@ -1,0 +1,21 @@
+{
+    "initialize_pose_by_hole": 0,
+    "prohibit_unfeasible_after_feasible": 0,
+    "T0": 10.0,
+    "T1": 0.01,
+    "single_small_change_max_delta": 1,
+    "shift_max_delta": 1,
+    "slight_rotate_max_deg": 2.0,
+    "vote_pow": 5.0,
+    "slide_protrusion_max_delta": 1,
+    "single_small_change_probability": 0.9,
+    "slight_rotate_probability": 0.01,
+    "shift_probability": 0.01,
+    "hop_grid_probability": 0.01,
+    "flip_probability": 0.03,
+    "slide_protrusion_probability": 0.10,
+    "protrusion_cost_coefficient0": 1.0,
+    "protrusion_cost_coefficient1": 0.01,
+    "deformation_cost_coefficient": 10.0,
+    "dislikes_cost_coefficient": 0.01
+}

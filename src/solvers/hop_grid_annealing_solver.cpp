@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include <cmath>
+#include <fmt/format.h>
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/geometries/polygon.hpp>
@@ -35,6 +37,9 @@ BoostPolygon ToBoostPolygon(const std::vector<T>& points) {
   for (std::size_t i = 0; i <= points.size(); ++i) {
     polygon.outer().push_back(ToBoostPoint(points[i % points.size()]));
   }
+  if (bg::area(polygon) < 0.0) {
+    bg::reverse(polygon);
+  }
   return polygon;
 }
 
@@ -62,7 +67,7 @@ class Solver : public SolverBase {
 
     SVisualEditorPtr editor;
     if (args.visualize) {
-      editor = std::make_shared<SVisualEditor>(args.problem, "visualize");
+      editor = std::make_shared<SVisualEditor>(args.problem, "HopGridAnnealingSolver", "visualize");
     }
 
     const int N = vertices_.size();
@@ -76,17 +81,28 @@ class Solver : public SolverBase {
     const double T1 = 1.0e-2;
     double progress = 0.0;
 
-    // lesser version of tonagi's idea 
+    integer ymin = INT_MAX, ymax = INT_MIN;
+    integer xmin = INT_MAX, xmax = INT_MIN;
+    for (auto p : hole_) {
+      xmin = std::min(xmin, get_x(p));
+      ymin = std::min(ymin, get_y(p));
+      xmax = std::max(xmax, get_x(p));
+      ymax = std::max(ymax, get_y(p));
+    }
+
+    // lesser version of tonagi's idea
     for (auto& p : pose) { p = hole_[0]; }
 
     auto evaluate_and_descide_rollback = [&]() -> bool {
       auto [feasible, updated_cost] = Evaluate(pose);
 
       // tonagi's idea.
-      auto res = judge(*args.problem, pose);
-      if (!res.fit_in_hole()) {
-        feasible = false;
-        updated_cost = DBL_MAX;
+      if (false || !best_feasible_pose.empty()) {
+        auto res = judge(*args.problem, pose);
+        if (!res.fit_in_hole()) {
+          feasible = false;
+          updated_cost = DBL_MAX;
+        }
       }
 
 #if 0
@@ -94,7 +110,7 @@ class Solver : public SolverBase {
       if (feasible != judge_valid) {
         LOG(INFO) << feasible << " " << judge_valid;
         if (editor) {
-          editor->set_pose(std::make_shared<SSolution>(pose));
+          editor->set_pose(args.problem->create_solution(pose));
           while (true) {
             int c = editor->show(1);
             if (c == 27) break;
@@ -106,6 +122,7 @@ class Solver : public SolverBase {
       if (feasible && updated_cost < best_feasible_cost) {
         best_feasible_cost = updated_cost;
         best_feasible_pose = pose;
+        if (editor) editor->set_persistent_custom_stat(fmt::format("best_cost = {}", best_feasible_cost));
       }
       const double T = std::pow(T0, 1.0 - progress) * std::pow(T1, progress);
       if (std::uniform_real_distribution(0.0, 1.0)(rng_) < std::exp(-(updated_cost - cost) / T)) {
@@ -116,7 +133,6 @@ class Solver : public SolverBase {
       }
     };
     evaluate_and_descide_rollback();
-
 
     auto single_small_change = [&] { // ynasu87 original
       const int v = std::uniform_int_distribution(0, N - 1)(rng_);
@@ -144,6 +160,34 @@ class Solver : public SolverBase {
       }
     };
 
+    auto slight_rotate = [&] {
+      const double deg = std::uniform_real_distribution(-2.0, 2.0)(rng_);
+      auto pose_bak = pose;
+
+      integer curr_ymin = INT_MAX, curr_ymax = INT_MIN;
+      integer curr_xmin = INT_MAX, curr_xmax = INT_MIN;
+      for (auto p : hole_) {
+        curr_xmin = std::min(curr_xmin, get_x(p));
+        curr_ymin = std::min(curr_ymin, get_y(p));
+        curr_xmax = std::max(curr_xmax, get_x(p));
+        curr_ymax = std::max(curr_ymax, get_y(p));
+      }
+
+      const double cx = double(curr_xmin + curr_xmax) / 2;
+      const double cy = double(curr_ymin + curr_ymax) / 2;
+      const double sin = std::sin(deg * 3.1415 / 180.0);
+      const double cos = std::cos(deg * 3.1415 / 180.0);
+      for (auto& p : pose) {
+        const double dx = p.first - cx;
+        const double dy = p.second - cy;
+        p.first  = std::round(dx * cos - dy * sin + cx);
+        p.second = std::round(dx * sin + dy * cos + cy);
+      }
+      if (evaluate_and_descide_rollback()) {
+        pose = pose_bak;
+      }
+    };
+
     auto flip = [&] { // from FlipAnnealingSolver
       const int v0 = std::uniform_int_distribution(0, N - 1)(rng_);
       const int v1 = std::uniform_int_distribution(0, N - 1)(rng_);
@@ -163,15 +207,6 @@ class Solver : public SolverBase {
         pose = pose_bak;
       }
     };
-
-    integer ymin = INT_MAX, ymax = INT_MIN;
-    integer xmin = INT_MAX, xmax = INT_MIN;
-    for (auto p : hole_) {
-      xmin = std::min(xmin, get_x(p));
-      ymin = std::min(ymin, get_y(p));
-      xmax = std::max(xmax, get_x(p));
-      ymax = std::max(ymax, get_y(p));
-    }
 
     auto edges_cache = edges_from_vertex(*args.problem);
     auto hop_grid = [&] { // jump to a tolerated (by at least one edge) point.
@@ -221,9 +256,10 @@ class Solver : public SolverBase {
     using Action = std::function<void()>;
     std::vector<std::pair<double, Action>> action_probs = {
       {0.9, single_small_change},
+      {0.01, slight_rotate},
       {0.01, shift},
       {0.01, hop_grid},
-      {0.01, flip},
+      {0.03, flip},
     };
     {
       // normalize probs
@@ -232,8 +268,8 @@ class Solver : public SolverBase {
       for (int i = 0; i < action_probs.size(); ++i) { action_probs[i].first /= p; }
     }
 
-    for (int i = 0; i < num_iters; ++i) {
-      progress = 1.0 * i / num_iters;
+    for (int iter = 0; iter < num_iters; ++iter) {
+      progress = 1.0 * iter / num_iters;
 
       const double p_action = std::uniform_real_distribution(0.0, 1.0)(rng_);
       double p_accum = 0.0;
@@ -244,17 +280,20 @@ class Solver : public SolverBase {
         }
       }
 
-      if (editor && i % 100 == 0) {
-        editor->set_pose(std::make_shared<SSolution>(pose));
-        int c = editor->show(1);
+      if (editor && iter % 100 == 0) {
+        editor->set_oneshot_custom_stat(fmt::format("iter = {}/{}", iter, num_iters));
+        editor->set_pose(args.problem->create_solution(pose));
+        if (auto show_result = editor->show(1); show_result.edit_result) {
+          pose = show_result.edit_result->pose_after_edit->vertices;
+        }
       }
     }
 
     SolverOutputs outputs;
     if (best_feasible_pose.empty()) {
-      outputs.solution = std::make_shared<SSolution>(pose);
+      outputs.solution = args.problem->create_solution(pose);
     } else {
-      outputs.solution = std::make_shared<SSolution>(best_feasible_pose);
+      outputs.solution = args.problem->create_solution(best_feasible_pose);
     }
     return outputs;
   }

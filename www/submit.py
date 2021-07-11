@@ -17,22 +17,27 @@ def submit_pose():
     data = flask.request.get_data().decode()
     data = json.loads(data)
     id = data['id']
-    solver = data['solver']
-    if solver == 'ManualSolver':
-        solver = 'by_hands'
-    solution = json.dumps(load_pose_json(type=solver, id=id))
+    subdir = data['subdir']
+    if subdir == 'ManualSolver':
+        subdir = 'by_hands'
+    solution = load_pose_json(subdir=subdir, id=id)
+    assert solution is not None, data
+    solution = json.dumps(solution)
 
     headers = {'Authorization': 'Bearer {}'.format(API_TOKEN)}
     url = 'https://poses.live/api/problems/{}/solutions'.format(id)
     response = requests.post(url, headers=headers, data=solution)
-    print(response)
+    if response.status_code != 200:
+        print('>', solution)
+        print(response.text)
     return response.text
 
 
-def load_pose_json(id, type='submit'):
-    pose_path = os.path.join(SOLUTIONS_DIR, type, '{}.pose.json'.format(id)) 
+def load_pose_json(id, subdir='submit'):
+    pose_path = os.path.join(SOLUTIONS_DIR, subdir, '{}.pose.json'.format(id)) 
     try:
         with open(pose_path) as f:
             return json.load(f)
     except:
+        print('Fail to open {} {}'.format(subdir, pose_path))
         return None

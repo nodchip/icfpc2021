@@ -35,14 +35,22 @@ int main(int argc, char* argv[]) {
     bool output_judge = true;
     bool visualize = false;
     bool post_edit = false;
+    std::string parameters_json;
+    std::optional<int> offer_globalist_bonus;
+    std::optional<int> offer_wallhack_bonus;
+    std::function<void(const int& p)> set_globalist_func = [&](int p) { offer_globalist_bonus = p; };
+    std::function<void(const int& p)> set_wallhack_func = [&](int p) { offer_wallhack_bonus = p; };
     sub_solve->add_option("solver_name", solver_name, "solver name");
     sub_solve->add_option("problem_json", problem_json, "problem JSON file path");
     sub_solve->add_option("solution_json", solution_json, "output solution JSON file path (optional)");
     sub_solve->add_option("initial_solution_json", initial_solution_json, "input solution JSON file path (optional)");
     sub_solve->add_flag("-m,--output-meta,!--no-output-meta", output_meta, "output meta info to solution JSON");
     sub_solve->add_flag("-j,--output-judge,!--no-output-judge", output_judge, "output judge info to solution JSON");
+    sub_solve->add_option_function("--offer-globalist", set_globalist_func, "problem id that offers GLOBALIST bonus to this problem. AND USE IT!");
+    sub_solve->add_option_function("--offer-wallhack", set_wallhack_func, "problem id that offers WALLHACK bonus to this problem. AND USE IT!");
     sub_solve->add_flag("--visualize", visualize, "realtime visualize");
     sub_solve->add_flag("--post-edit", post_edit, "post edit output");
+    sub_solve->add_flag("--parameters_json", parameters_json, "parameters JSON file path. Required only by OptunaAnnealingSolver.");
 
     auto sub_list_solvers = app.add_subcommand("list_solvers", "list up registered solvers");
 
@@ -56,6 +64,7 @@ int main(int argc, char* argv[]) {
     sub_try_globalist->add_flag("-j,--output-judge,!--no-output-judge", output_judge, "output judge info to solution JSON");
     sub_try_globalist->add_flag("--visualize", visualize, "realtime visualize");
     sub_try_globalist->add_flag("--post-edit", post_edit, "post edit output");
+    sub_try_globalist->add_flag("--parameters_json", parameters_json, "parameters JSON file path. Required only by OptunaAnnealingSolver.");
 
     CLI11_PARSE(app, argc, argv);
 
@@ -68,6 +77,16 @@ int main(int argc, char* argv[]) {
         return 0;
       }
       SProblemPtr problem = SProblem::load_file_ext(problem_json);
+      if (offer_globalist_bonus) {
+        problem->force_use_bonus_index = problem->available_bonuses.size();
+        problem->available_bonuses.push_back(SBonus(SBonus::Type::GLOBALIST, *offer_globalist_bonus));
+        LOG(INFO) << fmt::format("Offerred GLOBALIST <- {}", *offer_globalist_bonus);
+      }
+      if (offer_wallhack_bonus) {
+        problem->force_use_bonus_index = problem->available_bonuses.size();
+        problem->available_bonuses.push_back(SBonus(SBonus::Type::WALLHACK, *offer_wallhack_bonus));
+        LOG(INFO) << fmt::format("Offerred WALLHACK <- {}", *offer_wallhack_bonus);
+      }
       LOG(INFO) << fmt::format("Problem  : {}", problem_json);
 
       SSolutionPtr initial_solution;
@@ -76,11 +95,16 @@ int main(int argc, char* argv[]) {
         CHECK(initial_solution);
         CHECK(is_compatible(*problem, *initial_solution));
         LOG(INFO) << fmt::format("Initial Solution  : {}", initial_solution_json);
+
+        if (problem->force_use_bonus_index) {
+          LOG(WARNING) << "Overwritng BONUS";
+          initial_solution->bonuses = problem->create_solution()->bonuses;
+        }
       }
 
       SolverOutputs out;
       const auto t0 = std::chrono::system_clock::now();
-      out = solver->solve({ problem, initial_solution, visualize });
+      out = solver->solve({problem, initial_solution, visualize, parameters_json});
       const auto t1 = std::chrono::system_clock::now();
       const double solve_s = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count() * 1e-6;
       LOG(INFO) << fmt::format("Elapsed  : {:.2f} s", solve_s);
@@ -98,7 +122,7 @@ int main(int argc, char* argv[]) {
           LOG(INFO) << "judge : fit_in_hole = " << res.fit_in_hole();
           LOG(INFO) << "judge : satisfy_stretch = " << res.satisfy_stretch();
           LOG(INFO) << "judge : is_valid = " << res.is_valid();
-          update_judge(res, json);
+          update_judge(*problem, res, json);
         }
         if (solution_json.empty()) {
           LOG(INFO) << "No output";
@@ -110,7 +134,7 @@ int main(int argc, char* argv[]) {
       }
 
       if (post_edit) {
-        visualize_and_edit(problem, out.solution);
+        visualize_and_edit(problem, out.solution, solver_name);
       }
 
       return 0;
@@ -144,20 +168,23 @@ int main(int argc, char* argv[]) {
       std::vector<SJudgeResult> res(2);
       std::vector<nlohmann::json> out_json(2);
       for (int trial = 0; trial < 2; ++trial) {
-        problem->is_globalist_mode = trial == 0;
-        LOG(INFO) << fmt::format("Trying GLOBALIST  : {}", problem->is_globalist_mode);
+        const bool is_globalst_mode = trial == 0;
+        if (is_globalst_mode) {
+          problem->available_bonuses = { SBonus(SBonus::Type::GLOBALIST) };
+          problem->force_use_bonus_index = 0;
+        } else {
+          problem->available_bonuses = { };
+          problem->force_use_bonus_index = std::nullopt;
+        }
+        LOG(INFO) << fmt::format("Trying GLOBALIST  : {}", is_globalst_mode);
 
         const auto t0 = std::chrono::system_clock::now();
-        out[trial] = solver->solve({ problem, initial_solution, visualize });
+        out[trial] = solver->solve({ problem, initial_solution, visualize, parameters_json });
         const auto t1 = std::chrono::system_clock::now();
         const double solve_s = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count() * 1e-6;
         LOG(INFO) << fmt::format("Elapsed  : {:.2f} s", solve_s);
 
         {
-          if (problem->is_globalist_mode) {
-            out[trial].solution->bonuses.push_back(SBonus(SBonus::Type::GLOBALIST));
-          }
-
           nlohmann::json json = out[trial].solution->json();
           if (output_meta) {
             if (json.find("meta") == json.end()) json["meta"] = {};
@@ -170,7 +197,7 @@ int main(int argc, char* argv[]) {
             LOG(INFO) << "judge : fit_in_hole = " << res[trial].fit_in_hole();
             LOG(INFO) << "judge : satisfy_stretch = " << res[trial].satisfy_stretch();
             LOG(INFO) << "judge : is_valid = " << res[trial].is_valid();
-            update_judge(res[trial], json);
+            update_judge(*problem, res[trial], json);
           }
           out_json[trial] = json;
 
@@ -182,7 +209,7 @@ int main(int argc, char* argv[]) {
           }
 
           if (post_edit) {
-            visualize_and_edit(problem, out[trial].solution);
+            visualize_and_edit(problem, out[trial].solution, solver_name);
           }
         }
       }

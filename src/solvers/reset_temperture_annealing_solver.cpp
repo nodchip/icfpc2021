@@ -55,6 +55,9 @@ BoostPolygon ToBoostPolygon(const std::vector<T>& points) {
   for (std::size_t i = 0; i <= points.size(); ++i) {
     polygon.outer().push_back(ToBoostPoint(points[i % points.size()]));
   }
+  if (bg::area(polygon) < 0.0) {
+    bg::reverse(polygon);
+  }
   return polygon;
 }
 
@@ -82,7 +85,7 @@ class Solver : public SolverBase {
 
     SVisualEditorPtr editor;
     if (args.visualize) {
-      editor = std::make_shared<SVisualEditor>(args.problem, "visualize");
+      editor = std::make_shared<SVisualEditor>(args.problem, "ResetTempertureAnnealingSolver", "visualize");
     }
 
     const int N = vertices_.size();
@@ -122,7 +125,7 @@ class Solver : public SolverBase {
       if (feasible != judge_valid) {
         LOG(INFO) << feasible << " " << judge_valid;
         if (editor) {
-          editor->set_pose(std::make_shared<SSolution>(pose));
+          editor->set_pose(args.problem->create_solution(pose));
           while (true) {
             int c = editor->show(1);
             if (c == 27) break;
@@ -259,16 +262,16 @@ class Solver : public SolverBase {
       }
 
       if (editor && iter % 100 == 0) {
-        editor->set_pose(std::make_shared<SSolution>(pose));
+        editor->set_pose(args.problem->create_solution(pose));
         int c = editor->show(1);
       }
     }
 
     SolverOutputs outputs;
     if (best_feasible_pose.empty()) {
-      outputs.solution = std::make_shared<SSolution>(pose);
+      outputs.solution = args.problem->create_solution(pose);
     } else {
-      outputs.solution = std::make_shared<SSolution>(best_feasible_pose);
+      outputs.solution = args.problem->create_solution(best_feasible_pose);
     }
     return outputs;
   }

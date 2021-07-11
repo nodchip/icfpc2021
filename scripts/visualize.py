@@ -39,6 +39,17 @@ def visualize(problem_file_path, pose_file_path, output_file_path):
     # holeを描画する
     plt.fill(*zip(*problem['hole']), facecolor='white')
 
+    # bonusesを描画する
+    for bonus in problem['bonuses']:
+        color = 'darkred'
+        if bonus['bonus'] == 'GLOBALIST':
+            color = 'yellow'
+        if bonus['bonus'] == 'BREAK_A_LEG':
+            color = 'blue'
+        if bonus['bonus'] == 'WALLHACK':
+            color = 'orange'
+        axes.add_patch(plt.Circle(bonus['position'], radius=5, color=color, alpha=0.5))
+
     # figureを描画する
     for edge in problem['figure']['edges']:
         src = problem['figure']['vertices'][edge[0]]

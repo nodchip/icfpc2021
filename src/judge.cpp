@@ -7,7 +7,8 @@
 #include "timer.h"
 #include "judge.h"
 
-#if 0
+#define USE_BOOST_GEOMETRY
+#if defined(USE_BOOST_GEOMETRY)
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/geometries/polygon.hpp>
@@ -28,6 +29,9 @@ BoostPolygon ToBoostPolygon(const std::vector<T>& points) {
   BoostPolygon polygon;
   for (std::size_t i = 0; i <= points.size(); ++i) {
     polygon.outer().push_back(ToBoostPoint(points[i % points.size()]));
+  }
+  if (bg::area(polygon) < 0.0) {
+    bg::reverse(polygon);
   }
   return polygon;
 }
@@ -52,34 +56,55 @@ void test_bg() {
     boost::geometry::read_wkt(
         "POLYGON((0 0, 10 0, 10 5, 5 5, 5 10, 0 10))", blue);
 
+    if (bg::area(blue) < 0.0) {
+      bg::reverse(blue);
+    }
+
     BoostLinestring ls({ToBoostPoint(Point(5.0, 8.0)), ToBoostPoint(Point(8.0, 5.0))});
 
-    std::vector<BoostLinestring> output;
-    boost::geometry::difference(ls, blue, output);
-
-    LOG(INFO) << "linestring - blue:" << output.size(); // zero ...
+    LOG(INFO) << "linestring coverd by blue?:" << boost::geometry::covered_by(ls, blue);
 
 }
 #endif
 
 SJudgeResult judge(const SProblem& problem, const SSolution& solution) {
   SJudgeResult res;
+  for (auto& b : solution.bonuses) {
+    if (b.type == SBonus::Type::GLOBALIST) {
+      res.is_globalist_mode = true;
+    }
+    if (b.type == SBonus::Type::WALLHACK) {
+      res.is_wallhack_mode = true;
+    }
+  }
+
+  // all figure points are inside the hole.
+  for (size_t ivert = 0; ivert < solution.vertices.size(); ++ivert) {
+    // (c) Every point located on any line segment of the figure in the assumed pose must either lay inside the hole, or on its boundary 
+    if (contains(problem.hole_polygon, solution.vertices[ivert]) == EContains::EOUT) {
+      res.out_of_hole_vertices.push_back(ivert);
+    }
+  }
+
+  if (res.is_wallhack_mode) {
+    if (res.out_of_hole_vertices.size() == 1) {
+      res.wallhacking_index = res.out_of_hole_vertices[0];
+    }
+  }
 
   // figure does not intersect with edges of the hole.
-#if 0
-  test_bg();
+#if defined(USE_BOOST_GEOMETRY)
+  //test_bg();
 
   auto hole_polygon_ = ToBoostPolygon(problem.hole_polygon);
   for (size_t iedge = 0; iedge < problem.edges.size(); ++iedge) {
     const auto [a, b] = problem.edges[iedge];
     BoostLinestring linestring{ToBoostPoint(solution.vertices[a]), ToBoostPoint(solution.vertices[b])};
-    std::vector<BoostLinestring> differences;
-    bg::difference(linestring, hole_polygon_, differences);
-    bool intersects = false;
-    for (const auto& segment : differences) {
-      intersects = true;
-    }
-    if (intersects) {
+    if (!bg::covered_by(linestring, hole_polygon_)) {
+      const bool wallhacking_edge = res.wallhacking_index.value_or(-1) == a || res.wallhacking_index.value_or(-1) == b;
+      if (!wallhacking_edge) {
+        res.out_of_hole_edges_except_wallhack.push_back(iedge);
+      }
       res.out_of_hole_edges.push_back(iedge);
     }
   }
@@ -111,11 +136,11 @@ SJudgeResult judge(const SProblem& problem, const SSolution& solution) {
       && contains(problem.hole_polygon, moved_j) == EContains::EON
       ) {
       bool on_edge = false;
-      for (const auto& original_edge : problem.edges) {
-        auto original_i = solution.vertices[edge.first];
-        auto original_j = solution.vertices[edge.second];
-        if ((moved_i == original_i && moved_j == original_j) ||
-            (moved_i == original_j && moved_j == original_i)) {
+      for (size_t ihole = 0; ihole < problem.hole_polygon.size(); ++ihole) {
+        auto h0 = problem.hole_polygon[ihole];
+        auto h1 = problem.hole_polygon[(ihole + 1) % problem.hole_polygon.size()];
+        if ((moved_i == h0 && moved_j == h1) ||
+            (moved_i == h1 && moved_j == h0)) {
           on_edge = true;
           break;
         }
@@ -139,18 +164,9 @@ SJudgeResult judge(const SProblem& problem, const SSolution& solution) {
     }
   }
 #endif
-
-  // all figure points are inside the hole.
-  for (size_t ivert = 0; ivert < solution.vertices.size(); ++ivert) {
-    // (c) Every point located on any line segment of the figure in the assumed pose must either lay inside the hole, or on its boundary 
-    if (contains(problem.hole_polygon, solution.vertices[ivert]) == EContains::EOUT) {
-      res.out_of_hole_vertices.push_back(ivert);
-    }
-  }
   
   // stretch
-  res.is_globalist_mode = problem.is_globalist_mode;
-  if (problem.is_globalist_mode) {
+  if (res.is_globalist_mode) {
     double globalist = 0.0;
     for (size_t iedge = 0; iedge < problem.edges.size(); ++iedge) {
       const auto& edge = problem.edges[iedge];
@@ -189,18 +205,38 @@ SJudgeResult judge(const SProblem& problem, const SSolution& solution) {
     res.dislikes += minval;
   }
 
+  // gain bonus
+  res.gained_bonus_indices.clear();
+  for (size_t ibonus = 0; ibonus < problem.bonuses.size(); ++ibonus) {
+    for (size_t ivert = 0; ivert < solution.vertices.size(); ++ivert) {
+      if (problem.bonuses[ibonus].position == solution.vertices[ivert]) {
+        res.gained_bonus_indices.push_back(ibonus);
+        break;
+      }
+    }
+  }
+
   return res;
 }
 
-bool update_judge(const SJudgeResult& res, nlohmann::json& solution_json) {
+bool update_judge(const SProblem& problem, const SJudgeResult& res, nlohmann::json& solution_json) {
   if (solution_json.find("meta") == solution_json.end()) solution_json["meta"] = {};
   auto& meta_json = solution_json["meta"];
-  if (meta_json.find("juge") == meta_json.end()) meta_json["judge"] = {};
+  if (meta_json.find("judge") == meta_json.end()) meta_json["judge"] = {};
   
   meta_json["judge"]["dislikes"] = res.dislikes;
   meta_json["judge"]["fit_in_hole"] = res.fit_in_hole();
   meta_json["judge"]["satisfy_stretch"] = res.satisfy_stretch();
   meta_json["judge"]["is_valid"] = res.is_valid();
+
+  meta_json["judge"]["gained_bonuses"] = nlohmann::json::array();
+  for (auto bid : res.gained_bonus_indices) {
+    meta_json["judge"]["gained_bonuses"].push_back({
+      {"position", problem.bonuses[bid].position},
+      {"bonus", SBonus::bonus_name(problem.bonuses[bid].type)},
+      {"problem", problem.bonuses[bid].problem_id},
+      });
+  }
 
   return true;
 }

@@ -359,8 +359,7 @@ public:
 		SolverOutputs ret;
 
 		Timer timer;
-		ret.solution = std::make_shared<SSolution>();
-		ret.solution->vertices = args.problem->vertices;
+		ret.solution = args.problem->create_solution();
 		full_research(args.problem, ret.solution, timer);
 
 		// dummy.

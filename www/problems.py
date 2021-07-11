@@ -21,33 +21,39 @@ def show_problems():
     contest_infos = pd.read_table(os.path.join(ROOT_DIR, 'www', 'contest_infos.tsv'), index_col=0).loc
     ids = sorted([int(re.sub(r'\D', '', x)) for x in os.listdir(path=PROBLEMS_DIR)])
     solutions = get_all_solutions(ids)
+    problems = [parse_problem(id, contest_infos[id]) for id in ids]
+
+    # Resolve bonus dependencies
+    for i, problem in enumerate(problems):
+        from_id = i + 1
+        for bonus in problem.get('bonuses', []):
+            if 'problem' not in bonus:
+                continue
+            j = bonus['problem'] - 1
+            if 'bonuses' not in problems[j]:
+                problems[j]['bonuses'] = []
+            to_bonus = {
+                'bonus': bonus['bonus'],
+                'from': from_id,
+            }
+            problems[j]['bonuses'].append(to_bonus)
+
     problem_contexts = []
-
-    for id in ids:
-        web = contest_infos[id]
-        dislikes = web['your dislikes']
-        problem = load_problem_json(id)
-        problem.update({
-            'best_dislikes': int(web['minimal dislikes']) if not math.isnan(web['minimal dislikes']) else None,
-            'dislikes': int(dislikes) if not math.isnan(dislikes) else None,
-            'max_score': get_score(problem),
-        })
-
+    for i, problem in enumerate(problems):
         def get_state(p, l):
             d = p['dislikes']
             b = p['best_dislikes']
             if d is None:
-                if l is not None:
-                    return 'danger'
-            else:
-                if l is None or d < l:
-                    return 'warning'
-                if d > l:
-                    return 'danger'
-                if d == b:
-                    return 'success'
+                return 'secondary' if l is None else 'danger'
+            if l is None or d < l:
+                return 'warning'
+            if d > l:
+                return 'danger'
+            if d == b:
+                return 'success'
             return None
 
+        id = i + 1
         local_dislikes = solutions[id][0]['meta']['judge']['dislikes'] if solutions[id] else None
         context = {
             'id': id,
@@ -60,12 +66,13 @@ def show_problems():
             'num_verts': len(problem['figure']['vertices']),
             'solutions': [solution_context(problem, x) for x in solutions[id]],
             'state': get_state(problem, local_dislikes),
+            'bonuses': problem['bonuses'],
         }
-
         problem_contexts.append(context)
 
     context = {
         'problems': problem_contexts,
+        'emojis': {'GLOBALIST': '🌏', 'BREAK_A_LEG': '🦵', 'WALLHACK': '🧱'},
     }
     return flask.render_template('problems.html', title='Problems', **context)
 
@@ -76,6 +83,7 @@ def solution_context(problem, solution):
 
     context = {
         'solver': meta['solver'],
+        'subdir': meta['subdir'],
     }
 
     if judge:
@@ -95,17 +103,30 @@ def get_all_solutions(ids):
         type = os.path.basename(subdir)
         for filename in files:
             id = int(re.sub(r'\D', '', filename))
-            pose = load_pose_json(type=type, id=id)
-            if not pose:
+            solution = load_pose_json(type=type, id=id)
+            if not solution:
                 continue
-            if 'meta' not in pose:
-                pose['meta'] = {}
-            if 'solver' not in pose['meta']:
-                pose['meta']['solver'] = type
-            solutions[id].append(pose)
+            assert 'meta' in solution, 'No meta info in {}/{}.pose.json'.format(type, id)
+            if not solution['meta']['judge']['is_valid']:
+                continue
+            if 'solver' not in solution['meta']:
+                solution['meta']['solver'] = type
+            solution['meta']['subdir'] = type
+            solutions[id].append(solution)
     for id in ids:
         solutions[id] = sorted(solutions[id], key=lambda x: x['meta']['judge']['dislikes'])
     return solutions
+
+
+def parse_problem(id, web):
+    dislikes = web['your dislikes']
+    problem = load_problem_json(id)
+    problem.update({
+        'best_dislikes': int(web['minimal dislikes']) if not math.isnan(web['minimal dislikes']) else None,
+        'dislikes': int(dislikes) if not math.isnan(dislikes) else None,
+        'max_score': get_score(problem),
+    })
+    return problem
 
 
 def load_problem_json(id):
