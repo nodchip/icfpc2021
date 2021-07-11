@@ -297,12 +297,13 @@ struct SCanvas {
         mag = 1200 / img_base_size;
         img_size = img_base_size * mag;
         img_base = cv::Mat_<cv::Vec3b>(img_size, img_size, cv::Vec3b(160, 160, 160));
-        std::vector<cv::Point> cv_hole_polygon;
+        std::vector<std::vector<cv::Point>> cv_hole_polygon(1); // cv::fillPoly() throws with std::vector<cv::Point> ..
         for (auto p : problem->hole_polygon) {
           auto [x, y] = cvt(p);
-          cv_hole_polygon.emplace_back(x, y);
+          cv_hole_polygon[0].emplace_back(x, y);
         }
         cv::fillPoly(img_base, cv_hole_polygon, cv::Scalar(255, 255, 255));
+
         for (auto& bonus : problem->bonuses) {
             auto [x, y] = bonus.position;
             cv::Scalar color;
