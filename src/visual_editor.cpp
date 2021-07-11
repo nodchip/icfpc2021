@@ -71,11 +71,13 @@ struct SCanvas {
   SSolutionPtr solution;
   std::set<int> marked_vertex_indices;
 
-  integer img_offset_x{kBaseOffset};
-  integer img_offset_y{kBaseOffset};
-  integer base_img_width;
-  integer base_img_height;
+  // TODO(peria): Make these const.
+  integer img_width;
+  integer img_height;
   integer mag;
+
+  integer offset_x{kBaseOffset};
+  integer offset_y{kBaseOffset + kBaseOffset};
   cv::Mat_<cv::Vec3b> base_img;
   cv::Mat_<cv::Vec3b> img;
 
@@ -102,11 +104,11 @@ struct SCanvas {
   cv::Scalar marked_vartex_color = cv::Scalar(128, 128, 0);
 
   inline cv::Point cvt(int x, int y) {
-    return cv::Point((x + img_offset_x) * mag, (y + img_offset_y) * mag);
+    return cv::Point((x + offset_x) * mag, (y + offset_y) * mag);
   };
   inline cv::Point cvt(const Point& p) { return cvt(p.first, p.second); }
   inline Point icvt(int x, int y) {
-    return {x / mag - img_offset_x, y / mag - img_offset_y};
+    return {x / mag - offset_x, y / mag - offset_y};
   }
 
   void draw_circle(cv::Mat& img,
@@ -234,6 +236,11 @@ struct SCanvas {
       p.first += dx;
       p.second += dy;
     }
+  }
+
+  void shift_all(int dx, int dy) {
+    offset_x += dx;
+    offset_y += dy;
   }
 
   void rotate_clockwise() {
@@ -382,6 +389,62 @@ struct SCanvas {
     return true;
   }
 
+  void draw_base_image() {
+    integer img_width_px = img_width * mag;
+    integer img_height_px = img_height * mag;
+    base_img = cv::Mat_<cv::Vec3b>(img_height_px, img_width_px,
+                                   cv::Vec3b(160, 160, 160));
+
+    {
+      // cv::fillPoly() throws with std::vector<cv::Point>
+      std::vector<std::vector<cv::Point>> cv_hole_polygon(1);
+      auto& polygon = cv_hole_polygon[0];
+      for (auto p : problem->hole_polygon) {
+        auto [x, y] = cvt(p);
+        polygon.emplace_back(x, y);
+      }
+      cv::fillPoly(base_img, cv_hole_polygon, cv::Scalar(255, 255, 255));
+    }
+
+    for (auto& bonus : problem->bonuses) {
+      auto [x, y] = bonus.position;
+      cv::Scalar color;
+      switch (bonus.type) {
+        case SBonus::Type::GLOBALIST:
+          color = cv::Scalar(32, 192, 192);
+          break;
+        case SBonus::Type::BREAK_A_LEG:
+          color = cv::Scalar(192, 32, 32);
+          break;
+        case SBonus::Type::WALLHACK:
+          color = cv::Scalar(64, 128, 255);
+          break;
+        case SBonus::Type::SUPERFLEX:
+          color = cv::Scalar(192, 192, 32);
+          break;
+        case SBonus::Type::INVALID:
+          CHECK(false);
+      }
+      cv::circle(base_img, cvt(x, y), 20, color, cv::FILLED);
+    }
+
+    // Draw grid points.
+    for (integer x = -offset_x; x <= -offset_x + img_width; ++x) {
+      for (integer y = -offset_y + kBaseOffset; y <= -offset_y + img_height;
+           ++y) {
+        cv::circle(base_img, cvt(x, y), 2, cv::Scalar(200, 200, 200),
+                   cv::FILLED);
+      }
+    }
+
+    const int n = problem->hole_polygon.size();
+    for (int i = 0; i < n; ++i) {
+      auto [x1, y1] = cvt(problem->hole_polygon[i]);
+      auto [x2, y2] = cvt(problem->hole_polygon[(i + 1) % n]);
+      draw_line(base_img, x1, y1, x2, y2, cv::Scalar(0, 0, 0), 2);
+    }
+  }
+
   void init() {
     auto rect_poly = calc_bb(problem->hole_polygon);
     auto rect_fig = calc_bb(problem->vertices);
@@ -392,66 +455,11 @@ struct SCanvas {
     integer y_max =
         std::max(rect_poly.y + rect_poly.height, rect_fig.y + rect_fig.height);
 
-    base_img_width = x_max + kBaseOffset * 2;
-    base_img_height = y_max + kBaseOffset * 2;
-    integer mag_x = kWindowWidthPx / base_img_width;
-    integer mag_y = kWindowHeightPx / base_img_height;
+    img_width = x_max + kBaseOffset * 2;
+    img_height = y_max + kBaseOffset * 3;
+    integer mag_x = kWindowWidthPx / img_width;
+    integer mag_y = kWindowHeightPx / img_height;
     mag = std::min(mag_x, mag_y);
-  }
-
-  void draw_base_image() {
-    auto rect_poly = calc_bb(problem->hole_polygon);
-    auto rect_fig = calc_bb(problem->vertices);
-    integer x_min = std::min(rect_poly.x, rect_fig.x);
-    integer x_max =
-        std::max(rect_poly.x + rect_poly.width, rect_fig.x + rect_fig.width);
-    integer y_min = std::min(rect_poly.y, rect_fig.y);
-    integer y_max =
-        std::max(rect_poly.y + rect_poly.height, rect_fig.y + rect_fig.height);
-
-    // draw base image
-    integer img_width_px = base_img_width * mag;
-    integer img_height_px = base_img_height * mag;
-    base_img = cv::Mat_<cv::Vec3b>(img_height_px, img_width_px,
-                                   cv::Vec3b(160, 160, 160));
-    std::vector<std::vector<cv::Point>> cv_hole_polygon(
-        1);  // cv::fillPoly() throws with std::vector<cv::Point> ..
-    for (auto p : problem->hole_polygon) {
-      auto [x, y] = cvt(p);
-      cv_hole_polygon[0].emplace_back(x, y);
-    }
-    cv::fillPoly(base_img, cv_hole_polygon, cv::Scalar(255, 255, 255));
-
-    for (auto& bonus : problem->bonuses) {
-      auto [x, y] = bonus.position;
-      cv::Scalar color;
-      if (bonus.type == SBonus::Type::GLOBALIST) {
-        color = cv::Scalar(32, 192, 192);
-      } else if (bonus.type == SBonus::Type::BREAK_A_LEG) {
-        color = cv::Scalar(192, 32, 32);
-      } else if (bonus.type == SBonus::Type::WALLHACK) {
-        color = cv::Scalar(64, 128, 255);
-      } else if (bonus.type == SBonus::Type::SUPERFLEX) {
-        color = cv::Scalar(192, 192, 32);
-      }
-      cv::circle(base_img, cvt(x, y), 20, color, cv::FILLED);
-    }
-
-    // Draw grid points.
-    for (integer x = -img_offset_x; x <= -img_offset_x + base_img_width; ++x) {
-      for (integer y = -img_offset_y + kBaseOffset;
-           y <= -img_offset_y + base_img_height; ++y) {
-        cv::circle(base_img, cvt(x, y), 2, cv::Scalar(200, 200, 200),
-                   cv::FILLED);
-      }
-    }
-
-    int nh = problem->hole_polygon.size();
-    for (int i = 0; i < nh; i++) {
-      auto [x1, y1] = cvt(problem->hole_polygon[i]);
-      auto [x2, y2] = cvt(problem->hole_polygon[(i + 1) % nh]);
-      draw_line(base_img, x1, y1, x2, y2, cv::Scalar(0, 0, 0), 2);
-    }
     edge_colors.resize(problem->edges.size(), cv::Scalar(0, 255, 0));
   }
 
@@ -617,6 +625,26 @@ SShowResult SVisualEditor::show(int delay_ms) {
       break;
     case 'r':
       canvas->rotate_clockwise();
+      canvas->update(-1);
+      break;
+    case kUpArrowKey:
+      canvas->shift_all(0, -1);
+      canvas->draw_base_image();
+      canvas->update(-1);
+      break;
+    case kDownArrowKey:
+      canvas->shift_all(0, 1);
+      canvas->draw_base_image();
+      canvas->update(-1);
+      break;
+    case kLeftArrowKey:
+      canvas->shift_all(-1, 0);
+      canvas->draw_base_image();
+      canvas->update(-1);
+      break;
+    case kRightArrowKey:
+      canvas->shift_all(1, 0);
+      canvas->draw_base_image();
       canvas->update(-1);
       break;
     case 'm': {  // toggle internal edit mode.
