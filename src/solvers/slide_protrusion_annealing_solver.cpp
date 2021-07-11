@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include <cmath>
+#include <fmt/format.h>
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/geometries/polygon.hpp>
@@ -121,6 +122,7 @@ namespace SlideProtrusionAnnealingSolver {
         if (feasible && updated_cost < best_feasible_cost) {
           best_feasible_cost = updated_cost;
           best_feasible_pose = pose;
+          if (editor) editor->set_persistent_custom_stat(fmt::format("best_cost = {}", best_feasible_cost));
         }
         const double T = std::pow(T0, 1.0 - progress) * std::pow(T1, progress);
         if (std::uniform_real_distribution(0.0, 1.0)(rng_) < std::exp(-(updated_cost - cost) / T)) {
@@ -207,37 +209,6 @@ namespace SlideProtrusionAnnealingSolver {
         }
       };
 
-    auto slide_protrusion = [&] { // from SlideProtrusionAnnealingSolver
-      bool found = false;
-      int vertex_index_backup[2];
-      Point vertex_backup[2];
-      for (const auto& edge : edges_) {
-        const auto [a, b] = edge;
-        Point2d pa = pose[a];
-        Point2d pb = pose[b];
-        shrink(pa, pb);
-        const auto boost_point_a = ToBoostPoint(pa);
-        const auto boost_point_b = ToBoostPoint(pb);
-        BoostLinestring linestring{ boost_point_a, boost_point_b };
-        std::vector<BoostLinestring> differences;
-        bg::difference(linestring, hole_polygon_, differences);
-        if (differences.empty()) {
-          continue;
-        }
-
-        for (const auto& segment : differences) {
-          for (const auto& point : segment) {
-            auto p = boost_point_b;
-            bg::subtract_point(p, boost_point_a);
-            auto q = point;
-            bg::subtract_point(q, boost_point_a);
-
-            auto cross_product = bg::cross_product(p, q);
-          }
-        }
-      }
-    };
-
       auto edges_cache = edges_from_vertex(*args.problem);
       auto hop_grid = [&] { // jump to a tolerated (by at least one edge) point.
         const int pivot = std::uniform_int_distribution(0, N - 1)(rng_);
@@ -284,6 +255,47 @@ namespace SlideProtrusionAnnealingSolver {
         }
       };
 
+      // ÇÕÇ›èoÇµÇƒÇ¢ÇÈê¸ï™Çà⁄ìÆÇ≥ÇπÇÈ
+      auto slide_protrusion = [&] { // from SlideProtrusionAnnealingSolver
+        bool found = false;
+        int vertex_index_backup[2];
+        Point vertex_backup[2];
+        for (const auto& edge : edges_) {
+          const auto [a, b] = edge;
+          Point2d pa = pose[a];
+          Point2d pb = pose[b];
+          shrink(pa, pb);
+          const auto boost_point_a = ToBoostPoint(pa);
+          const auto boost_point_b = ToBoostPoint(pb);
+          BoostLinestring linestring{ boost_point_a, boost_point_b };
+          std::vector<BoostLinestring> differences;
+          bg::difference(linestring, hole_polygon_, differences);
+          if (differences.empty()) {
+            continue;
+          }
+
+          found = true;
+          vertex_index_backup[0] = a;
+          vertex_index_backup[1] = b;
+          vertex_backup[0] = pose[a];
+          vertex_backup[1] = pose[b];
+
+          pose[a].first += std::uniform_int_distribution(-1, 1)(rng_);
+          pose[a].second += std::uniform_int_distribution(-1, 1)(rng_);
+          pose[b].first += std::uniform_int_distribution(-1, 1)(rng_);
+          pose[b].second += std::uniform_int_distribution(-1, 1)(rng_);
+
+          break;
+        }
+
+        if (found) {
+          if (evaluate_and_descide_rollback()) {
+            pose[vertex_index_backup[0]] = vertex_backup[0];
+            pose[vertex_index_backup[1]] = vertex_backup[1];
+          }
+        }
+      };
+
       using Action = std::function<void()>;
       std::vector<std::pair<double, Action>> action_probs = {
         {0.9, single_small_change},
@@ -291,6 +303,7 @@ namespace SlideProtrusionAnnealingSolver {
         {0.01, shift},
         {0.01, hop_grid},
         {0.03, flip},
+        {0.10, slide_protrusion},
       };
       {
         // normalize probs
@@ -312,8 +325,11 @@ namespace SlideProtrusionAnnealingSolver {
         }
 
         if (editor && iter % 100 == 0) {
+          editor->set_oneshot_custom_stat(fmt::format("iter = {}/{}", iter, num_iters));
           editor->set_pose(std::make_shared<SSolution>(pose));
-          int c = editor->show(1);
+          if (auto show_result = editor->show(1); show_result.edit_result) {
+            pose = show_result.edit_result->pose_after_edit->vertices;
+          }
         }
       }
 

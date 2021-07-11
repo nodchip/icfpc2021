@@ -1,0 +1,1 @@
+{"bonuses":[],"meta":{"created_at":"2021/07/11 13:29:30","elapsed_s":22.952723,"git_commit":"d222803ca7179f9741ec2b05e96c8e4957ab7103","judge":{"dislikes":438,"fit_in_hole":true,"gained_bonuses":[],"is_valid":true,"satisfy_stretch":true},"solver":"SlideProtrusionAnnealingSolver"},"vertices":[[3,33],[4,9],[23,10],[15,53],[12,31],[34,39],[36,31],[43,46],[59,29]]}
