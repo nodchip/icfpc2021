@@ -111,11 +111,11 @@ SJudgeResult judge(const SProblem& problem, const SSolution& solution) {
       && contains(problem.hole_polygon, moved_j) == EContains::EON
       ) {
       bool on_edge = false;
-      for (const auto& original_edge : problem.edges) {
-        auto original_i = solution.vertices[edge.first];
-        auto original_j = solution.vertices[edge.second];
-        if ((moved_i == original_i && moved_j == original_j) ||
-            (moved_i == original_j && moved_j == original_i)) {
+      for (size_t ihole = 0; ihole < problem.hole_polygon.size(); ++ihole) {
+        auto h0 = problem.hole_polygon[ihole];
+        auto h1 = problem.hole_polygon[(ihole + 1) % problem.hole_polygon.size()];
+        if ((moved_i == h0 && moved_j == h1) ||
+            (moved_i == h1 && moved_j == h0)) {
           on_edge = true;
           break;
         }
