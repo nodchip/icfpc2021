@@ -43,6 +43,12 @@ struct vec_holenum {
 		h2v[B] = a;
 	}
 
+  void Change_V2H(int v, int h) {
+    if (v2h[v] == h) return;
+    int prev_v = h2v[v];
+    Swap(v, prev_v);
+  }
+
 	std::vector<int> decided_points(const std::vector<int>& v) const {
 		std::vector<int> ret(H);
 		for (int i = 0; i < H; i++) ret[v2h[i]] = v[i];
@@ -313,7 +319,7 @@ bool full_research(SProblemPtr problem, SSolutionPtr& solution, Timer& timer) {
 	
 	constexpr double BIGDOUBLE = 1e18;
 	vec_holenum v_h(H);
-	v_h.shuffle(rng);
+	//v_h.shuffle(rng);
 
 	mat vertices_distances(V, vec(V, 0));
 	std::vector<std::vector<double>> upperlimit_distances(V, std::vector<double>(V, BIGDOUBLE));
@@ -338,13 +344,35 @@ bool full_research(SProblemPtr problem, SSolutionPtr& solution, Timer& timer) {
 	//std::vector<Point> points(V, std::make_pair(0, 0));
 	SSolutionPtr solution_initial(new SSolution(problem->vertices));
 
-	while (true) {
-		auto sol = dfs_holes(problem, solution_initial, hole_distances, vertices_distances, upperlimit_distances, v, V, H, timer, used_vertices, v_h, counter);
-		if (sol) {
-			solution = sol;
-			return true;
-		}
-		break;
+  SVisualEditor give_points_first(problem,"full_research", "initial_state");
+  give_points_first.set_pose(solution_initial);
+  while (true) {
+    int c = give_points_first.show(15);
+    if (c == 27) {
+      break;
+    }
+  }
+  solution_initial = give_points_first.get_pose();
+  std::vector<int> decided_points_initial = give_points_first.get_marked_indices();
+
+  for (int i = 0; i < decided_points_initial.size(); i++) {
+    auto e = decided_points_initial[i];
+    Point point = solution_initial->vertices[e];
+    for (int j = 0; j < H; j++) {
+      if (point == problem->hole_polygon[j]) {
+        v_h.Change_V2H(i, j);
+        break;
+      }
+    }
+  }
+
+
+  
+
+	auto sol = dfs_holes(problem, solution_initial, hole_distances, vertices_distances, upperlimit_distances, decided_points_initial, V, H, timer, used_vertices, v_h, counter);
+	if (sol) {
+		solution = sol;
+		return true;
 	}
 	return false;
 
