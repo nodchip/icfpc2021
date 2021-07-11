@@ -106,13 +106,13 @@ std::vector<int> edges_from_vertex(const SProblem& problem, int vid) {
 
 
 SSolution::SSolution() {
-  LOG(INFO) << __FUNCTION__;
+  //LOG(INFO) << __FUNCTION__;
 }
 SSolution::SSolution(const std::vector<Point>& vertices) : vertices(vertices) {
-  LOG(INFO) << __FUNCTION__ << " vert";
+  //LOG(INFO) << __FUNCTION__ " vert";
 }
 SSolution::SSolution(const std::vector<Point>& vertices, const std::vector<SBonus>& bonuses) : vertices(vertices), bonuses(bonuses) {
-  LOG(INFO) << __FUNCTION__ << " vert bonus";
+  //LOG(INFO) << __FUNCTION__ " vert bonus";
 }
 
 SSolutionPtr SSolution::load_file(const std::string& path) {
