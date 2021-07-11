@@ -71,10 +71,19 @@ struct SSolution {
       *res = *this;
       return res;
     }
+    void set_used_bonuses(const SProblem& problem) {
+      if (problem.is_globalist_mode) {
+        bonuses.push_back(SBonus(SBonus::Type::GLOBALIST)); // TODO: include problem id (refactoring required)
+      }
+      if (problem.is_wallhack_mode) {
+        bonuses.push_back(SBonus(SBonus::Type::WALLHACK)); // TODO: include problem id (refactoring required)
+      }
+    }
     std::string str() const;
     nlohmann::json json() const;
     friend std::ostream& operator<<(std::ostream& o, const SSolution& obj);
     friend std::ostream& operator<<(std::ostream& o, const SSolutionPtr& obj);
 };
+
 
 bool is_compatible(const SProblem& problem, const SSolution& solution);

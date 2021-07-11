@@ -72,6 +72,8 @@ struct SJudgeResult {
     }
   }
   bool is_valid() const {
+    if (is_globalist_mode && is_wallhack_mode) return false; // multiple bonuses
+
     if (is_wallhack_mode) {
       return fit_in_hole_except_wallhack() && satisfy_stretch();
     } else {
