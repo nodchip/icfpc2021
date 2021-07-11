@@ -10,7 +10,7 @@
 #include "solver_util.h"
 #include "judge.h"
 
-namespace HopGridAnnealingPostprocessSolver {
+namespace MatchingAndAnnealingSolver {
 
 namespace bg = boost::geometry;
 using BoostPoint = bg::model::d2::point_xy<double>;
@@ -76,7 +76,7 @@ class Solver : public SolverBase {
 
     SVisualEditorPtr editor;
     if (args.visualize) {
-      editor = std::make_shared<SVisualEditor>(args.problem, "HopGridAnnealingPostprocessSolver", "visualize");
+      editor = std::make_shared<SVisualEditor>(args.problem, "MatchingAndAnnealingSolver", "visualize");
       std::vector<int> pinned_vertices;
       for (int i = 0; i < N; ++i) {
         if (pose[i] != vertices_[i]) {
@@ -400,5 +400,5 @@ class Solver : public SolverBase {
 
 }
 
-REGISTER_SOLVER("HopGridAnnealingPostprocessSolver", HopGridAnnealingPostprocessSolver::Solver);
+REGISTER_SOLVER("MatchingAndAnnealingSolver", MatchingAndAnnealingSolver::Solver);
 // vim:ts=2 sw=2 sts=2 et ci
