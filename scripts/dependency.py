@@ -13,8 +13,8 @@ def main():
             for bonus in data['bonuses']:
                 tp = f"{bonus['problem']}"
                 tb = f"{bonus['bonus']}"
-                dg.node(tp, style="filled", fillcolor=("red" if tb == "GLOBALIST" else "blue"))
-                dg.edge(problem, tp)
+                dg.node(tp, style="filled", fillcolor=("gray"))
+                dg.edge(problem, tp, color=("red" if tb == "GLOBALIST" else "blue" if tb == "BREAK_A_LEG" else "green"))
     dg.render('./dgraph', view=True)
 
 main()
