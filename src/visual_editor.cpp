@@ -59,7 +59,8 @@ struct SCanvas {
     SSolutionPtr solution;
     std::set<int> marked_vertex_indices;
 
-    integer img_offset;
+    integer img_offset_x {5};
+    integer img_offset_y {5};
     integer img_base_size;
     integer mag;
     integer img_size;
@@ -87,9 +88,9 @@ struct SCanvas {
     cv::Scalar violating_vertex_color = cv::Scalar(128, 0, 128);
     cv::Scalar out_of_hole_edge_color = cv::Scalar(128, 0, 128);
     cv::Scalar marked_vartex_color = cv::Scalar(128, 128, 0);
-    inline cv::Point cvt(int x, int y) { return cv::Point((x + img_offset) * mag, (y + img_offset) * mag); };
+    inline cv::Point cvt(int x, int y) { return cv::Point((x + img_offset_x) * mag, (y + img_offset_y) * mag); };
     inline cv::Point cvt(const Point& p) { return cvt(p.first, p.second); }
-    inline Point icvt(int x, int y) { return { x / mag - img_offset, y / mag - img_offset }; }
+    inline Point icvt(int x, int y) { return { x / mag - img_offset_x, y / mag - img_offset_y }; }
 
     void draw_circle(cv::Mat& img, int x, int y, int sz, cv::Scalar col, int thickness) {
         cv::circle(img, cv::Point(x, y), sz, col, thickness);
@@ -178,7 +179,7 @@ struct SCanvas {
         }
     }
 
-    void shift(int dx, int dy) {
+    void shift_pose(int dx, int dy) {
         for (auto& p : solution->vertices) {
           p.first += dx;
           p.second += dy;
@@ -321,8 +322,7 @@ struct SCanvas {
         integer x_max = std::max(rect_poly.x + rect_poly.width, rect_fig.x + rect_fig.width);
         integer y_min = std::min(rect_poly.y, rect_fig.y);
         integer y_max = std::max(rect_poly.y + rect_poly.height, rect_fig.y + rect_fig.height);
-        img_offset = 5;
-        img_base_size = std::max(x_max, y_max) + img_offset * 2;
+        img_base_size = std::max(x_max, y_max) + img_offset_x * 2;  // ???
         mag = 1200 / img_base_size;
         img_size = img_base_size * mag;
         img_base = cv::Mat_<cv::Vec3b>(img_size, img_size, cv::Vec3b(160, 160, 160));
@@ -449,89 +449,102 @@ void SVisualEditor::save_intermediate() const {
   LOG(INFO) << "saved: " << file_path;
 }
 
-SShowResult SVisualEditor::show(int wait) {
-    SShowResult res(cv::waitKey(wait));
-    if (res.key == 27) {
+// Handles key inputs
+SShowResult SVisualEditor::show(int delay_ms) {
+    static constexpr int kEscKey = 27;
+    static constexpr int kNoKeyPress = -1;
+    static constexpr int kUpArrowKey = 82;
+    static constexpr int kLeftArrowKey = 81;
+    static constexpr int kDownArrowKey = 84;
+    static constexpr int kRightArrowKey = 83;
+
+    SShowResult res(cv::waitKey(delay_ms));
+    if (res.key == kEscKey) {
       if (in_internal_edit_loop()) {
+        // Leaving internal edit mode.
         res.key = 'm';
       } else {
         return res.key;
       }
     }
-    if (res.key == 'd') {
+
+    switch (res.key) {
+    case 'd':
         canvas->draw_distant_hole_vertex = !canvas->draw_distant_hole_vertex;
         canvas->update(-1);
-    }
-    if (res.key == 'e') {
+        break;
+    case 'e':
         canvas->draw_edge_lengths_mode = !canvas->draw_edge_lengths_mode;
         canvas->update(-1);
-    }
-    if (res.key == 'i') {
+        break;
+    case 'i':
         canvas->draw_index_mode = !canvas->draw_index_mode;
         canvas->update(-1);
-    }
-    if (res.key == 't') {
+        break;
+    case 't':
         canvas->draw_tolerated_vertex = !canvas->draw_tolerated_vertex;
         canvas->update(get_mouseover_node_id());
-    }
-    if (res.key == 's') {
+        break;
+    case 's':
         save_intermediate();
-    }
-    if (res.key == 'h') {
-        canvas->shift(-1, 0);
+        break;
+    case 'h':
+        canvas->shift_pose(-1, 0);
         canvas->update(-1);
-    }
-    if (res.key == 'j') {
-        canvas->shift(0, 1);
+        break;
+    case 'j':
+        canvas->shift_pose(0, 1);
         canvas->update(-1);
-    }
-    if (res.key == 'k') {
-        canvas->shift(0, -1);
+        break;
+    case 'k':
+        canvas->shift_pose(0, -1);
         canvas->update(-1);
-    }
-    if (res.key == 'l') {
-        canvas->shift(1, 0);
+        break;
+    case 'l':
+        canvas->shift_pose(1, 0);
         canvas->update(-1);
-    }
-    if (res.key == 'r') {
+        break;
+    case 'r':
         canvas->rotate_clockwise();
         canvas->update(-1);
-    }
-    if (res.key == 'm') { // toggle internal edit mode.
-      LOG(INFO) << "in internal edit loop? " << in_internal_edit_loop();
-      if (in_internal_edit_loop()) {
-        LOG(INFO) << "leaving internal edit loop.";
-        CHECK(edit_info);
-        edit_info->pose_after_edit = get_pose()->clone();
-        edit_info->moved_vertex_indices.clear();
-        for (int i = 0; i < edit_info->pose_before_edit->vertices.size(); ++i) {
-          if (edit_info->pose_before_edit->vertices[i] != edit_info->pose_after_edit->vertices[i]) {
-            edit_info->moved_vertex_indices.push_back(i);
-          }
+        break;
+    case 'm': { // toggle internal edit mode.
+        LOG(INFO) << "in internal edit loop? " << in_internal_edit_loop();
+        if (in_internal_edit_loop()) {
+            LOG(INFO) << "leaving internal edit loop.";
+            CHECK(edit_info);
+            edit_info->pose_after_edit = get_pose()->clone();
+            edit_info->moved_vertex_indices.clear();
+            for (int i = 0; i < edit_info->pose_before_edit->vertices.size(); ++i) {
+              if (edit_info->pose_before_edit->vertices[i] != edit_info->pose_after_edit->vertices[i]) {
+                edit_info->moved_vertex_indices.push_back(i);
+              }
+            }
+            LOG(INFO) << "leaving internal edit loop. edited = " << edit_info->moved_vertex_indices.size();
+            edit_info = nullptr;
+            res.key = kEscKey;
+        } else {
+            LOG(INFO) << "entering internal edit loop.";
+            CHECK(!edit_info);
+            res.edit_result = SShowResult::SEditResult();
+            res.edit_result->pose_before_edit = get_pose()->clone();
+            edit_info = &res.edit_result.value();
+            while (show(delay_ms) != kEscKey) {}
+            CHECK(!edit_info);
+            CHECK(res.edit_result->pose_before_edit);
+            CHECK(res.edit_result->pose_after_edit);
+            save_intermediate();
         }
-        LOG(INFO) << "leaving internal edit loop. edited = " << edit_info->moved_vertex_indices.size();
-        edit_info = nullptr;
-        res.key = 27; // ESC
-      } else {
-        LOG(INFO) << "entering internal edit loop.";
-        CHECK(!edit_info);
-        res.edit_result = SShowResult::SEditResult();
-        res.edit_result->pose_before_edit = get_pose()->clone();
-        edit_info = &res.edit_result.value();
-        while (true) {
-          SShowResult res_internal = show(wait);
-          if (res_internal.key == 27) {
-            break;
-          }
-        }
-        CHECK(!edit_info);
-        CHECK(res.edit_result->pose_before_edit);
-        CHECK(res.edit_result->pose_after_edit);
-        save_intermediate();
       }
+      break;
+    case kNoKeyPress:
+      break;
+    default:
+      LOG(WARNING) << "Unknown key code: " << res.key;
     }
+
     if (!in_internal_edit_loop()) {
-      canvas->oneshot_custom_stat.clear();
+        canvas->oneshot_custom_stat.clear();
     }
     cv::imshow(window_name, canvas->img);
     return res;
