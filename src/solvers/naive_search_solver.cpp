@@ -10,6 +10,7 @@
 #include "contest_types.h"
 #include "solver_registry.h"
 #include "visual_editor.h"
+#include "timer.h"
 #include "judge.h"
 
 namespace NNaiveSearchSolver {
@@ -55,20 +56,34 @@ std::vector<Point> enumerate_interior_points(const SProblem& problem) {
     ymax = std::max(ymax, get_y(p));
   }
 
+#if 0
   auto bg_hole_polygon = ToBoostPolygon(problem.hole_polygon);
   std::vector<Point> points;
   for (int y = ymin; y <= ymax; ++y) {
     for (int x = xmin; x <= xmax; ++x) {
-      if (bg::within(ToBoostPoint(Point{x, y}), bg_hole_polygon)) {
+      if (bg::within(ToBoostPoint(Point{x, y}), bg_hole_polygon)) { // exclude points on the edge/vertex of the hole.
         points.emplace_back(x, y);
       }
     }
   }
+#else
+  std::vector<Point> points;
+  for (int y = ymin; y <= ymax; ++y) {
+    for (int x = xmin; x <= xmax; ++x) {
+      if (contains(problem.hole_polygon, {x, y}) != EContains::EOUT) { // include points on the edge/vertex of the hole.
+        points.emplace_back(x, y);
+      }
+    }
+  }
+#endif
   LOG(INFO) << fmt::format("found {} interior points", points.size());
   return points;
 }
 
 class NaiveSearchSolver : public SolverBase {
+private:
+  std::mt19937 rng;
+
 public:
   NaiveSearchSolver() { }
   SolverOutputs solve(const SolverArguments &args) override {
@@ -78,13 +93,16 @@ public:
     ret.solution = args.optional_initial_solution ? args.optional_initial_solution : args.problem->create_solution();
 
     // develop.
+    constexpr int report_every_iter = 100000;
+    constexpr int editor_sleep = 1;
     SVisualEditorPtr editor;
     if (args.visualize) {
       editor = std::make_shared<SVisualEditor>(args.problem, "NaiveSearchSolver", "visualize");
     }
 
     // prepare.
-    const auto interior_points = enumerate_interior_points(*args.problem);
+    auto interior_points = enumerate_interior_points(*args.problem);
+    std::shuffle(interior_points.begin(), interior_points.end(), rng);
     const std::vector<std::vector<int>> edges_from_vertex_cache = edges_from_vertex(*args.problem);
     const int V = args.problem->vertices.size();
 
@@ -98,6 +116,7 @@ public:
 
     // (starting position, radius**2) -> (available points)
     using SKey = std::pair<Point, int>;
+    int64_t movable_cache_count = 0;
     std::map<SKey, std::vector<Point>> movable_cache;
     // exact lookup.
     auto get_movable_points = [&](Point p, int d2) -> std::vector<Point> {
@@ -109,6 +128,7 @@ public:
       std::vector<Point> points;
       for (Point ip : interior_points) {
         if (d2 == distance2(p, ip) && is_good_edge(p, ip)) {
+          ++movable_cache_count;
           points.push_back(ip);
         }
       }
@@ -141,9 +161,11 @@ public:
       Point p = {0, 0};
       // remaining indices after placing this node.
       std::vector<int> indices_flag;
+      // vertices after placing this node.
+      std::vector<Point> vertices;
 
-      State(int depth, int vid, Point p, const std::vector<int>& indices_flag)
-        : depth(depth), vid(vid), p(p), indices_flag(indices_flag) {}
+      State(int depth, int vid, Point p, const std::vector<int>& indices_flag, const std::vector<Point>& vertices)
+        : depth(depth), vid(vid), p(p), indices_flag(indices_flag), vertices(vertices) {}
     };
     using StatePtr = std::shared_ptr<State>;
     auto create_fixed_indices = [&](StatePtr s) {
@@ -164,47 +186,122 @@ public:
       std::vector<int> indices_flag(V, REMAINING);
       indices_flag[start_index] = USED;
       for (auto ip : interior_points) {
-        stack.push(std::make_shared<State>(1 /* depth */, start_index, ip, indices_flag));
+        auto vertices = ret.solution->vertices;
+        vertices[start_index] = ip;
+        stack.push(std::make_shared<State>(1 /* depth */, start_index, ip, indices_flag, vertices));
       }
     }
 
+    bool found = false;
+    int64_t root_counter = 0;
     int64_t counter = 0;
     int max_depth = 1;
-    while (!stack.empty()) {
+    Timer timer;
+    double lazy_elapsed_ms = 0.0; // not always updated.
+    while (!found && !stack.empty()) {
       StatePtr s = stack.top(); stack.pop();
-      const auto p_bak = ret.solution->vertices[s->vid];
-      ret.solution->vertices[s->vid] = s->p;
-      {
-        ++counter;
-        max_depth = std::max(max_depth, s->depth);
 
-        if ((counter + 1) % 1 == 0 && editor) {
-          editor->set_persistent_custom_stat(fmt::format("visited {}, max depth {}", counter, max_depth));
-          editor->set_marked_indices(create_fixed_indices(s));
-          editor->set_pose(ret.solution);
-          editor->show(1);
+      if (s->depth == 1) {
+        ++root_counter;
+      }
+      ++counter;
+      max_depth = std::max(max_depth, s->depth);
+      bool report = (counter % report_every_iter == 0);
+
+      if (max_depth == V) {
+        auto temp_solution = args.problem->create_solution(s->vertices);
+        auto judge_res = judge(*args.problem, *temp_solution);
+        if (judge_res.is_valid()) {
+          ret.solution = temp_solution;
+          found = true;
+          report = true;
         }
       }
 
+      if (report) {
+        lazy_elapsed_ms = timer.elapsed_ms();
+        const auto stat = fmt::format("root {}/{}({:.2f}%), visited {}, max depth {}, {:.2f} ms, {:.2f} node/s, cache {:.2f} MB",
+          root_counter, interior_points.size(), 100.0 * root_counter / interior_points.size(),
+          counter, max_depth, lazy_elapsed_ms, counter / lazy_elapsed_ms * 1e3,
+          movable_cache_count * sizeof(Point) / 1024.0 / 1024.0
+          );
+        LOG(INFO) << stat;
+        if (editor) {
+          editor->set_oneshot_custom_stat(stat);
+          editor->set_marked_indices(create_fixed_indices(s));
+          editor->set_pose(args.problem->create_solution(s->vertices));
+          editor->show(editor_sleep);
+        }
+      }
+
+      // first enumerate remaining edge ..
+      struct SEdgeItem {
+        int num_undetermined_edges = 0;
+        int eid = -1;
+        // smaller is better.
+        bool operator<(const SEdgeItem& rhs) const {
+          return num_undetermined_edges != rhs.num_undetermined_edges
+            ? num_undetermined_edges > rhs.num_undetermined_edges
+            : eid < rhs.eid;
+        }
+      };
+      std::vector<SEdgeItem> remaining_edges;
       for (int eid : edges_from_vertex_cache[s->vid]) {
         auto [u, v] = args.problem->edges[eid];
         auto counter_vid = u == s->vid ? v : u;
 
         if (s->indices_flag[counter_vid] == REMAINING) {
-          // push nodes for this unused edge (s->vid, counter_vid)
-          auto original_distance2 = distance2(args.problem->vertices[s->vid], args.problem->vertices[counter_vid]);
-          auto movable_points = get_movable_points_with_tolerance(s->p, original_distance2);
+          // count number of determined and undetermined edges.
+          int num_determined_edges = 0;
+          int num_undetermined_edges = 0;
+          for (auto counter_eid : edges_from_vertex_cache[counter_vid]) {
+            auto [j, k] = args.problem->edges[counter_eid];
+            auto neighbor_vid = j == counter_vid ? k : j;
+            if (s->indices_flag[neighbor_vid] == USED) {
+              ++num_determined_edges;
+            } else {
+              ++num_undetermined_edges;
+            }
+          }
+          remaining_edges.push_back({num_undetermined_edges, eid});
+        }
+      }
+      std::sort(remaining_edges.begin(), remaining_edges.end());
 
-          LOG(INFO) << fmt::format("pivot vid={} next {} candidates", s->vid, movable_points.size());
+      for (const SEdgeItem& edge : remaining_edges) {
+        const int eid = edge.eid;
+        auto [u, v] = args.problem->edges[eid];
+        auto counter_vid = u == s->vid ? v : u;
 
-          for (auto p : movable_points) {
+        // push nodes for this unused edge (s->vid, counter_vid)
+        auto original_distance2 = distance2(args.problem->vertices[s->vid], args.problem->vertices[counter_vid]);
+        auto movable_points = get_movable_points_with_tolerance(s->p, original_distance2);
+
+
+        for (auto p : movable_points) {
+          // all fixed neighbors of counter_vid should agree with this move.
+          bool agree = true;
+          for (auto counter_eid : edges_from_vertex_cache[counter_vid]) {
+            auto [j, k] = args.problem->edges[counter_eid];
+            auto neighbor_vid = j == counter_vid ? k : j;
+            if (s->indices_flag[neighbor_vid] == USED) {
+              const double neighbor_original_distance2 = distance2(args.problem->vertices[neighbor_vid], args.problem->vertices[counter_vid]);
+              const double neighbor_distance2 = distance2(s->vertices[neighbor_vid], p);
+              if (!tolerate(neighbor_original_distance2, neighbor_distance2, args.problem->epsilon)) {
+                agree = false;
+                break;
+              }
+            }
+          }
+          if (agree) {
             auto new_remaining_index_flag = s->indices_flag;
             new_remaining_index_flag[counter_vid] = USED;
-            stack.push(std::make_shared<State>(s->depth + 1, counter_vid, p, new_remaining_index_flag));
+            auto new_vertices = s->vertices;
+            new_vertices[counter_vid] = p;
+            stack.push(std::make_shared<State>(s->depth + 1, counter_vid, p, new_remaining_index_flag, new_vertices));
           }
         }
       }
-      ret.solution->vertices[s->vid] = p_bak;
     }
     LOG(INFO) << fmt::format("total nodes = {}, max depth = {}", counter, max_depth);
 
