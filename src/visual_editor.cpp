@@ -308,11 +308,13 @@ struct SCanvas {
             auto [x, y] = bonus.position;
             cv::Scalar color;
             if (bonus.type == SBonus::Type::GLOBALIST) {
-              color = cv::Scalar(32, 192, 192); 
+              color = cv::Scalar(32, 192, 192);
             } else if (bonus.type == SBonus::Type::BREAK_A_LEG) {
-              color = cv::Scalar(192, 192, 32); 
+              color = cv::Scalar(192, 32, 32);
             } else if (bonus.type == SBonus::Type::WALLHACK) {
-              color = cv::Scalar(64, 128, 255); 
+              color = cv::Scalar(64, 128, 255);
+            } else if (bonus.type == SBonus::Type::SUPERFLEX) {
+              color = cv::Scalar(192, 192, 32);
             }
             cv::circle(img_base, cvt(x, y), 20, color, cv::FILLED);
         }
