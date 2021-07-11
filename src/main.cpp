@@ -35,6 +35,7 @@ int main(int argc, char* argv[]) {
     bool output_judge = true;
     bool visualize = false;
     bool post_edit = false;
+    std::string parameters_json;
     std::optional<int> offer_globalist_bonus;
     std::optional<int> offer_wallhack_bonus;
     std::function<void(const int& p)> set_globalist_func = [&](int p) { offer_globalist_bonus = p; };
@@ -49,6 +50,7 @@ int main(int argc, char* argv[]) {
     sub_solve->add_option_function("--offer-wallhack", set_wallhack_func, "problem id that offers WALLHACK bonus to this problem. AND USE IT!");
     sub_solve->add_flag("--visualize", visualize, "realtime visualize");
     sub_solve->add_flag("--post-edit", post_edit, "post edit output");
+    sub_solve->add_flag("--parameters_json", parameters_json, "parameters JSON file path. Required only by OptunaAnnealingSolver.");
 
     auto sub_list_solvers = app.add_subcommand("list_solvers", "list up registered solvers");
 
@@ -62,6 +64,7 @@ int main(int argc, char* argv[]) {
     sub_try_globalist->add_flag("-j,--output-judge,!--no-output-judge", output_judge, "output judge info to solution JSON");
     sub_try_globalist->add_flag("--visualize", visualize, "realtime visualize");
     sub_try_globalist->add_flag("--post-edit", post_edit, "post edit output");
+    sub_try_globalist->add_flag("--parameters_json", parameters_json, "parameters JSON file path. Required only by OptunaAnnealingSolver.");
 
     CLI11_PARSE(app, argc, argv);
 
@@ -101,7 +104,7 @@ int main(int argc, char* argv[]) {
 
       SolverOutputs out;
       const auto t0 = std::chrono::system_clock::now();
-      out = solver->solve({problem, initial_solution, visualize});
+      out = solver->solve({problem, initial_solution, visualize, parameters_json});
       const auto t1 = std::chrono::system_clock::now();
       const double solve_s = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count() * 1e-6;
       LOG(INFO) << fmt::format("Elapsed  : {:.2f} s", solve_s);
@@ -176,7 +179,7 @@ int main(int argc, char* argv[]) {
         LOG(INFO) << fmt::format("Trying GLOBALIST  : {}", is_globalst_mode);
 
         const auto t0 = std::chrono::system_clock::now();
-        out[trial] = solver->solve({ problem, initial_solution, visualize });
+        out[trial] = solver->solve({ problem, initial_solution, visualize, parameters_json });
         const auto t1 = std::chrono::system_clock::now();
         const double solve_s = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count() * 1e-6;
         LOG(INFO) << fmt::format("Elapsed  : {:.2f} s", solve_s);

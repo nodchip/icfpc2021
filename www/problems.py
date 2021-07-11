@@ -12,110 +12,114 @@ app = flask.Blueprint('problems', __name__)
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROBLEMS_DIR = os.path.join(ROOT_DIR, 'data', 'problems')
 SOLUTIONS_DIR = os.path.join(ROOT_DIR, 'solutions')
-SUBMIT_DIR = os.path.join(SOLUTIONS_DIR, 'submit')  # TODO: Drop this
+WWW_DIR = os.path.join(ROOT_DIR, 'www')
 
 
 @app.route('/problems.html')
 def show_problems():
-    # TODO: Update this TSV as frequently as possible.
-    contest_infos = pd.read_table(os.path.join(ROOT_DIR, 'www', 'contest_infos.tsv'), index_col=0).loc
-    ids = sorted([int(re.sub(r'\D', '', x)) for x in os.listdir(path=PROBLEMS_DIR)])
-    solutions = get_all_solutions(ids)
-    problems = [parse_problem(id, contest_infos[id]) for id in ids]
+    problems = struct_problems()
+    solutions = get_all_solutions()
+    problem_contexts = [make_problem_context(id, problem, solutions.get(id, []))
+                        for id, problem in enumerate(problems, start=1)]
 
-    # Resolve bonus dependencies
-    for i, problem in enumerate(problems):
-        from_id = i + 1
-        for bonus in problem.get('bonuses', []):
-            if 'problem' not in bonus:
-                continue
-            j = bonus['problem'] - 1
-            if 'bonuses' not in problems[j]:
-                problems[j]['bonuses'] = []
-            to_bonus = {
-                'bonus': bonus['bonus'],
-                'from': from_id,
-            }
-            problems[j]['bonuses'].append(to_bonus)
-
-    problem_contexts = []
-    for i, problem in enumerate(problems):
-        def get_state(p, l):
-            d = p['dislikes']
-            b = p['best_dislikes']
-            if d is None:
-                return 'secondary' if l is None else 'danger'
-            if l is None or d < l:
-                return 'warning'
-            if d > l:
-                return 'danger'
-            if d == b:
-                return 'success'
-            return None
-
-        id = i + 1
-        local_dislikes = solutions[id][0]['meta']['judge']['dislikes'] if solutions[id] else None
-        context = {
-            'id': id,
-            'image': 'images/{}.problem.png'.format(id),
-            'epsilon': problem['epsilon'],
-            'max_score': problem['max_score'],
-            'best_dislikes': str(problem['best_dislikes']),
-            'dislikes': str(problem['dislikes']) if problem['dislikes'] is not None else None,
-            'num_holes': len(problem['hole']),
-            'num_verts': len(problem['figure']['vertices']),
-            'solutions': [solution_context(problem, x) for x in solutions[id]],
-            'state': get_state(problem, local_dislikes),
-            'bonuses': problem['bonuses'],
-        }
-        problem_contexts.append(context)
-
+    # TODO(peria): Drop the entry for 'INVALID'.
     context = {
         'problems': problem_contexts,
-        'emojis': {'GLOBALIST': '🌏', 'BREAK_A_LEG': '🦵', 'WALLHACK': '🧱'},
+        'emojis': {'GLOBALIST': '🌏', 'BREAK_A_LEG': '🦵', 'WALLHACK': '🧱', 'INVALID': '🧱'},
     }
     return flask.render_template('problems.html', title='Problems', **context)
 
 
+def make_problem_context(id, problem, solutions):
+    def get_state(p, l):
+        d, b = p['dislikes'], p['best_dislikes']
+        if d is None:
+            return 'secondary' if l is None else 'danger'
+        if l is None or d < l:
+            return 'warning'
+        if d > l:
+            return 'danger'
+        if d == b:
+            return 'success'
+        return None
+
+    local_dislikes = solutions[0]['meta']['judge']['dislikes'] if solutions else None
+    return {
+        'id': id,
+        'image': 'images/{}.problem.png'.format(id),
+        'epsilon': problem['epsilon'],
+        'max_score': problem['max_score'],
+        'best_dislikes': str(problem['best_dislikes']),
+        'dislikes': str(problem['dislikes']) if problem['dislikes'] is not None else None,
+        'num_holes': len(problem['hole']),
+        'num_verts': len(problem['figure']['vertices']),
+        'solutions': [solution_context(problem, x) for x in solutions],
+        'state': get_state(problem, local_dislikes),
+        'bonuses': problem['bonuses'],
+    }
+
+
 def solution_context(problem, solution):
     meta = solution['meta']
-    judge = meta.get('judge', None)
 
     context = {
         'solver': meta['solver'],
         'subdir': meta['subdir'],
     }
-
-    if judge:
-        mine = meta['judge']['dislikes']
-        context['dislikes'] = str(mine)
-        context['score'] = str(get_score(problem, mine))
-        context['eligible'] = is_eligible_for_submit(solution)
+    assert 'judge' in meta, '"judge" is not found'
+    judge = meta['judge']
+    dislikes = judge['dislikes']
+    context.update({
+        'gained_bonuses': judge['gained_bonuses'],
+        'dislikes': str(dislikes),
+        'score': str(get_score(problem, dislikes)),
+        'eligible': is_eligible_for_submit(solution),
+    })
  
     return context
 
 
-def get_all_solutions(ids):
-    solutions = dict(zip(ids, [[] for _ in ids]))
-    for subdir, _, files in os.walk(SOLUTIONS_DIR):
-        if not files:
-            continue
-        type = os.path.basename(subdir)
+def get_all_solutions():
+    solutions = {}
+    for base_dir, _, files in os.walk(SOLUTIONS_DIR):
+        subdir = os.path.basename(base_dir)
         for filename in files:
             id = int(re.sub(r'\D', '', filename))
-            solution = load_pose_json(type=type, id=id)
+            solution = load_pose_json(type=subdir, id=id)
             if not solution:
                 continue
-            assert 'meta' in solution, 'No meta info in {}/{}.pose.json'.format(type, id)
+            assert 'meta' in solution, 'No meta info in {}/{}.pose.json'.format(subdir, id)
             if not solution['meta']['judge']['is_valid']:
                 continue
             if 'solver' not in solution['meta']:
-                solution['meta']['solver'] = type
-            solution['meta']['subdir'] = type
+                solution['meta']['solver'] = subdir
+            solution['meta']['subdir'] = subdir
+            if id not in solutions:
+                solutions[id] = []
             solutions[id].append(solution)
-    for id in ids:
-        solutions[id] = sorted(solutions[id], key=lambda x: x['meta']['judge']['dislikes'])
+    for id in solutions.keys():
+        solutions[id].sort(key=lambda x: x['meta']['judge']['dislikes'] * 10 + len(x['meta']['judge']['gained_bonuses']))
     return solutions
+
+
+def struct_problems():
+    contest_infos = pd.read_table(os.path.join(WWW_DIR, 'contest_infos.tsv'), index_col=0)
+    ids = contest_infos.index
+    problems = [parse_problem(id, contest_infos.loc[id]) for id in ids]
+
+    # Resolve bonus dependencies
+    for id, problem in enumerate(problems, start=1):
+        for bonus in filter(lambda x: 'problem' in x, problem.get('bonuses', [])):
+            j = bonus['problem'] - 1
+            if 'bonuses' not in problems[j]:
+                problems[j]['bonuses'] = []
+            to_bonus = {
+                'bonus': bonus['bonus'],
+                'from': id,
+            }
+            problems[j]['bonuses'].append(to_bonus)
+
+    return problems
 
 
 def parse_problem(id, web):
@@ -157,6 +161,7 @@ def get_score(problem, dislikes=None):
         score = score * math.sqrt((best + 1) / (dislikes + 1))
 
     return int(math.ceil(score))
+
 
 def is_eligible_for_submit(solution):
     if not solution['meta']['judge']['is_valid']:

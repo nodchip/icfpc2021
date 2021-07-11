@@ -90,7 +90,7 @@ class Solver : public SolverBase {
       ymax = std::max(ymax, get_y(p));
     }
 
-    // lesser version of tonagi's idea 
+    // lesser version of tonagi's idea
     for (auto& p : pose) { p = hole_[0]; }
 
     auto evaluate_and_descide_rollback = [&]() -> bool {
