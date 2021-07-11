@@ -188,7 +188,7 @@ SSolutionPtr dfs_able_points(SProblemPtr problem, SSolutionPtr solution, std::ve
 
 }
 
-SSolutionPtr dfs_holes(SProblemPtr problem, const mat& hole_distances, const mat& vertices_distances, const std::vector<std::vector<double>>& upperlimit_distances, std::vector<int> v, int V, int H, Timer& timer, long long& counter) {
+SSolutionPtr dfs_holes(SProblemPtr problem, const mat& hole_distances, const mat& vertices_distances, const std::vector<std::vector<double>>& upperlimit_distances, std::vector<int>& v, int V, int H, Timer& timer, std::vector<int>& used_vertices ,long long& counter) {
 	constexpr int one_min = 1000 * 60;
 	counter++;
 	//if(counter % integer(1e4) == 0) LOG(INFO) << "counter is (holes)" << counter;
@@ -209,17 +209,14 @@ SSolutionPtr dfs_holes(SProblemPtr problem, const mat& hole_distances, const mat
 
 	}
 	else {
-		for (int x = 0; x < V; x++) {
+		for (int x = 0; x < V; x++) if(!used_vertices[x]) {
 
 			v.push_back(x);
 			bool okay = true;
+			used_vertices[x]++;
 
 			for (int i = 0; i < v.size() - 1; i++) {
 				int y = v[i];
-				if (y == x) {
-					okay = false;
-					break;
-				}
 				auto ver_dist = vertices_distances[x][y];
 				auto uplimit_dist = upperlimit_distances[x][y];
 				auto hole_dist = hole_distances[i][v.size() - 1];
@@ -232,10 +229,11 @@ SSolutionPtr dfs_holes(SProblemPtr problem, const mat& hole_distances, const mat
 			if (okay) {
 				//LOG(INFO) << "dfs_holes:: v is ";
 				//for (auto e : v) LOG(INFO) << e;
-				auto sol = dfs_holes(problem, hole_distances, vertices_distances, upperlimit_distances, v, V, H, timer, counter);
+				auto sol = dfs_holes(problem, hole_distances, vertices_distances, upperlimit_distances, v, V, H, timer, used_vertices, counter);
 				if (sol) return sol;
 			}
 			v.pop_back();
+			used_vertices[x]--;
 		}
 	}
 	return nullptr;
@@ -271,8 +269,9 @@ bool full_research(SProblemPtr problem, SSolutionPtr& solution, Timer& timer) {
 	for (int i = 0; i < H; i++) for (int j = 0; j < H; j++) if (i != j) hole_distances[i][j] = distance2(problem->hole_polygon[i], problem->hole_polygon[j]);
 	long long counter = 0;
 	std::vector<std::vector<int>> ret;
+	std::vector<int> used_vertices(V, 0);
 	std::vector<int> v = {};
-	auto sol = dfs_holes(problem, hole_distances, vertices_distances, upperlimit_distances, v, V, H, timer, counter);
+	auto sol = dfs_holes(problem, hole_distances, vertices_distances, upperlimit_distances, v, V, H, timer, used_vertices, counter);
 	if (counter >= 1e9) LOG(INFO) << "counter over";
 	if (sol) {
 		solution = sol;
