@@ -64,6 +64,7 @@ struct SCanvas {
  private:
   static constexpr int kBaseOffset = 5;
   static constexpr int kWindowWidthPx = 1200;
+  static constexpr int kWindowHeightPx = 1200;
 
  public:
   SProblemPtr problem;
@@ -72,9 +73,9 @@ struct SCanvas {
 
   integer img_offset_x{kBaseOffset};
   integer img_offset_y{kBaseOffset};
-  integer img_base_size;
+  integer base_img_width;
+  integer base_img_height;
   integer mag;
-  integer img_size;
   cv::Mat_<cv::Vec3b> base_img;
   cv::Mat_<cv::Vec3b> img;
 
@@ -99,6 +100,7 @@ struct SCanvas {
   cv::Scalar violating_vertex_color = cv::Scalar(128, 0, 128);
   cv::Scalar out_of_hole_edge_color = cv::Scalar(128, 0, 128);
   cv::Scalar marked_vartex_color = cv::Scalar(128, 128, 0);
+
   inline cv::Point cvt(int x, int y) {
     return cv::Point((x + img_offset_x) * mag, (y + img_offset_y) * mag);
   };
@@ -390,9 +392,11 @@ struct SCanvas {
     integer y_max =
         std::max(rect_poly.y + rect_poly.height, rect_fig.y + rect_fig.height);
 
-    img_base_size = std::max(x_max, y_max) + kBaseOffset * 2;  // ???
-    mag = kWindowWidthPx / img_base_size;
-    img_size = img_base_size * mag;
+    base_img_width = x_max + kBaseOffset * 2;
+    base_img_height = y_max + kBaseOffset * 2;
+    integer mag_x = kWindowWidthPx / base_img_width;
+    integer mag_y = kWindowHeightPx / base_img_height;
+    mag = std::min(mag_x, mag_y);
   }
 
   void draw_base_image() {
@@ -406,8 +410,10 @@ struct SCanvas {
         std::max(rect_poly.y + rect_poly.height, rect_fig.y + rect_fig.height);
 
     // draw base image
-    base_img =
-        cv::Mat_<cv::Vec3b>(img_size, img_size, cv::Vec3b(160, 160, 160));
+    integer img_width_px = base_img_width * mag;
+    integer img_height_px = base_img_height * mag;
+    base_img = cv::Mat_<cv::Vec3b>(img_height_px, img_width_px,
+                                   cv::Vec3b(160, 160, 160));
     std::vector<std::vector<cv::Point>> cv_hole_polygon(
         1);  // cv::fillPoly() throws with std::vector<cv::Point> ..
     for (auto p : problem->hole_polygon) {
@@ -430,12 +436,16 @@ struct SCanvas {
       }
       cv::circle(base_img, cvt(x, y), 20, color, cv::FILLED);
     }
-    for (int x = x_min; x <= x_max; x++) {
-      for (int y = y_min; y <= y_max; y++) {
+
+    // Draw grid points.
+    for (integer x = -img_offset_x; x <= -img_offset_x + base_img_width; ++x) {
+      for (integer y = -img_offset_y + kBaseOffset;
+           y <= -img_offset_y + base_img_height; ++y) {
         cv::circle(base_img, cvt(x, y), 2, cv::Scalar(200, 200, 200),
                    cv::FILLED);
       }
     }
+
     int nh = problem->hole_polygon.size();
     for (int i = 0; i < nh; i++) {
       auto [x1, y1] = cvt(problem->hole_polygon[i]);
