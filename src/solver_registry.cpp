@@ -48,7 +48,6 @@ void SolverRegistry::displaySolvers() {
 
 SolverOutputs solve_with(const std::string& solver_name, SProblemPtr problem, SSolutionPtr initial_solution) {
   CHECK(problem);
-  CHECK(initial_solution);
   auto solver = SolverRegistry::getSolver(solver_name);
   CHECK(solver);
   SolverArguments args { problem, initial_solution, false /* visualize */ };

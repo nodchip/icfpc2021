@@ -67,28 +67,49 @@ class Solver : public SolverBase {
     epsilon_ = args.problem->epsilon;
     hole_polygon_ = ToBoostPolygon(hole_);
 
-    SVisualEditorPtr editor;
-    if (args.visualize) {
-      editor = std::make_shared<SVisualEditor>(args.problem, "HopGridAnnealingPostprocessSolver", "visualize");
-    }
-
+    const auto initial_solution = solve_with("SimpleMatchingSolver", args.problem, nullptr);
     const int N = vertices_.size();
-    auto pose = vertices_;
+    auto pose = initial_solution.solution->vertices;
     double cost = std::numeric_limits<double>::infinity();
     double best_feasible_cost = std::numeric_limits<double>::infinity();
     std::vector<Point> best_feasible_pose;
 
-    SPinnedIndex pinned_index(rng_, N, editor);
-    if (args.optional_initial_solution) {
-      pose = args.optional_initial_solution->vertices;
-      pinned_index.movable_indices.clear();
+    SVisualEditorPtr editor;
+    if (args.visualize) {
+      editor = std::make_shared<SVisualEditor>(args.problem, "HopGridAnnealingPostprocessSolver", "visualize");
+      std::vector<int> pinned_vertices;
       for (int i = 0; i < N; ++i) {
-        if (args.optional_initial_solution->vertices[i] == vertices_[i]) {
-          pinned_index.movable_indices.push_back(i);
+        if (pose[i] != vertices_[i]) {
+          pinned_vertices.push_back(i);
         }
       }
-      LOG(INFO) << "N = " << N << ", movable = " << pinned_index.movable_indices.size();
+      editor->set_marked_indices(pinned_vertices);
     }
+    pinned_.resize(N);
+    movable_vertices_.clear();
+    for (int i = 0; i < N; ++i) {
+      pinned_[i] = pose[i] != vertices_[i];
+      if (!pinned_[i]) {
+        movable_vertices_.push_back(i);
+      }
+    }
+
+    unassigned_hole_vertices_.clear();
+    for (int j = 0; j < hole_.size(); ++j) {
+      bool assigned = false;
+      for (int i = 0; i < N; ++i) {
+        if (pose[i] != vertices_[i] && pose[i] == hole_[j]) {
+          assigned = true;
+          break;
+        }
+      }
+      if (assigned) continue;
+      unassigned_hole_vertices_.push_back(j);
+    }
+
+    SPinnedIndex pinned_index(rng_, N, editor);
+    pinned_index.movable_indices = movable_vertices_;
+    LOG(INFO) << "N = " << N << ", movable = " << pinned_index.movable_indices.size();
 
     const int num_iters = 100000;
     const double T0 = 1.0e1;
@@ -316,6 +337,7 @@ class Solver : public SolverBase {
     double deformation_cost = 0.0;
     double protrusion_cost = 0.0;
     double dislikes_cost = 0.0;
+    double vertex_bonus = 0.0;
 
     const double tolerance = epsilon_ / 1'000'000.0;
     for (const auto& vertex : pose) {
@@ -333,9 +355,10 @@ class Solver : public SolverBase {
         protrusion_cost += 1.0e-2 * bg::length(segment);
       }
 
+      const double weight = (pinned_[a] || pinned_[b]) ? 1.0e2 : 1.0e1;
       const auto d0 = SquaredEdgeLength(vertices_, edge);
       const auto d1 = SquaredEdgeLength(pose, edge);
-      deformation_cost += 1.0e1 * std::max(0.0, std::abs(d1 / d0 - 1.0) - tolerance);
+      deformation_cost += weight * std::max(0.0, std::abs(d1 / d0 - 1.0) - tolerance);
     }
 
     for (const auto h : hole_) {
@@ -346,8 +369,19 @@ class Solver : public SolverBase {
       dislikes_cost += best * 1.0e-2;
     }
 
+    std::vector<bool> assigned(hole_.size());
+    for (const int vertex : movable_vertices_) {
+      for (const int hole_vertex : unassigned_hole_vertices_) {
+        if (assigned[hole_vertex]) continue;
+        if (pose[vertex] == hole_[hole_vertex]) {
+          vertex_bonus += 1.0e1;
+          assigned[hole_vertex] = true;
+        }
+      }
+    }
+
     const bool feasible = deformation_cost + protrusion_cost == 0.0;
-    const double cost = deformation_cost + protrusion_cost + dislikes_cost;
+    const double cost = deformation_cost + protrusion_cost + dislikes_cost - vertex_bonus;
 
     return {feasible, cost};
   }
@@ -359,6 +393,9 @@ class Solver : public SolverBase {
   std::vector<Edge> edges_;
   integer epsilon_;
   BoostPolygon hole_polygon_;
+  std::vector<bool> pinned_;
+  std::vector<int> movable_vertices_;
+  std::vector<int> unassigned_hole_vertices_;
 };
 
 }
