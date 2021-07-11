@@ -46,6 +46,8 @@ def visualize(problem_file_path, pose_file_path, output_file_path):
             color = 'yellow'
         if bonus['bonus'] == 'BREAK_A_LEG':
             color = 'blue'
+        if bonus['bonus'] == 'WALLHACK':
+            color = 'orange'
         axes.add_patch(plt.Circle(bonus['position'], radius=5, color=color, alpha=0.5))
 
     # figureを描画する
