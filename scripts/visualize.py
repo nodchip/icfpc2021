@@ -49,6 +49,8 @@ def visualize(problem_file_path, pose_file_path=None, output_file_path=None, doe
             color = 'blue'
         if bonus['bonus'] == 'WALLHACK':
             color = 'orange'
+        if bonus['bonus'] == 'SUPERFLEX':
+            color = 'cyan'
         axes.add_patch(plt.Circle(bonus['position'], radius=5, color=color, alpha=0.5))
 
     # figureを描画する
