@@ -267,7 +267,7 @@ SSolutionPtr dfs_holes(SProblemPtr problem, SSolutionPtr solution, const mat& ho
 			auto e = decided_points[i];
 			points[e] = problem->hole_polygon[i];
 		}
-		SSolutionPtr solution(new SSolution(points));
+		SSolutionPtr solution(problem->create_solution(points));
 		return dfs_able_points(problem, solution, decided_points, restriction_edges, vertices_distances, V, counter);
 	}
 
@@ -342,7 +342,7 @@ bool full_research(SProblemPtr problem, SSolutionPtr& solution, Timer& timer) {
 	std::vector<int> used_vertices(V, 0);
 	std::vector<int> v = {};
 	//std::vector<Point> points(V, std::make_pair(0, 0));
-	SSolutionPtr solution_initial(new SSolution(problem->vertices));
+	SSolutionPtr solution_initial(problem->create_solution());
 
   SVisualEditor give_points_first(problem,"full_research", "initial_state");
   give_points_first.set_pose(solution_initial);
