@@ -101,28 +101,28 @@ class Solver : public SolverBase {
       }
     }
 
+    component_sizes_ = {M_};
+    //component_sizes_ = {17, 25, 12};  // for 80
+    //component_sizes_ = {23, 22, 18}; // for 106
     auto pose = vertices_;
-    SolverOutputs outputs;
-    outputs.solution = std::make_shared<SSolution>(pose);
     for (int i = 0; i < N_; ++i) {
       queued_[i] = N_;
       vertex_candidates_.push_back(i);
       assigned_counts_.assign(1, 0);
-      if (Search(10)) {
+      if (Search()) {
         for (int j = 0; j < N_; ++j) {
           if (assigned_[j] < 0) continue;
           pose[j] = hole_[assigned_[j]];
         }
-        outputs.solution = std::make_shared<SSolution>(pose);
         break;
       }
       vertex_candidates_.pop_back();
       queued_[i] = -1;
     }
-    return outputs;
+    return SolverOutputs{std::make_shared<SSolution>(pose)};
   }
 
-  bool Search(int num_components) {
+  bool Search() {
     if (hole_candidates_.empty()) return true;
     if (++counter_ % 1000 == 0 && editor_) {
       auto pose = vertices_;
@@ -134,7 +134,7 @@ class Solver : public SolverBase {
       }
       editor_->set_pose(std::make_shared<SSolution>(pose));
       editor_->set_marked_indices(marked);
-      editor_->set_persistent_custom_stat(fmt::format("num_components = {}, assigned counts ={}", num_components, fmt::join(assigned_counts_, ", ")));
+      editor_->set_persistent_custom_stat(fmt::format("assigned counts = {}", fmt::join(assigned_counts_, ", ")));
       editor_->show(1);
     }
     for (int i = vertex_candidates_.size() - 1; i >= 0; --i) {
@@ -167,7 +167,7 @@ class Solver : public SolverBase {
             queued_[next] = vertex;
             vertex_candidates_.push_back(next);
           }
-          if (Search(num_components)) return true;
+          if (Search()) return true;
           for (const auto& [next, min, max] : adjacent_[vertex]) {
             if (queued_[next] != vertex) continue;
             queued_[next] = -1;
@@ -180,13 +180,15 @@ class Solver : public SolverBase {
       }
       vertex_candidates_.insert(vertex_candidates_.begin() + i, vertex);
     }
-    if (num_components > 1 && assigned_counts_.back() >= 5) {
+    const int component_index = assigned_counts_.size() - 1;
+    if (assigned_counts_.back() >= component_sizes_[component_index]) {
+      if (assigned_counts_.size() == component_sizes_.size()) return true;
       for (int i = 0; i < N_; ++i) {
         if (queued_[i] >= 0) continue;
         queued_[i] = N_;
         vertex_candidates_.push_back(i);
         assigned_counts_.push_back(0);
-        if (Search(num_components - 1)) return true;
+        if (Search()) return true;
         assigned_counts_.pop_back();
         vertex_candidates_.pop_back();
         queued_[i] = -1;
@@ -213,6 +215,7 @@ class Solver : public SolverBase {
   std::vector<std::vector<bool>> hole_visibilities_;
   std::vector<std::vector<integer>> vertex_max_distances_;
   std::vector<int> assigned_counts_;
+  std::vector<int> component_sizes_;
   SVisualEditorPtr editor_;
   std::size_t counter_;
 };
