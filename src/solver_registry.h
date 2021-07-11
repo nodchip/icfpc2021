@@ -45,14 +45,7 @@ struct SolverRegistry {
     static std::map<std::string, SolverEntry> s_solver_registry;
     return s_solver_registry;
   }
-  static SolverBase::Ptr getSolver(std::string name) {
-    auto reg = getRegistry();
-    auto it = reg.find(name);
-    if (it == reg.end()) {
-      return {};
-    }
-    return it->second.factory();
-  }
+  static SolverBase::Ptr getSolver(std::string name);
 
   SolverRegistry(std::string name, SolverEntry entry) {
     getRegistry()[name] = entry;

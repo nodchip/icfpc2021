@@ -24,6 +24,7 @@ function submit(id, subdir) {
 </script>
 <style>
   .line { white-space: nowrap; }
+  .info { display: inline-block; }
 </style>
 {% endblock %}
 {% block content %}
@@ -63,14 +64,17 @@ function submit(id, subdir) {
             {% endfor %}
         </td>
         {% for solution in problem.solutions %}
-            <td>
-                <span>{{ solution.solver }}</span><br>
-                <span class="line">DL {{ solution.dislikes }}</span><br>
-                <span class="line">SC ({{ solution.score }})</span><br>
-                <span class="line">{% for bonus in solution.gained_bonuses%}{{ emojis[bonus.bonus] }}→{{ bonus.problem }}{% endfor %}</span>
-                {% if problem.state == 'danger' and loop.index == 1 and solution.eligible %}
-                <button type="button" id="button_{{solution.subdir}}_{{problem.id}}" onclick="submit({{problem.id}}, '{{solution.subdir}}')">Submit</button>
-                {% endif %}
+            <td class="line">
+                <a href="{{solution.img_path}}"><img src="{{solution.img_path}}" height="100" width="100"></a>
+                <div class="info">
+                    <span class="line">{{ solution.solver }}{% for bonus in solution.bonuses %}{{ emojis[bonus.bonus] }}({{ bonus.problem }}){% endfor %}</span><br>
+                    <span class="line">DL {{ solution.dislikes }}</span><br>
+                    <span class="line">SC {{ solution.score }}</span><br>
+                    <span class="line">{% for bonus in solution.gained_bonuses%}{{ emojis[bonus.bonus] }}→{{ bonus.problem }} {% endfor %}</span>
+                    {% if problem.state == 'danger' and loop.index == 1 and solution.eligible %}
+                    <button type="button" id="button_{{solution.subdir}}_{{problem.id}}" onclick="submit({{problem.id}}, '{{solution.subdir}}')">Submit</button>
+                    {% endif %}
+                </div>
             </td>
         {% endfor %}
     </tr>

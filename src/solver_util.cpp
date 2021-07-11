@@ -2,23 +2,22 @@
 #include "solver_util.h"
 #include "contest_types.h"
 
-Point find_collapse_point(SProblemPtr problem) {
-  integer xmin = 0, xmax = 0, ymin = 0, ymax = 0;
-  bounding_box(problem->hole_polygon, xmin, xmax, ymin, ymax);
+SPinnedIndex::SPinnedIndex(std::mt19937& rng, int N, SVisualEditorPtr editor) : editor(editor), rng(rng), N(N) {
+  update_movable_index();
+}
 
-  for (integer x = xmin; x <= xmax; x+=std::max<integer>(1, (xmax - xmin) / 100)) {
-    for (integer y = ymin; y <= ymax; y+=std::max<integer>(1, (ymax - ymin) / 100)) {
+int SPinnedIndex::sample_movable_index() const {
+  return movable_indices[std::uniform_int_distribution<int>(0, movable_indices.size() - 1)(rng)];
+};
+
+void SPinnedIndex::update_movable_index() {
+  movable_indices.assign(N, 0);
+  std::iota(movable_indices.begin(), movable_indices.end(), 0);
+  if (editor) {
+    for (auto i : editor->get_marked_indices()) {
+      movable_indices[i] = -1;
     }
+    movable_indices.erase(std::remove(movable_indices.begin(), movable_indices.end(), -1), movable_indices.end());
   }
 }
 
-void bounding_box(const std::vector<Point>& points, integer& xmin, integer& xmax, integer& ymin, integer& ymax) {
-  integer ymin = INT_MAX, ymax = INT_MIN;
-  integer xmin = INT_MAX, xmax = INT_MIN;
-  for (auto p : points) {
-    xmin = std::min(xmin, get_x(p));
-    ymin = std::min(ymin, get_y(p));
-    xmax = std::max(xmax, get_x(p));
-    ymax = std::max(ymax, get_y(p));
-  }
-}

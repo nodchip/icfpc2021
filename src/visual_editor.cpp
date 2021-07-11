@@ -406,6 +406,16 @@ SSolutionPtr SVisualEditor::get_pose() const {
     return canvas->solution;
 }
 
+void SVisualEditor::save_intermediate() const {
+  const std::string file_path = "intermediate.pose.json";
+  std::ofstream ofs(file_path);
+  auto json = canvas->solution->json();
+  update_meta(json, solver_name);
+  update_judge(*canvas->problem, judge(*canvas->problem, *canvas->solution), json);
+  ofs << json;
+  LOG(INFO) << "saved: " << file_path;
+}
+
 SShowResult SVisualEditor::show(int wait) {
     SShowResult res(cv::waitKey(wait));
     if (res.key == 27) {
@@ -428,13 +438,7 @@ SShowResult SVisualEditor::show(int wait) {
         canvas->update(get_mouseover_node_id());
     }
     if (res.key == 's') {
-        const std::string file_path = "intermediate.pose.json";
-        std::ofstream ofs(file_path);
-        auto json = canvas->solution->json();
-        update_meta(json, solver_name);
-        update_judge(*canvas->problem, judge(*canvas->problem, *canvas->solution), json);
-        ofs << json;
-        LOG(INFO) << "saved: " << file_path;
+        save_intermediate();
     }
     if (res.key == 'h') {
         canvas->shift(-1, 0);
@@ -486,6 +490,7 @@ SShowResult SVisualEditor::show(int wait) {
         CHECK(!edit_info);
         CHECK(res.edit_result->pose_before_edit);
         CHECK(res.edit_result->pose_after_edit);
+        save_intermediate();
       }
     }
     cv::imshow(window_name, canvas->img);

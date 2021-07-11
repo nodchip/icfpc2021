@@ -36,6 +36,9 @@
     <ClInclude Include="..\..\src\visual_editor.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\solver_util.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\main.cpp">
@@ -90,6 +93,12 @@
       <Filter>ソース ファイル\solvers</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\solvers\optuna_annealing_solver.cpp">
+      <Filter>ソース ファイル\solvers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\solver_util.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\solvers\fit_hole_solver.cpp">
       <Filter>ソース ファイル\solvers</Filter>
     </ClCompile>
   </ItemGroup>

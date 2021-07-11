@@ -6,6 +6,7 @@ import math
 import os
 import pandas as pd
 import re
+import visualize
 
 app = flask.Blueprint('problems', __name__)
 
@@ -60,22 +61,34 @@ def make_problem_context(id, problem, solutions):
 
 def solution_context(problem, solution):
     meta = solution['meta']
-
-    context = {
-        'solver': meta['solver'],
-        'subdir': meta['subdir'],
-    }
     assert 'judge' in meta, '"judge" is not found'
     judge = meta['judge']
     dislikes = judge['dislikes']
-    context.update({
+    id = problem['id']
+    subdir = meta['subdir']
+    img_url_path = 'images/solutions/{}/{}.pose.png'.format(subdir, id)
+
+    # Create an image if it does not exit.
+    img_file_path = os.path.join(WWW_DIR, img_url_path)
+    if not os.path.isfile(img_file_path):
+        img_dir_path = os.path.dirname(img_file_path)
+        if not os.path.exists(img_dir_path):
+            os.makedirs(img_dir_path)
+        problem_file_path = os.path.join(PROBLEMS_DIR, '{}.problem.json'.format(id))
+        solution_file_path = os.path.join(SOLUTIONS_DIR, subdir, '{}.pose.json'.format(id))
+        visualize.visualize(problem_file_path, solution_file_path,
+                            img_file_path, does_draw_figure=False)
+
+    return {
+        'solver': meta['solver'],
+        'subdir': subdir,
+        'bonuses': solution.get('bonuses', []),
         'gained_bonuses': judge['gained_bonuses'],
         'dislikes': str(dislikes),
         'score': str(get_score(problem, dislikes)),
         'eligible': is_eligible_for_submit(solution),
-    })
- 
-    return context
+        'img_path': img_url_path,
+    }
 
 
 def get_all_solutions():
@@ -97,7 +110,7 @@ def get_all_solutions():
                 solutions[id] = []
             solutions[id].append(solution)
     for id in solutions.keys():
-        solutions[id].sort(key=lambda x: x['meta']['judge']['dislikes'] * 10 + len(x['meta']['judge']['gained_bonuses']))
+        solutions[id].sort(key=lambda x: x['meta']['judge']['dislikes'] * 100 - len(x['meta']['judge']['gained_bonuses']))
     return solutions
 
 
@@ -125,6 +138,7 @@ def parse_problem(id, web):
     dislikes = web['your dislikes']
     problem = load_problem_json(id)
     problem.update({
+        'id': id,
         'best_dislikes': int(web['minimal dislikes']) if not math.isnan(web['minimal dislikes']) else None,
         'dislikes': int(dislikes) if not math.isnan(dislikes) else None,
         'max_score': get_score(problem),
@@ -165,9 +179,4 @@ def get_score(problem, dislikes=None):
 def is_eligible_for_submit(solution):
     if not solution['meta']['judge']['is_valid']:
         return False
-    # if bonus exists, problem should be >= 0
-    if 'bonuses' in solution:
-        for bonus in solution['bonuses']:
-            if bonus.get('problem', -1) < 0:
-                return False
     return True
