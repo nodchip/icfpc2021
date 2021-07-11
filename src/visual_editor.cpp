@@ -70,7 +70,7 @@ struct SCanvas {
   integer img_base_size;
   integer mag;
   integer img_size;
-  cv::Mat_<cv::Vec3b> img_base;
+  cv::Mat_<cv::Vec3b> base_img;
   cv::Mat_<cv::Vec3b> img;
 
   integer dislikes;
@@ -262,7 +262,7 @@ struct SCanvas {
     }
     is_valid = res.is_valid();
     // draw
-    img = img_base.clone();
+    img = base_img.clone();
     if (draw_distant_hole_vertex) {
       for (int i = 0; i < problem->hole_polygon.size(); i++) {
         auto [x, y] = cvt(problem->hole_polygon[i]);
@@ -383,7 +383,7 @@ struct SCanvas {
     img_base_size = std::max(x_max, y_max) + img_offset_x * 2;  // ???
     mag = 1200 / img_base_size;
     img_size = img_base_size * mag;
-    img_base =
+    base_img =
         cv::Mat_<cv::Vec3b>(img_size, img_size, cv::Vec3b(160, 160, 160));
     std::vector<std::vector<cv::Point>> cv_hole_polygon(
         1);  // cv::fillPoly() throws with std::vector<cv::Point> ..
@@ -391,7 +391,7 @@ struct SCanvas {
       auto [x, y] = cvt(p);
       cv_hole_polygon[0].emplace_back(x, y);
     }
-    cv::fillPoly(img_base, cv_hole_polygon, cv::Scalar(255, 255, 255));
+    cv::fillPoly(base_img, cv_hole_polygon, cv::Scalar(255, 255, 255));
 
     for (auto& bonus : problem->bonuses) {
       auto [x, y] = bonus.position;
@@ -405,11 +405,11 @@ struct SCanvas {
       } else if (bonus.type == SBonus::Type::SUPERFLEX) {
         color = cv::Scalar(192, 192, 32);
       }
-      cv::circle(img_base, cvt(x, y), 20, color, cv::FILLED);
+      cv::circle(base_img, cvt(x, y), 20, color, cv::FILLED);
     }
     for (int x = x_min; x <= x_max; x++) {
       for (int y = y_min; y <= y_max; y++) {
-        cv::circle(img_base, cvt(x, y), 2, cv::Scalar(200, 200, 200),
+        cv::circle(base_img, cvt(x, y), 2, cv::Scalar(200, 200, 200),
                    cv::FILLED);
       }
     }
@@ -417,14 +417,20 @@ struct SCanvas {
     for (int i = 0; i < nh; i++) {
       auto [x1, y1] = cvt(problem->hole_polygon[i]);
       auto [x2, y2] = cvt(problem->hole_polygon[(i + 1) % nh]);
-      draw_line(img_base, x1, y1, x2, y2, cv::Scalar(0, 0, 0), 2);
+      draw_line(base_img, x1, y1, x2, y2, cv::Scalar(0, 0, 0), 2);
     }
     edge_colors.resize(problem->edges.size(), cv::Scalar(0, 255, 0));
     update(-1);
     return true;
   }
 
+  void init() {
+
+  }
+
   SCanvas(SProblemPtr problem) : problem(problem) {
+    init();
+
     auto pose = problem->create_solution();
     pose->vertices = problem->vertices;
     set_pose(pose);
