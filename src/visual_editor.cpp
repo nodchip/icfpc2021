@@ -212,7 +212,7 @@ struct SCanvas {
     offset_y += dy;
   }
 
-  void rotate_clockwise() {
+  void rotate_pose() {
     auto rect_poly = calc_bb(problem->hole_polygon);
     const int cx = rect_poly.x + rect_poly.width / 2;
     const int cy = rect_poly.y + rect_poly.height / 2;
@@ -602,7 +602,7 @@ SShowResult SVisualEditor::show(int delay_ms) {
       canvas->update(-1);
       break;
     case 'r':
-      canvas->rotate_clockwise();
+      canvas->rotate_pose();
       canvas->update(-1);
       break;
     case '/':
