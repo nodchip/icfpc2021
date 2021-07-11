@@ -60,7 +60,7 @@ def make_problem_context(id, problem, solutions):
         'image': img_url_path,
         'epsilon': problem['epsilon'],
         'max_score': problem['max_score'],
-        'best_dislikes': str(problem['best_dislikes']),
+        'best_dislikes': str(problem['best_dislikes']) if problem['best_dislikes'] else None,
         'dislikes': str(problem['dislikes']) if problem['dislikes'] is not None else None,
         'num_holes': len(problem['hole']),
         'num_verts': len(problem['figure']['vertices']),
