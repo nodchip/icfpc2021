@@ -172,8 +172,7 @@ public:
     }
 
     double evaluate(const Pose& pose) const {
-        SSolutionPtr sol = std::make_shared<SSolution>();
-        sol->vertices = pose;
+        SSolutionPtr sol = prob->create_solution(pose);
         auto res = judge(*prob, *sol);
         if (!res.fit_in_hole()) return std::numeric_limits<double>::max();
         double stretch_cost = 0.0;
@@ -226,7 +225,7 @@ public:
     }
 
     STransPtr create_random_trans(Pose& pose, double now_score) {
-        // TODO: vertices �ł͂Ȃ� pose ��
+        // TODO: vertices ではなく pose で
         static constexpr int di[] = { 0, -1, 0, 1 };
         static constexpr int dj[] = { 1, 0, -1, 0 };
         int r = rnd.next_int(10);
@@ -293,7 +292,7 @@ public:
             }
             if (editor && loop % 1000 == 0) {
                 LOG(INFO) << "loop = " << loop << ", score = " << now_score;
-                editor->set_pose(std::make_shared<SSolution>(pose));
+                editor->set_pose(prob->create_solution(pose));
                 int c = editor->show(1);
             }
             loop++;
@@ -332,7 +331,7 @@ public:
                     << ", progress_rate = " << progress_rate
                     << ", accept_rate = " << double(accepted) / loop
                     << ", score = " << now_score;
-                editor->set_pose(std::make_shared<SSolution>(pose));
+                editor->set_pose(prob->create_solution(pose));
                 if (auto show_result = editor->show(1); show_result.edit_result) {
                   pose = show_result.edit_result->pose_after_edit->vertices;
                 }
@@ -350,8 +349,7 @@ public:
 
         // do nothing.
         SolverOutputs ret;
-        ret.solution = std::make_shared<SSolution>();
-        ret.solution->vertices = pose;
+        ret.solution = prob->create_solution(pose);
         return ret;
     }
 

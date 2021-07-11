@@ -118,12 +118,20 @@ struct SCanvas {
     void set_persistent_custom_stat(const std::string& stat_str) { persistent_custom_stat = stat_str; }
 
     void draw_stats(cv::Mat& img) {
-        std::string stat_str = fmt::format("[{}] dislikes={}, fit={}(NG edge {} vert {}), stretch={}(NG {}), bonuses[offerred={}{}, gained={}]",
+        std::ostringstream oss_bonus;
+        for (auto& b : problem->available_bonuses) {
+          oss_bonus << SBonus::bonus_name(b.type);
+          oss_bonus << " ";
+        }
+        std::ostringstream oss_using_bonus;
+        for (auto& b : solution->bonuses) {
+          oss_using_bonus << SBonus::bonus_name(b.type);
+          oss_using_bonus << " ";
+        }
+        std::string stat_str = fmt::format("[{}] dislikes={}, fit={}(NG edge {} vert {}), stretch={}(NG {}), bonuses[offerred={}, using={}, gained={}]",
           is_valid ? "O" : "X",
           dislikes, fit_in_hole, num_no_fit_in_hole_edge, num_no_fit_in_hole_vert, satisfy_stretch, num_no_satisfy_stretch,
-          problem->is_globalist_mode ? "GLOBALIST ": "",
-          problem->is_wallhack_mode ? "WALLHACK": "",
-          num_gained_bonuses);
+          oss_bonus.str(), oss_using_bonus.str(), num_gained_bonuses);
         int y = 30;
         cv::putText(img, stat_str, cv::Point(20, y), cv::FONT_HERSHEY_SIMPLEX, 0.5, is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 128), 1, cv::LINE_AA);
         y += 30;
@@ -319,7 +327,7 @@ struct SCanvas {
     }
 
     SCanvas(SProblemPtr problem) : problem(problem) {
-        auto pose = std::make_shared<SSolution>();
+        auto pose = problem->create_solution();
         pose->vertices = problem->vertices;
         set_pose(pose);
     }
@@ -523,7 +531,7 @@ void SVisualEditor::callback(int e, int x, int y, int f, void* param) {
 SSolutionPtr visualize_and_edit(SProblemPtr problem, SSolutionPtr solution, const std::string& base_solver_name) {
     SVisualEditorPtr editor = std::make_shared<SVisualEditor>(problem, base_solver_name + "Edit", "visualize");
     editor->set_pose(solution);
-    SSolutionPtr editor_solution = std::make_shared<SSolution>();
+    SSolutionPtr editor_solution = problem->create_solution();
     *editor_solution = *solution;
     while (true) {
         int c = editor->show(15);

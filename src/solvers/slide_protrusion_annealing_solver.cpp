@@ -255,7 +255,7 @@ namespace SlideProtrusionAnnealingSolver {
         }
       };
 
-      // ‚Í‚Ýo‚µ‚Ä‚¢‚éü•ª‚ðˆÚ“®‚³‚¹‚é
+      // ã¯ã¿å‡ºã—ã¦ã„ã‚‹ç·šåˆ†ã‚’ç§»å‹•ã•ã›ã‚‹
       auto slide_protrusion = [&] { // from SlideProtrusionAnnealingSolver
         bool found = false;
         int vertex_index_backup[2];
@@ -326,7 +326,7 @@ namespace SlideProtrusionAnnealingSolver {
 
         if (editor && iter % 100 == 0) {
           editor->set_oneshot_custom_stat(fmt::format("iter = {}/{}", iter, num_iters));
-          editor->set_pose(std::make_shared<SSolution>(pose));
+          editor->set_pose(args.problem->create_solution(pose));
           if (auto show_result = editor->show(1); show_result.edit_result) {
             pose = show_result.edit_result->pose_after_edit->vertices;
           }
@@ -335,10 +335,9 @@ namespace SlideProtrusionAnnealingSolver {
 
       SolverOutputs outputs;
       if (best_feasible_pose.empty()) {
-        outputs.solution = std::make_shared<SSolution>(pose);
-      }
-      else {
-        outputs.solution = std::make_shared<SSolution>(best_feasible_pose);
+        outputs.solution = args.problem->create_solution(pose);
+      } else {
+        outputs.solution = args.problem->create_solution(best_feasible_pose);
       }
       return outputs;
     }

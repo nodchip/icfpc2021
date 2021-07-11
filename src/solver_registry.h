@@ -2,6 +2,7 @@
 #include <string>
 #include <functional>
 #include <map>
+#include <optional>
 #include <cassert>
 
 #include "contest_types.h"
