@@ -24,6 +24,19 @@ std::string SolverRegistry::getCanonicalSolverName(std::string name) {
       return name + "Solver";
     }
   }
+  {
+    std::vector<std::string> names;
+    for (const auto& [n, _] : reg) {
+      names.push_back(n);
+    }
+    std::sort(names.begin(), names.end());
+    for (auto n : names) {
+      if (n.find(name) == 0) {
+        return n;
+      }
+    }
+  }
+
   return name;
 }
 
