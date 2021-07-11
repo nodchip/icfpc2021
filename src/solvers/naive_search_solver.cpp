@@ -94,9 +94,11 @@ public:
     ret.solution = args.optional_initial_solution ? args.optional_initial_solution : args.problem->create_solution();
 
     // develop.
-    constexpr int report_every_iter = 10000;
+    constexpr int check_timeout_every_iter = 100000;
+    constexpr int report_every_iter = 100000;
     constexpr int editor_sleep = 1;
     constexpr bool exhaustive_search = true;
+    const std::optional<int> subsample_roots = std::nullopt;
     SVisualEditorPtr editor;
     if (args.visualize) {
       editor = std::make_shared<SVisualEditor>(args.problem, "NaiveSearchSolver", "visualize");
@@ -194,6 +196,7 @@ public:
       }
     }
 
+    const int n_roots = stack.size();
     integer best_dislikes = std::numeric_limits<integer>::max();
     bool found = false;
     int64_t root_counter = 0;
@@ -201,9 +204,11 @@ public:
     int max_depth = 1;
     Timer timer;
     double lazy_elapsed_ms = 0.0; // not always updated.
-    constexpr int check_timeout_every_iter = 10000;
     if (args.timeout_s) {
       LOG(WARNING) << fmt::format("Timeout : {} s", *args.timeout_s);
+    }
+    if (subsample_roots) {
+      LOG(WARNING) << fmt::format("SUBSAMPLING : {}", *subsample_roots);
     }
 
     while (!stack.empty()) {
@@ -214,15 +219,19 @@ public:
 
       if (s->depth == 1) {
         ++root_counter;
+        if (subsample_roots && root_counter > *subsample_roots) {
+          LOG(ERROR) << fmt::format("SUBSAMPLING DONE! {}", root_counter);
+          break;
+        }
       }
       ++counter;
       max_depth = std::max(max_depth, s->depth);
       bool report = (counter % report_every_iter == 0);
 
       if (counter % check_timeout_every_iter == 0 && args.timeout_s) {
-        const double elapsed_s = timer.elapsed_ms() * 1e-3;
-        if (elapsed_s > *args.timeout_s) {
-          LOG(ERROR) << fmt::format("TIMEOUT! {} / {} s", elapsed_s, *args.timeout_s);
+        lazy_elapsed_ms = timer.elapsed_ms();
+        if (lazy_elapsed_ms * 1e-3 > *args.timeout_s) {
+          LOG(ERROR) << fmt::format("TIMEOUT! {} / {} s", lazy_elapsed_ms * 1e-3, *args.timeout_s);
           break;
         }
       }
@@ -245,9 +254,11 @@ public:
 
       if (report) {
         lazy_elapsed_ms = timer.elapsed_ms();
-        const auto stat = fmt::format("[{}][best DL={}] root {}/{}({:.2f}%), visited {}, max depth {}, {:.2f} ms, {:.2f} node/s, cache {:.2f} MB",
+        const double root_per_s = root_counter / lazy_elapsed_ms * 1e3;
+        const auto stat = fmt::format("[{}][best DL={}] root {}/{}({:.2f}%) {:.2f} root/s, ETA {:.2f} s, visited {}, max depth {}, {:.2f} ms, {:.2f} node/s, cache {:.2f} MB",
           found ? "O" : "X", found ? best_dislikes : -1,
-          root_counter, interior_points.size(), 100.0 * root_counter / interior_points.size(),
+          root_counter, interior_points.size(), 100.0 * root_counter / interior_points.size(), root_per_s,
+          double(n_roots) / root_per_s,
           counter, max_depth, lazy_elapsed_ms, counter / lazy_elapsed_ms * 1e3,
           movable_cache_count * sizeof(Point) / 1024.0 / 1024.0
           );
