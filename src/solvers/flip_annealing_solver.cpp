@@ -59,8 +59,8 @@ class Solver : public SolverBase {
     const int num_iters = 100000;
     const double T0 = 1.0e1;
     const double T1 = 1.0e-2;
-    for (int i = 0; i < num_iters; ++i) {
-      const double progress = 1.0 * i / num_iters;
+    for (int iter = 0; iter < num_iters; ++iter) {
+      const double progress = 1.0 * iter / num_iters;
       if (std::uniform_real_distribution(0.0, 1.0)(rng_) < 0.01) {
         const int v0 = std::uniform_int_distribution(0, N - 1)(rng_);
         const int v1 = std::uniform_int_distribution(0, N - 1)(rng_);
