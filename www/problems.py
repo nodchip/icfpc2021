@@ -40,22 +40,20 @@ def show_problems():
 
     problem_contexts = []
     for i, problem in enumerate(problems):
-        id = i + 1
         def get_state(p, l):
             d = p['dislikes']
             b = p['best_dislikes']
             if d is None:
-                if l is not None:
-                    return 'danger'
-            else:
-                if l is None or d < l:
-                    return 'warning'
-                if d > l:
-                    return 'danger'
-                if d == b:
-                    return 'success'
+                return 'secondary' if l is None else 'danger'
+            if l is None or d < l:
+                return 'warning'
+            if d > l:
+                return 'danger'
+            if d == b:
+                return 'success'
             return None
 
+        id = i + 1
         local_dislikes = solutions[id][0]['meta']['judge']['dislikes'] if solutions[id] else None
         context = {
             'id': id,
