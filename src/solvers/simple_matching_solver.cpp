@@ -11,6 +11,7 @@ namespace SimpleMatchingSolver {
 
 constexpr int kNumTrialsPerComponent = 100000;
 constexpr int kMinComponentSize = 10;
+constexpr int kMinDegree = 2;
 
 namespace bg = boost::geometry;
 using BoostPoint = bg::model::d2::point_xy<double>;
@@ -113,6 +114,7 @@ class Solver : public SolverBase {
       vertex_candidates_.push_back(i);
       assigned_counts_.assign(1, 0);
       if (Search()) {
+        Cleanup();
         for (int j = 0; j < N_; ++j) {
           if (assigned_[j] < 0) continue;
           pose[j] = hole_[assigned_[j]];
@@ -123,6 +125,24 @@ class Solver : public SolverBase {
       queued_[i] = -1;
     }
     return SolverOutputs{std::make_shared<SSolution>(pose)};
+  }
+
+  void Cleanup() {
+    while (true) {
+      bool converged = true;
+      for (int i = 0; i < N_; ++i) {
+        if (assigned_[i] < 0) continue;
+        int degree = 0;
+        for (const auto& [next, min, max] : adjacent_[i]) {
+          degree += assigned_[next] >= 0;
+        }
+        if (degree < kMinDegree) {
+          converged = false;
+          assigned_[i] = -1;
+        }
+      }
+      if (converged) return;
+    }
   }
 
   bool Search() {

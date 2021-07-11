@@ -76,6 +76,9 @@ SJudgeResult judge(const SProblem& problem, const SSolution& solution) {
     if (b.type == SBonus::Type::WALLHACK) {
       res.is_wallhack_mode = true;
     }
+    if (b.type == SBonus::Type::SUPERFLEX) {
+      res.is_superflex_mode = true;
+    }
   }
 
   // all figure points are inside the hole.
@@ -189,6 +192,9 @@ SJudgeResult judge(const SProblem& problem, const SSolution& solution) {
       if (!tolerate(distance2(org_i, org_j), distance2(moved_i, moved_j), problem.epsilon)) {
         res.stretch_violating_edges.push_back(iedge);
       }
+    }
+    if (res.is_superflex_mode && res.stretch_violating_edges.size() == 1) {
+      res.superflex_index = res.stretch_violating_edges[0];
     }
   }
 

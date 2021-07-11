@@ -198,7 +198,12 @@ struct SCanvas {
         num_no_satisfy_stretch = res.stretch_violating_edges.size();
         num_gained_bonuses = res.gained_bonus_indices.size();
         for (int eid = 0; eid < problem->edges.size(); eid++) {
-            edge_colors[eid] = get_edge_color(eid);
+          edge_colors[eid] = cv::Scalar(0, 255, 0);
+        }
+        for (int eid : res.stretch_violating_edges) {
+            if (!(res.superflex_index && res.superflex_index == eid)) {
+              edge_colors[eid] = get_edge_color(eid);
+            }
         }
         is_valid = res.is_valid();
         // draw
