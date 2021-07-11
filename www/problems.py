@@ -22,10 +22,9 @@ def show_problems():
     problem_contexts = [make_problem_context(id, problem, solutions.get(id, []))
                         for id, problem in enumerate(problems, start=1)]
 
-    # TODO(peria): Drop the entry for 'INVALID'.
     context = {
         'problems': problem_contexts,
-        'emojis': {'GLOBALIST': '🌏', 'BREAK_A_LEG': '🦵', 'WALLHACK': '🧱', 'INVALID': '🧱'},
+        'emojis': {'GLOBALIST': '🌏', 'BREAK_A_LEG': '🦵', 'WALLHACK': '🧱'},
     }
     return flask.render_template('problems.html', title='Problems', **context)
 
