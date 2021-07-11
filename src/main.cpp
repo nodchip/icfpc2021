@@ -35,6 +35,7 @@ int main(int argc, char* argv[]) {
     bool output_judge = true;
     bool visualize = false;
     bool post_edit = false;
+    double timeout_s = -1.0;
     std::string parameters_json;
     std::optional<int> offer_globalist_bonus;
     std::optional<int> offer_wallhack_bonus;
@@ -51,6 +52,7 @@ int main(int argc, char* argv[]) {
     sub_solve->add_option_function("--offer-globalist", set_globalist_func, "problem id that offers GLOBALIST bonus to this problem. AND USE IT!");
     sub_solve->add_option_function("--offer-wallhack", set_wallhack_func, "problem id that offers WALLHACK bonus to this problem. AND USE IT!");
     sub_solve->add_option_function("--offer-superflex", set_superflex_func, "problem id that offers SUPERFLEX bonus to this problem. AND USE IT!");
+    sub_solve->add_option("--timeout", timeout_s, "timeout (s). it is up to each solver to follow the timeout or not");
     sub_solve->add_flag("--visualize", visualize, "realtime visualize");
     sub_solve->add_flag("--post-edit", post_edit, "post edit output");
     sub_solve->add_flag("--parameters_json", parameters_json, "parameters JSON file path. Required only by OptunaAnnealingSolver.");
@@ -111,9 +113,16 @@ int main(int argc, char* argv[]) {
         }
       }
 
+      SolverArguments arg(problem);
+      arg.optional_initial_solution = initial_solution;
+      arg.visualize = visualize;
+      arg.parameters_file_path = parameters_json;
+      if (timeout_s > 0) {
+        arg.timeout_s = timeout_s;
+      }
       SolverOutputs out;
       const auto t0 = std::chrono::system_clock::now();
-      out = solver->solve({problem, initial_solution, visualize, parameters_json});
+      out = solver->solve(arg);
       const auto t1 = std::chrono::system_clock::now();
       const double solve_s = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count() * 1e-6;
       LOG(INFO) << fmt::format("Elapsed  : {:.2f} s", solve_s);
@@ -188,8 +197,15 @@ int main(int argc, char* argv[]) {
         }
         LOG(INFO) << fmt::format("Trying GLOBALIST  : {}", is_globalst_mode);
 
+        SolverArguments arg(problem);
+        arg.optional_initial_solution = initial_solution;
+        arg.visualize = visualize;
+        arg.parameters_file_path = parameters_json;
+        if (timeout_s > 0) {
+          arg.timeout_s = timeout_s;
+        }
         const auto t0 = std::chrono::system_clock::now();
-        out[trial] = solver->solve({ problem, initial_solution, visualize, parameters_json });
+        out[trial] = solver->solve(arg);
         const auto t1 = std::chrono::system_clock::now();
         const double solve_s = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count() * 1e-6;
         LOG(INFO) << fmt::format("Elapsed  : {:.2f} s", solve_s);

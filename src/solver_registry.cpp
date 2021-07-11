@@ -50,7 +50,8 @@ SolverOutputs solve_with(const std::string& solver_name, SProblemPtr problem, SS
   CHECK(problem);
   auto solver = SolverRegistry::getSolver(solver_name);
   CHECK(solver);
-  SolverArguments args { problem, initial_solution, false /* visualize */ };
+  SolverArguments args(problem);
+  args.optional_initial_solution = initial_solution;
   LOG(INFO) << fmt::format("solve_with({})..", solver_name);
   Timer t;
   SolverOutputs out = solver->solve(args);

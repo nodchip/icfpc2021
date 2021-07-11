@@ -201,6 +201,11 @@ public:
     int max_depth = 1;
     Timer timer;
     double lazy_elapsed_ms = 0.0; // not always updated.
+    constexpr int check_timeout_every_iter = 10000;
+    if (args.timeout_s) {
+      LOG(WARNING) << fmt::format("Timeout : {} s", *args.timeout_s);
+    }
+
     while (!stack.empty()) {
       if (!exhaustive_search && found) {
         break;
@@ -213,6 +218,14 @@ public:
       ++counter;
       max_depth = std::max(max_depth, s->depth);
       bool report = (counter % report_every_iter == 0);
+
+      if (counter % check_timeout_every_iter == 0 && args.timeout_s) {
+        const double elapsed_s = timer.elapsed_ms() * 1e-3;
+        if (elapsed_s > *args.timeout_s) {
+          LOG(ERROR) << fmt::format("TIMEOUT! {} / {} s", elapsed_s, *args.timeout_s);
+          break;
+        }
+      }
 
       if (max_depth == V) {
         auto temp_solution = args.problem->create_solution(s->vertices);
