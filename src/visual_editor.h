@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <optional>
 #include "contest_types.h"
 
 struct SCanvas;
@@ -6,6 +7,22 @@ using SCanvasPtr = std::shared_ptr<SCanvas>;
 
 struct SMouseParams;
 using SMouseParamsPtr = std::shared_ptr<SMouseParams>;
+
+struct SShowResult {
+  SShowResult(int key) : key(key) {}
+  int key = -1;
+
+  operator int() const {
+    return key;
+  }
+
+  struct SEditResult {
+    SSolutionPtr pose_before_edit;
+    SSolutionPtr pose_after_edit;
+    std::vector<int> moved_vertex_indices;
+  };
+  std::optional<SEditResult> edit_result;
+};
 
 struct SVisualEditor {
     SCanvasPtr canvas;
@@ -15,6 +32,8 @@ struct SVisualEditor {
     SMouseParamsPtr mp;
 
     int selected_vertex_id;
+    SShowResult::SEditResult* edit_info = nullptr;
+    bool in_internal_edit_loop() const { return bool(edit_info); }
 
     SVisualEditor(SProblemPtr problem, const std::string& solver_name, const std::string window_name);
     ~SVisualEditor();
@@ -24,7 +43,7 @@ struct SVisualEditor {
 
     bool set_pose(SSolutionPtr pose);
     SSolutionPtr get_pose() const;
-    int show(int wait);
+    SShowResult show(int wait);
 };
 using SVisualEditorPtr = std::shared_ptr<SVisualEditor>;
 

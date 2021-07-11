@@ -63,6 +63,11 @@ struct SSolution {
     SSolution(const std::vector<Point>& vertices);
     SSolution(const std::vector<Point>& vertices, const std::vector<SBonus>& bonuses);
     static SSolutionPtr load_file(const std::string& path);
+    SSolutionPtr clone() const {
+      auto res = std::make_shared<SSolution>();
+      *res = *this;
+      return res;
+    }
     std::string str() const;
     nlohmann::json json() const;
     friend std::ostream& operator<<(std::ostream& o, const SSolution& obj);

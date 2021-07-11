@@ -87,7 +87,7 @@ class Solver : public SolverBase {
     }
 
     // lesser version of tonagi's idea 
-    //for (auto& p : pose) { p = hole_[0]; }
+    for (auto& p : pose) { p = hole_[0]; }
 
     auto evaluate_and_descide_rollback = [&]() -> bool {
       auto [feasible, updated_cost] = Evaluate(pose);
@@ -277,7 +277,9 @@ class Solver : public SolverBase {
 
       if (editor && iter % 100 == 0) {
         editor->set_pose(std::make_shared<SSolution>(pose));
-        int c = editor->show(1);
+        if (auto show_result = editor->show(1); show_result.edit_result) {
+          pose = show_result.edit_result->pose_after_edit->vertices;
+        }
       }
     }
 
