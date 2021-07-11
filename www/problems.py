@@ -12,69 +12,53 @@ app = flask.Blueprint('problems', __name__)
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROBLEMS_DIR = os.path.join(ROOT_DIR, 'data', 'problems')
 SOLUTIONS_DIR = os.path.join(ROOT_DIR, 'solutions')
-SUBMIT_DIR = os.path.join(SOLUTIONS_DIR, 'submit')  # TODO: Drop this
+WWW_DIR = os.path.join(ROOT_DIR, 'www')
 
 
 @app.route('/problems.html')
 def show_problems():
-    # TODO: Update this TSV as frequently as possible.
-    contest_infos = pd.read_table(os.path.join(ROOT_DIR, 'www', 'contest_infos.tsv'), index_col=0).loc
-    ids = sorted([int(re.sub(r'\D', '', x)) for x in os.listdir(path=PROBLEMS_DIR)])
+    problems = struct_problems()
+    ids = list(range(1, len(problems) + 1))
+    assert len(ids) == len(problems)
+
     solutions = get_all_solutions(ids)
-    problems = [parse_problem(id, contest_infos[id]) for id in ids]
-
-    # Resolve bonus dependencies
-    for i, problem in enumerate(problems):
-        from_id = i + 1
-        for bonus in problem.get('bonuses', []):
-            if 'problem' not in bonus:
-                continue
-            j = bonus['problem'] - 1
-            if 'bonuses' not in problems[j]:
-                problems[j]['bonuses'] = []
-            to_bonus = {
-                'bonus': bonus['bonus'],
-                'from': from_id,
-            }
-            problems[j]['bonuses'].append(to_bonus)
-
-    problem_contexts = []
-    for i, problem in enumerate(problems):
-        def get_state(p, l):
-            d = p['dislikes']
-            b = p['best_dislikes']
-            if d is None:
-                return 'secondary' if l is None else 'danger'
-            if l is None or d < l:
-                return 'warning'
-            if d > l:
-                return 'danger'
-            if d == b:
-                return 'success'
-            return None
-
-        id = i + 1
-        local_dislikes = solutions[id][0]['meta']['judge']['dislikes'] if solutions[id] else None
-        context = {
-            'id': id,
-            'image': 'images/{}.problem.png'.format(id),
-            'epsilon': problem['epsilon'],
-            'max_score': problem['max_score'],
-            'best_dislikes': str(problem['best_dislikes']),
-            'dislikes': str(problem['dislikes']) if problem['dislikes'] is not None else None,
-            'num_holes': len(problem['hole']),
-            'num_verts': len(problem['figure']['vertices']),
-            'solutions': [solution_context(problem, x) for x in solutions[id]],
-            'state': get_state(problem, local_dislikes),
-            'bonuses': problem['bonuses'],
-        }
-        problem_contexts.append(context)
+    problem_contexts = [make_problem_context(id, problem, solutions.get(id, []))
+                        for id, problem in enumerate(problems, start=1)]
 
     context = {
         'problems': problem_contexts,
         'emojis': {'GLOBALIST': '🌏', 'BREAK_A_LEG': '🦵', 'WALLHACK': '🧱'},
     }
     return flask.render_template('problems.html', title='Problems', **context)
+
+
+def make_problem_context(id, problem, solutions):
+    def get_state(p, l):
+        d, b = p['dislikes'], p['best_dislikes']
+        if d is None:
+            return 'secondary' if l is None else 'danger'
+        if l is None or d < l:
+            return 'warning'
+        if d > l:
+            return 'danger'
+        if d == b:
+            return 'success'
+        return None
+
+    local_dislikes = solutions[0]['meta']['judge']['dislikes'] if solutions else None
+    return {
+        'id': id,
+        'image': 'images/{}.problem.png'.format(id),
+        'epsilon': problem['epsilon'],
+        'max_score': problem['max_score'],
+        'best_dislikes': str(problem['best_dislikes']),
+        'dislikes': str(problem['dislikes']) if problem['dislikes'] is not None else None,
+        'num_holes': len(problem['hole']),
+        'num_verts': len(problem['figure']['vertices']),
+        'solutions': [solution_context(problem, x) for x in solutions],
+        'state': get_state(problem, local_dislikes),
+        'bonuses': problem['bonuses'],
+    }
 
 
 def solution_context(problem, solution):
@@ -118,6 +102,26 @@ def get_all_solutions(ids):
     return solutions
 
 
+def struct_problems():
+    contest_infos = pd.read_table(os.path.join(WWW_DIR, 'contest_infos.tsv'), index_col=0)
+    ids = contest_infos.index
+    problems = [parse_problem(id, contest_infos.loc[id]) for id in ids]
+
+    # Resolve bonus dependencies
+    for id, problem in enumerate(problems, start=1):
+        for bonus in filter(lambda x: 'problem' in x, problem.get('bonuses', [])):
+            j = bonus['problem'] - 1
+            if 'bonuses' not in problems[j]:
+                problems[j]['bonuses'] = []
+            to_bonus = {
+                'bonus': bonus['bonus'],
+                'from': id,
+            }
+            problems[j]['bonuses'].append(to_bonus)
+
+    return problems
+
+
 def parse_problem(id, web):
     dislikes = web['your dislikes']
     problem = load_problem_json(id)
@@ -157,6 +161,7 @@ def get_score(problem, dislikes=None):
         score = score * math.sqrt((best + 1) / (dislikes + 1))
 
     return int(math.ceil(score))
+
 
 def is_eligible_for_submit(solution):
     if not solution['meta']['judge']['is_valid']:
