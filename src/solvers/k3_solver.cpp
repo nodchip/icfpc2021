@@ -246,7 +246,7 @@ public:
     // stretch_cost: 0.1 -> 0.9
     // dislike: 0.9 -> 0.1
     double weight = 0.8 * progress_rate;
-    double phys_ratio = 0.9 - weight;
+    double phys_ratio = 0.0;
     double stretch_ratio = 0.1 + weight;
     double dislike_ratio = 0.9 - weight;
     return phys_ratio * calc_phys_cost(pose) + stretch_ratio * stretch_cost + dislike_ratio * dislike_cost;
@@ -381,24 +381,21 @@ public:
     int seed = 3;
     Xorshift rnd; rnd.set_seed(seed);
 
-    auto pose = (args.optional_initial_solution ? args.optional_initial_solution->vertices : vertices_orig);
-
-    // initial state
-    //auto representative_point = calc_representative_polygon_point(inner_polygon_points);
-    //for (int i = 0; i < pose.size(); i++) move_vertex(pose, i, representative_point);
-
+    constexpr bool scatter_mode = false;
     constexpr bool visualize = true;
     if (visualize) {
       editor = std::make_shared<SVisualEditor>(args.problem, "K3Solver", "visualize");
     }
+    auto pose = (args.optional_initial_solution ? args.optional_initial_solution->vertices : vertices_orig);
     SPinnedIndex pinned_index(rng, pose.size(), editor);
 
-    auto get_temp = [](double stemp, double etemp, double loop, double num_loop) {
-      return etemp + (stemp - etemp) * (num_loop - loop) / num_loop;
-    };
-
-    //pose = scatter(pose, 200, rnd);
-    if (editor) {
+    if (scatter_mode) {
+      // initial state
+      auto representative_point = calc_representative_polygon_point(inner_polygon_points);
+      for (int i = 0; i < pose.size(); i++) move_vertex(pose, i, representative_point);
+      pose = scatter(pose, 10000, rnd);
+    }
+    else {
       editor->set_pose(prob->create_solution(pose));
       while (true) {
         int c = editor->show(1);
@@ -409,6 +406,10 @@ public:
       pose = editor->get_pose()->vertices;
       pinned_index.update_movable_index();
     }
+
+    auto get_temp = [](double stemp, double etemp, double loop, double num_loop) {
+      return etemp + (stemp - etemp) * (num_loop - loop) / num_loop;
+    };
 
     progress_rate = 0.0;
     double now_score = evaluate(pose);
