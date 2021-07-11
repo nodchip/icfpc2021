@@ -8,10 +8,13 @@
 #include "contest_types.h"
 
 struct SolverArguments {
+  SolverArguments(SProblemPtr problem) : problem(problem) {}
+
   SProblemPtr problem;
   SSolutionPtr optional_initial_solution;
 
   bool visualize = false;
+  std::optional<double> timeout_s;
 
   /// <summary>
   /// パラメーターファイルのパス。OptunaAnnealingSolverのみで使用する。
