@@ -43,8 +43,9 @@ def job(problem_json, args):
 
     if not new_is_valid:
         print(name, 'skip (invalid)')
-        os.unlink(tmp_out_path)
-        return dict(row, result='invalid')
+        if not args.store_invalid:
+            os.unlink(tmp_out_path)
+            return dict(row, result='invalid')
 
     action = 'force'
     exists = out_path.is_file()
@@ -116,6 +117,8 @@ def main():
     parser.add_argument('solver_name', help='Solver to use')
     parser.add_argument('overwrite_option', default='improvement', choices=[
                         'force', 'improvement', 'never'], help='when to overwite existing files')
+    parser.add_argument(
+        '--store-invalid', action='store_true', help='output invalid files. use this with care (not to submit)!')
     parser.add_argument(
         '--try-globalist', action='store_true', help='try GLOBALIST mode')
     parser.add_argument(
