@@ -263,8 +263,8 @@ class Solver : public SolverBase {
       for (int i = 0; i < action_probs.size(); ++i) { action_probs[i].first /= p; }
     }
 
-    for (int i = 0; i < num_iters; ++i) {
-      progress = 1.0 * i / num_iters;
+    for (int iter = 0; iter < num_iters; ++iter) {
+      progress = 1.0 * iter / num_iters;
 
       const double p_action = std::uniform_real_distribution(0.0, 1.0)(rng_);
       double p_accum = 0.0;
@@ -275,7 +275,7 @@ class Solver : public SolverBase {
         }
       }
 
-      if (editor && i % 100 == 0) {
+      if (editor && iter % 100 == 0) {
         editor->set_pose(std::make_shared<SSolution>(pose));
         int c = editor->show(1);
       }
