@@ -93,8 +93,9 @@ public:
     ret.solution = args.optional_initial_solution ? args.optional_initial_solution : args.problem->create_solution();
 
     // develop.
-    constexpr int report_every_iter = 100000;
+    constexpr int report_every_iter = 10000;
     constexpr int editor_sleep = 1;
+    constexpr bool exhaustive_search = true;
     SVisualEditorPtr editor;
     if (args.visualize) {
       editor = std::make_shared<SVisualEditor>(args.problem, "NaiveSearchSolver", "visualize");
@@ -192,13 +193,17 @@ public:
       }
     }
 
+    integer best_dislikes = std::numeric_limits<integer>::max();
     bool found = false;
     int64_t root_counter = 0;
     int64_t counter = 0;
     int max_depth = 1;
     Timer timer;
     double lazy_elapsed_ms = 0.0; // not always updated.
-    while (!found && !stack.empty()) {
+    while (!stack.empty()) {
+      if (!exhaustive_search && found) {
+        break;
+      }
       StatePtr s = stack.top(); stack.pop();
 
       if (s->depth == 1) {
@@ -212,7 +217,11 @@ public:
         auto temp_solution = args.problem->create_solution(s->vertices);
         auto judge_res = judge(*args.problem, *temp_solution);
         if (judge_res.is_valid()) {
-          ret.solution = temp_solution;
+          if (judge_res.dislikes < best_dislikes) {
+            LOG(INFO) << fmt::format("#{} foud better solution {} -> {}", root_counter, best_dislikes, judge_res.dislikes);
+            ret.solution = temp_solution;
+            best_dislikes = judge_res.dislikes;
+          }
           found = true;
           report = true;
         }
