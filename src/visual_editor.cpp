@@ -224,6 +224,16 @@ struct SCanvas {
     }
   }
 
+  void zoom(int dmag) {
+    static constexpr integer kMaxMag = 20;
+    static constexpr integer kMinMag = 2;
+    mag += dmag;
+    mag = std::max(std::min(mag, kMaxMag), kMinMag);
+
+    img_width = kImageWidthPx / mag;
+    img_height = kImageHeightPx / mag;
+  }
+
   void update(int selected_id) {
     // judge
     auto res = judge(*problem, *solution);
@@ -593,6 +603,16 @@ SShowResult SVisualEditor::show(int delay_ms) {
       break;
     case 'r':
       canvas->rotate_clockwise();
+      canvas->update(-1);
+      break;
+    case '/':
+      canvas->zoom(1);
+      canvas->draw_base_image();
+      canvas->update(-1);
+      break;
+    case '\\':
+      canvas->zoom(-1);
+      canvas->draw_base_image();
       canvas->update(-1);
       break;
     case kUpArrowKey:
