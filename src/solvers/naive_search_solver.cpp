@@ -9,6 +9,7 @@
 #include <boost/geometry/geometries/polygon.hpp>
 #include "contest_types.h"
 #include "solver_registry.h"
+#include "solver_util.h"
 #include "visual_editor.h"
 #include "timer.h"
 #include "judge.h"
@@ -221,6 +222,7 @@ public:
             LOG(INFO) << fmt::format("#{} foud better solution {} -> {}", root_counter, best_dislikes, judge_res.dislikes);
             ret.solution = temp_solution;
             best_dislikes = judge_res.dislikes;
+            save_solution(args.problem, ret.solution, "NaiveSearchSolver", "bestsofar.pose.json");
           }
           found = true;
           report = true;
@@ -229,7 +231,8 @@ public:
 
       if (report) {
         lazy_elapsed_ms = timer.elapsed_ms();
-        const auto stat = fmt::format("root {}/{}({:.2f}%), visited {}, max depth {}, {:.2f} ms, {:.2f} node/s, cache {:.2f} MB",
+        const auto stat = fmt::format("[{}][best DL={}] root {}/{}({:.2f}%), visited {}, max depth {}, {:.2f} ms, {:.2f} node/s, cache {:.2f} MB",
+          found ? "O" : "X", found ? best_dislikes : -1,
           root_counter, interior_points.size(), 100.0 * root_counter / interior_points.size(),
           counter, max_depth, lazy_elapsed_ms, counter / lazy_elapsed_ms * 1e3,
           movable_cache_count * sizeof(Point) / 1024.0 / 1024.0
