@@ -117,6 +117,8 @@ def get_all_solutions():
             if 'solver' not in solution['meta']:
                 solution['meta']['solver'] = subdir
             solution['meta']['subdir'] = subdir
+            if 'gained_bonuses' not in solution['meta']['judge']:
+                solution['meta']['judge']['gained_bonuses'] = []
             if id not in solutions:
                 solutions[id] = []
             solutions[id].append(solution)
