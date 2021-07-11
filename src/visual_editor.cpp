@@ -80,6 +80,7 @@ struct SCanvas {
     bool draw_distant_hole_vertex = true;
     bool draw_tolerated_vertex = true;
     bool draw_edge_lengths_mode = true;
+    bool draw_index_mode = true;
 
     std::vector<cv::Scalar> edge_colors;
 
@@ -168,6 +169,15 @@ struct SCanvas {
         }
     }
 
+    void draw_index(cv::Mat& img) {
+        int nv = solution->vertices.size();
+        for (int i = 0; i < nv; i++) {
+            Point raw_u = solution->vertices[i];
+            cv::Point u = cvt(raw_u);
+            cv::putText(img, std::to_string(i), u, cv::FONT_HERSHEY_SIMPLEX, 0.4, cv::Scalar(255, 0, 0), 1, cv::LINE_AA);
+        }
+    }
+
     void shift(int dx, int dy) {
         for (auto& p : solution->vertices) {
           p.first += dx;
@@ -198,7 +208,12 @@ struct SCanvas {
         num_no_satisfy_stretch = res.stretch_violating_edges.size();
         num_gained_bonuses = res.gained_bonus_indices.size();
         for (int eid = 0; eid < problem->edges.size(); eid++) {
-            edge_colors[eid] = get_edge_color(eid);
+          edge_colors[eid] = cv::Scalar(0, 255, 0);
+        }
+        for (int eid : res.stretch_violating_edges) {
+            if (!(res.superflex_index && res.superflex_index == eid)) {
+              edge_colors[eid] = get_edge_color(eid);
+            }
         }
         is_valid = res.is_valid();
         // draw
@@ -232,9 +247,16 @@ struct SCanvas {
             if (draw_tolerated_vertex) {
                 auto bb = calc_bb(problem->hole_polygon);
                 auto edges = edges_from_vertex(*problem, selected_id);
-                std::vector<std::set<Point>> exact_grids;
+                std::map<Point, int> exact_counts;
+                auto add_point = [&](int x, int y) {
+                    auto it = exact_counts.find({x, y});
+                    if (it == exact_counts.end()) {
+                      exact_counts.insert(it, {{x, y}, 1});
+                    } else {
+                      it->second += 1;
+                    }
+                };
                 for (auto eid : edges) {
-                    std::set<Point> exact_grid;
                     auto [u, v] = problem->edges[eid];
                     const int counter_vid = u == selected_id ? v : u;
                     const auto org_d2 = distance2(problem->vertices[selected_id], problem->vertices[counter_vid]); 
@@ -242,26 +264,30 @@ struct SCanvas {
                         for (int x = bb.tl().x; x <= bb.br().x; ++x) {
                             const auto moved_d2 = distance2({x, y}, solution->vertices[counter_vid]); 
                             if (tolerate(org_d2, moved_d2, problem->epsilon)) {
-                                exact_grid.insert({x, y});
+                                add_point(x, y);
                             }
                         }
                     }
-                    for (auto v : exact_grid) {
-                        auto [x, y] = cvt(v);
+                }
+                if (!exact_counts.empty()) { // common feasible position.
+                    const int edge_count = edges.size();
+                    // others
+                    for (auto& [pos, count] : exact_counts) {
+                        auto [x, y] = cvt(pos);
                         draw_circle(img, x, y, std::max(4, int(mag) / 4), cv::Scalar(64, 0, 0), cv::FILLED);
                     }
-                    exact_grids.emplace_back(std::move(exact_grid));
-                }
-                if (!exact_grids.empty()) { // common feasible position.
-                    std::set<Point> intersection = exact_grids[0];
-                    for (int i = 1; i < exact_grids.size(); ++i) {
-                        std::set<Point> tmp;
-                        std::set_intersection(intersection.begin(), intersection.end(), exact_grids[i].begin(), exact_grids[i].end(), std::inserter(tmp, tmp.end()));
-                        std::swap(intersection, tmp);
+                    // top 2
+                    if (edge_count - 1 > 1) for (auto& [pos, count] : exact_counts) {
+                        auto [x, y] = cvt(pos);
+                        if (count == edge_count - 1) {
+                          draw_circle(img, x, y, std::max(8, int(mag) / 2), cv::Scalar(255, 64, 64), cv::FILLED);
+                        }
                     }
-                    for (auto v : intersection) {
-                        auto [x, y] = cvt(v);
-                        draw_circle(img, x, y, std::max(8, int(mag) / 2), cv::Scalar(255, 64, 64), cv::FILLED);
+                    for (auto& [pos, count] : exact_counts) {
+                        auto [x, y] = cvt(pos);
+                        if (count == edge_count) {
+                          draw_circle(img, x, y, std::max(8, int(mag) / 2), cv::Scalar(255, 255, 96), cv::FILLED);
+                        }
                     }
                 }
             }
@@ -279,6 +305,9 @@ struct SCanvas {
         draw_stats(img);
         if (draw_edge_lengths_mode) {
             draw_edge_lengths(img);
+        }
+        if (draw_index_mode) {
+            draw_index(img);
         }
     }
 
@@ -308,11 +337,13 @@ struct SCanvas {
             auto [x, y] = bonus.position;
             cv::Scalar color;
             if (bonus.type == SBonus::Type::GLOBALIST) {
-              color = cv::Scalar(32, 192, 192); 
+              color = cv::Scalar(32, 192, 192);
             } else if (bonus.type == SBonus::Type::BREAK_A_LEG) {
-              color = cv::Scalar(192, 192, 32); 
+              color = cv::Scalar(192, 32, 32);
             } else if (bonus.type == SBonus::Type::WALLHACK) {
-              color = cv::Scalar(64, 128, 255); 
+              color = cv::Scalar(64, 128, 255);
+            } else if (bonus.type == SBonus::Type::SUPERFLEX) {
+              color = cv::Scalar(192, 192, 32);
             }
             cv::circle(img_base, cvt(x, y), 20, color, cv::FILLED);
         }
@@ -390,6 +421,7 @@ void SVisualEditor::set_persistent_custom_stat(const std::string& stat_str) {
 void SVisualEditor::set_marked_indices(const std::vector<int>& marked_indices) {
   canvas->marked_vertex_indices.clear();
   std::copy(marked_indices.begin(), marked_indices.end(), std::inserter(canvas->marked_vertex_indices, canvas->marked_vertex_indices.end()));
+  canvas->update(-1);
 }
 
 std::vector<int> SVisualEditor::get_marked_indices() const {
@@ -432,6 +464,10 @@ SShowResult SVisualEditor::show(int wait) {
     }
     if (res.key == 'e') {
         canvas->draw_edge_lengths_mode = !canvas->draw_edge_lengths_mode;
+        canvas->update(-1);
+    }
+    if (res.key == 'i') {
+        canvas->draw_index_mode = !canvas->draw_index_mode;
         canvas->update(-1);
     }
     if (res.key == 't') {
@@ -494,10 +530,10 @@ SShowResult SVisualEditor::show(int wait) {
         save_intermediate();
       }
     }
-    cv::imshow(window_name, canvas->img);
     if (!in_internal_edit_loop()) {
       canvas->oneshot_custom_stat.clear();
     }
+    cv::imshow(window_name, canvas->img);
     return res;
 }
 
@@ -530,11 +566,13 @@ void SVisualEditor::callback(int e, int x, int y, int f, void* param) {
         }
     }
     if (mp->clicked_right()) {
-      auto it = s->canvas->marked_vertex_indices.find(mouseover_id);
-      if (it == s->canvas->marked_vertex_indices.end()) {
-        s->canvas->marked_vertex_indices.insert(mouseover_id);
-      } else {
-        s->canvas->marked_vertex_indices.erase(it);
+      if (mouseover_id != -1) {
+        auto it = s->canvas->marked_vertex_indices.find(mouseover_id);
+        if (it == s->canvas->marked_vertex_indices.end()) {
+          s->canvas->marked_vertex_indices.insert(mouseover_id);
+        } else {
+          s->canvas->marked_vertex_indices.erase(it);
+        }
       }
     }
     if (mp->drugging_left()) {

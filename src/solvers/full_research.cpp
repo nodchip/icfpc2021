@@ -416,7 +416,6 @@ SSolutionPtr dfs_holes(SProblemPtr problem, SSolutionPtr solution, HashMap& hash
  	if (v.size() >= H) {
     return Fit_Unstricted_Points(problem, solution, v, vertices_distances, hash_map_decided, counter);
   }
-
 	else {
 		for (int x = 0; x < V; x++) if(!used_vertices[x]) {
 			if (counter > 1e15) return nullptr;
@@ -483,20 +482,6 @@ bool full_research(SProblemPtr problem, SSolutionPtr& solution, Timer& timer) {
   std::vector<int> used_vertices(V, 0);
   std::vector<int> v = {};
   SSolutionPtr solution_initial(new SSolution(solution->vertices));
-
-  /*
-
-  SVisualEditor give_points_first(problem,"full_research", "initial_state");
-  give_points_first.set_pose(solution_initial);
-  while (true) {
-    int c = give_points_first.show(15);
-    if (c == 27) {
-      break;
-    }
-  }
-  solution_initial = give_points_first.get_pose();
-  std::vector<int> decided_points_initial = give_points_first.get_marked_indices();
-  */
   std::vector<int> decided_points_initial = {};
   for (int i = 0; i < V; i++) if (solution->vertices[i] != problem->vertices[i]) {
     decided_points_initial.push_back(i);

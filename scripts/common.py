@@ -11,3 +11,4 @@ if sys.platform == 'win32':
     EXE_DIR = REPO_DIR / 'vs' / 'x64' / 'Release'
 else:
     EXE_DIR = REPO_DIR / 'src'
+SQLITE_DIR = REPO_DIR / 'sqlite'

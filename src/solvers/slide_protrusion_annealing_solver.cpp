@@ -110,7 +110,7 @@ namespace SlideProtrusionAnnealingSolver {
         if (feasible != judge_valid) {
           LOG(INFO) << feasible << " " << judge_valid;
           if (editor) {
-            editor->set_pose(std::make_shared<SSolution>(pose));
+            editor->set_pose(args.problem->create_solution(pose));
             while (true) {
               int c = editor->show(1);
               if (c == 27) break;

@@ -14,3 +14,4 @@ struct SPinnedIndex {
   void update_movable_index();
 };
 
+void save_solution(SProblemPtr problem, SSolutionPtr solution, const std::string& solver_name, const std::string& file_path);

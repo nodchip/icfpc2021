@@ -38,8 +38,10 @@ int main(int argc, char* argv[]) {
     std::string parameters_json;
     std::optional<int> offer_globalist_bonus;
     std::optional<int> offer_wallhack_bonus;
+    std::optional<int> offer_superflex_bonus;
     std::function<void(const int& p)> set_globalist_func = [&](int p) { offer_globalist_bonus = p; };
     std::function<void(const int& p)> set_wallhack_func = [&](int p) { offer_wallhack_bonus = p; };
+    std::function<void(const int& p)> set_superflex_func = [&](int p) { offer_superflex_bonus = p; };
     sub_solve->add_option("solver_name", solver_name, "solver name");
     sub_solve->add_option("problem_json", problem_json, "problem JSON file path");
     sub_solve->add_option("solution_json", solution_json, "output solution JSON file path (optional)");
@@ -48,6 +50,7 @@ int main(int argc, char* argv[]) {
     sub_solve->add_flag("-j,--output-judge,!--no-output-judge", output_judge, "output judge info to solution JSON");
     sub_solve->add_option_function("--offer-globalist", set_globalist_func, "problem id that offers GLOBALIST bonus to this problem. AND USE IT!");
     sub_solve->add_option_function("--offer-wallhack", set_wallhack_func, "problem id that offers WALLHACK bonus to this problem. AND USE IT!");
+    sub_solve->add_option_function("--offer-superflex", set_superflex_func, "problem id that offers SUPERFLEX bonus to this problem. AND USE IT!");
     sub_solve->add_flag("--visualize", visualize, "realtime visualize");
     sub_solve->add_flag("--post-edit", post_edit, "post edit output");
     sub_solve->add_flag("--parameters_json", parameters_json, "parameters JSON file path. Required only by OptunaAnnealingSolver.");
@@ -69,6 +72,7 @@ int main(int argc, char* argv[]) {
     CLI11_PARSE(app, argc, argv);
 
     if (sub_solve->parsed()) {
+      solver_name = SolverRegistry::getCanonicalSolverName(solver_name);
       LOG(ERROR) << fmt::format("Solver   : {}", solver_name);
 
       auto solver = SolverRegistry::getSolver(solver_name);
@@ -86,6 +90,11 @@ int main(int argc, char* argv[]) {
         problem->force_use_bonus_index = problem->available_bonuses.size();
         problem->available_bonuses.push_back(SBonus(SBonus::Type::WALLHACK, *offer_wallhack_bonus));
         LOG(INFO) << fmt::format("Offerred WALLHACK <- {}", *offer_wallhack_bonus);
+      }
+      if (offer_superflex_bonus) {
+        problem->force_use_bonus_index = problem->available_bonuses.size();
+        problem->available_bonuses.push_back(SBonus(SBonus::Type::SUPERFLEX, *offer_superflex_bonus));
+        LOG(INFO) << fmt::format("Offerred SUPERFLEX <- {}", *offer_superflex_bonus);
       }
       LOG(INFO) << fmt::format("Problem  : {}", problem_json);
 
@@ -146,6 +155,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (sub_try_globalist->parsed()) {
+      solver_name = SolverRegistry::getCanonicalSolverName(solver_name);
       LOG(ERROR) << fmt::format("Solver   : {}", solver_name);
 
       auto solver = SolverRegistry::getSolver(solver_name);

@@ -12,7 +12,7 @@ using Point2d = std::pair<double, double>;
 using Line = std::array<Point, 2>;
 
 struct SBonus {
-    enum class Type { GLOBALIST, BREAK_A_LEG, WALLHACK, INVALID };
+    enum class Type { GLOBALIST, BREAK_A_LEG, WALLHACK, SUPERFLEX, INVALID };
     static constexpr integer DUMMY_PROBLEM_ID = -1;
 
     Type type;
@@ -25,12 +25,14 @@ struct SBonus {
       if (name == "GLOBALIST") return Type::GLOBALIST;
       if (name == "BREAK_A_LEG") return Type::BREAK_A_LEG;
       if (name == "WALLHACK") return Type::WALLHACK;
+      if (name == "SUPERFLEX") return Type::SUPERFLEX;
       return Type::INVALID;
     }
     static const char* bonus_name(Type type) {
       if (type == Type::GLOBALIST) return "GLOBALIST";
       if (type == Type::BREAK_A_LEG) return "BREAK_A_LEG";
       if (type == Type::WALLHACK) return "WALLHACK";
+      if (type == Type::SUPERFLEX) return "SUPERFLEX";
       return "INVALID";
     }
 };

@@ -27,10 +27,11 @@ def visualize(problem_file_path, pose_file_path=None, output_file_path=None, doe
 
     # y軸を逆さまにする
     # Matplotlib-y軸が反転したグラフの描き方 | DATUM STUDIO株式会社 https://datumstudio.jp/blog/matplotlib-y%E8%BB%B8%E3%81%8C%E5%8F%8D%E8%BB%A2%E3%81%97%E3%81%9F%E3%82%B0%E3%83%A9%E3%83%95%E3%81%AE%E6%8F%8F%E3%81%8D%E6%96%B9/
-    min_x = min(problem['hole'] + problem['figure']['vertices'], key=get_x)[0]
-    max_x = max(problem['hole'] + problem['figure']['vertices'], key=get_x)[0]
-    min_y = min(problem['hole'] + problem['figure']['vertices'], key=get_y)[1]
-    max_y = max(problem['hole'] + problem['figure']['vertices'], key=get_y)[1]
+    points = problem['hole'] + problem['figure']['vertices']
+    min_x = min(points, key=get_x)[0]
+    max_x = max(points, key=get_x)[0]
+    min_y = min(points, key=get_y)[1]
+    max_y = max(points, key=get_y)[1]
     axes = plt.axes(facecolor='pink')
     axes.set_ylim([max_y + 1, min_y - 1])
 
@@ -78,7 +79,7 @@ def visualize(problem_file_path, pose_file_path=None, output_file_path=None, doe
             plt.plot(*zip(src, dst), color=color)
 
     if output_file_path:
-        plt.savefig(output_file_path)
+        plt.savefig(output_file_path, bbox_inches='tight', pad_inches=0)
     else:
         plt.show()
 

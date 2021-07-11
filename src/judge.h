@@ -49,25 +49,34 @@ inline auto distance2(const TPoint& p, const TPoint& q) {
 struct SJudgeResult {
   bool is_globalist_mode = false;
   bool is_wallhack_mode = false;
+  bool is_superflex_mode = false;
   bool violates_globalist = false;
   integer dislikes = 0;
   std::optional<int> wallhacking_index; // nullopt if not using wallhack (always nullopt when !is_wallhack_mode)
+  std::optional<int> superflex_index; // nullopt if not using superflex (always nullopt when !is_superflex_mode)
   std::vector<integer> out_of_hole_edges; // wall hacking edges are included
   std::vector<integer> out_of_hole_vertices; // even when wallhacking is used, wall hacking vertex is included
   std::vector<integer> out_of_hole_edges_except_wallhack; // wall hacking edges are NOT included. if !is_wallhack_mode, identical to out_of_hole_edges.
-  std::vector<integer> stretch_violating_edges;
+  std::vector<integer> stretch_violating_edges; // all edges (including the excessivly compressed/stretched edge in the name of SUPERFLEX)
   std::vector<integer> individual_dislikes;
   std::vector<integer> gained_bonus_indices; // SProblem::bonuses[gained_bonus_indices[i]]
   std::vector<integer> used_bonus_indices; // SProblem::available_bonuses[gained_bonus_indices[i]]
   bool fit_in_hole() const { return out_of_hole_edges.empty() && out_of_hole_vertices.empty(); }
   bool fit_in_hole_except_wallhack() const {
     return out_of_hole_edges_except_wallhack.empty() && (
-      out_of_hole_vertices.empty() || out_of_hole_vertices.size() == 1 && wallhacking_index && *wallhacking_index == out_of_hole_vertices[0]
-      );
+      out_of_hole_vertices.empty() || (
+        out_of_hole_vertices.size() == 1 && wallhacking_index && *wallhacking_index == out_of_hole_vertices[0]
+      )
+    );
   }
   bool satisfy_stretch() const { 
     if (is_globalist_mode) {
       return !violates_globalist;
+    } else if (is_superflex_mode) {
+      return stretch_violating_edges.empty() || (
+        stretch_violating_edges.size() == 1 && superflex_index && *superflex_index == stretch_violating_edges[0]
+      );
+      return stretch_violating_edges.size() <= 1;
     } else {
       return stretch_violating_edges.empty();
     }

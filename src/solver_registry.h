@@ -46,6 +46,7 @@ struct SolverRegistry {
     return s_solver_registry;
   }
   static SolverBase::Ptr getSolver(std::string name);
+  static std::string getCanonicalSolverName(std::string name);
 
   SolverRegistry(std::string name, SolverEntry entry) {
     getRegistry()[name] = entry;
@@ -53,5 +54,7 @@ struct SolverRegistry {
 
   static void displaySolvers();
 };
+
+SolverOutputs solve_with(const std::string& solver_name, SProblemPtr problem, SSolutionPtr initial_solution);
 
 // vim:ts=2 sw=2 sts=2 et ci
