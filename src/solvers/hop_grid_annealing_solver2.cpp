@@ -82,8 +82,8 @@ class Solver : public SolverBase {
 
     SPinnedIndex pinned_index(rng_, N, editor);
 
-    const int num_iters = 100000;
-    const double T0 = 1.0e2;
+    const int num_iters = 1000000;
+    const double T0 = 1.0e1;
     const double T1 = 1.0e-2;
     double progress = 0.0;
 
