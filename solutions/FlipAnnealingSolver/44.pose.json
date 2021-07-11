@@ -1,1 +1,1 @@
-{"meta":{"created_at":"2021/07/10 11:26:12","elapsed_s":2.161945,"judge":{"dislikes":17290,"fit_in_hole":true,"is_valid":true,"satisfy_stretch":true},"solver":"FlipAnnealingSolver"},"vertices":[[4,51],[29,73],[12,43],[37,40],[36,66],[6,55]]}
+{"meta":{"created_at":"2021/07/10 11:26:12","elapsed_s":2.161945,"judge":{"dislikes":17290,"fit_in_hole":true,"gained_bonuses":[],"is_valid":true,"satisfy_stretch":true},"solver":"FlipAnnealingSolver"},"vertices":[[4,51],[29,73],[12,43],[37,40],[36,66],[6,55]]}

@@ -1,1 +1,1 @@
-{"bonuses":[],"meta":{"created_at":"2021/07/11 02:03:35","elapsed_s":2.3e-05,"git_commit":"","judge":{"dislikes":0,"fit_in_hole":true,"is_valid":true,"satisfy_stretch":true},"solver":"FullResearch"},"vertices":[[0,18],[29,35],[30,0],[64,1],[64,35],[94,18]]}
+{"bonuses":[],"meta":{"created_at":"2021/07/11 02:03:35","elapsed_s":2.3e-05,"git_commit":"","judge":{"dislikes":0,"fit_in_hole":true,"gained_bonuses":[],"is_valid":true,"satisfy_stretch":true},"solver":"FullResearch"},"vertices":[[0,18],[29,35],[30,0],[64,1],[64,35],[94,18]]}
