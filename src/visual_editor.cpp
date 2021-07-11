@@ -232,9 +232,16 @@ struct SCanvas {
             if (draw_tolerated_vertex) {
                 auto bb = calc_bb(problem->hole_polygon);
                 auto edges = edges_from_vertex(*problem, selected_id);
-                std::vector<std::set<Point>> exact_grids;
+                std::map<Point, int> exact_counts;
+                auto add_point = [&](int x, int y) {
+                    auto it = exact_counts.find({x, y});
+                    if (it == exact_counts.end()) {
+                      exact_counts.insert(it, {{x, y}, 1});
+                    } else {
+                      it->second += 1;
+                    }
+                };
                 for (auto eid : edges) {
-                    std::set<Point> exact_grid;
                     auto [u, v] = problem->edges[eid];
                     const int counter_vid = u == selected_id ? v : u;
                     const auto org_d2 = distance2(problem->vertices[selected_id], problem->vertices[counter_vid]); 
@@ -242,26 +249,30 @@ struct SCanvas {
                         for (int x = bb.tl().x; x <= bb.br().x; ++x) {
                             const auto moved_d2 = distance2({x, y}, solution->vertices[counter_vid]); 
                             if (tolerate(org_d2, moved_d2, problem->epsilon)) {
-                                exact_grid.insert({x, y});
+                                add_point(x, y);
                             }
                         }
                     }
-                    for (auto v : exact_grid) {
-                        auto [x, y] = cvt(v);
+                }
+                if (!exact_counts.empty()) { // common feasible position.
+                    const int edge_count = edges.size();
+                    // others
+                    for (auto& [pos, count] : exact_counts) {
+                        auto [x, y] = cvt(pos);
                         draw_circle(img, x, y, std::max(4, int(mag) / 4), cv::Scalar(64, 0, 0), cv::FILLED);
                     }
-                    exact_grids.emplace_back(std::move(exact_grid));
-                }
-                if (!exact_grids.empty()) { // common feasible position.
-                    std::set<Point> intersection = exact_grids[0];
-                    for (int i = 1; i < exact_grids.size(); ++i) {
-                        std::set<Point> tmp;
-                        std::set_intersection(intersection.begin(), intersection.end(), exact_grids[i].begin(), exact_grids[i].end(), std::inserter(tmp, tmp.end()));
-                        std::swap(intersection, tmp);
+                    // top 2
+                    if (edge_count - 1 > 1) for (auto& [pos, count] : exact_counts) {
+                        auto [x, y] = cvt(pos);
+                        if (count == edge_count - 1) {
+                          draw_circle(img, x, y, std::max(8, int(mag) / 2), cv::Scalar(255, 64, 64), cv::FILLED);
+                        }
                     }
-                    for (auto v : intersection) {
-                        auto [x, y] = cvt(v);
-                        draw_circle(img, x, y, std::max(8, int(mag) / 2), cv::Scalar(255, 64, 64), cv::FILLED);
+                    for (auto& [pos, count] : exact_counts) {
+                        auto [x, y] = cvt(pos);
+                        if (count == edge_count) {
+                          draw_circle(img, x, y, std::max(8, int(mag) / 2), cv::Scalar(255, 255, 96), cv::FILLED);
+                        }
                     }
                 }
             }
