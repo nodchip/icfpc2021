@@ -312,7 +312,7 @@ public:
 
         constexpr bool visualize = true;
         if (visualize) {
-            editor = std::make_shared<SVisualEditor>(args.problem, "visualize");
+            editor = std::make_shared<SVisualEditor>(args.problem, "K3Solver", "visualize");
         }
 
         auto get_temp = [](double stemp, double etemp, double loop, double num_loop) {

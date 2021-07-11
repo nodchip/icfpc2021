@@ -330,8 +330,8 @@ struct SMouseParams {
     }
 };
 
-SVisualEditor::SVisualEditor(SProblemPtr problem, const std::string window_name)
-  : window_name(window_name) {
+SVisualEditor::SVisualEditor(SProblemPtr problem, const std::string& solver_name, const std::string window_name)
+  : window_name(window_name), solver_name(solver_name) {
     canvas = std::make_shared<SCanvas>(problem);
     mp = std::make_shared<SMouseParams>();
     cv::namedWindow(window_name, cv::WINDOW_AUTOSIZE);
@@ -372,7 +372,7 @@ int SVisualEditor::show(int wait) {
         const std::string file_path = "intermediate.pose.json";
         std::ofstream ofs(file_path);
         auto json = canvas->solution->json();
-        update_meta(json, "ManualSolver");
+        update_meta(json, solver_name);
         update_judge(judge(*canvas->problem, *canvas->solution), json);
         ofs << json;
         LOG(INFO) << "saved: " << file_path;
@@ -450,8 +450,8 @@ void SVisualEditor::callback(int e, int x, int y, int f, void* param) {
     }
 }
 
-SSolutionPtr visualize_and_edit(SProblemPtr problem, SSolutionPtr solution) {
-    SVisualEditorPtr editor = std::make_shared<SVisualEditor>(problem, "visualize");
+SSolutionPtr visualize_and_edit(SProblemPtr problem, SSolutionPtr solution, const std::string& base_solver_name) {
+    SVisualEditorPtr editor = std::make_shared<SVisualEditor>(problem, base_solver_name + "Edit", "visualize");
     editor->set_pose(solution);
     SSolutionPtr editor_solution = std::make_shared<SSolution>();
     *editor_solution = *solution;
@@ -462,7 +462,7 @@ SSolutionPtr visualize_and_edit(SProblemPtr problem, SSolutionPtr solution) {
             const std::string file_path = "editor.pose.json";
             std::ofstream ofs(file_path);
             auto json = editor_solution->json();
-            update_meta(json, "ManualPostEditor");
+            update_meta(json, base_solver_name + "PostEdit");
             update_judge(judge(*problem, *editor_solution), json);
             ofs << json;
             LOG(INFO) << "saved editor solution: " << file_path;

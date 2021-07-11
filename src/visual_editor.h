@@ -11,11 +11,12 @@ struct SVisualEditor {
     SCanvasPtr canvas;
 
     const std::string window_name;
+    const std::string solver_name;
     SMouseParamsPtr mp;
 
     int selected_vertex_id;
 
-    SVisualEditor(SProblemPtr problem, const std::string window_name = "manual");
+    SVisualEditor(SProblemPtr problem, const std::string& solver_name, const std::string window_name);
     ~SVisualEditor();
 
     int get_mouseover_node_id() const;
@@ -27,7 +28,7 @@ struct SVisualEditor {
 };
 using SVisualEditorPtr = std::shared_ptr<SVisualEditor>;
 
-SSolutionPtr visualize_and_edit(SProblemPtr problem, SSolutionPtr solution);
+SSolutionPtr visualize_and_edit(SProblemPtr problem, SSolutionPtr solution, const std::string& base_solver_name);
 
 // vim:ts=2 sw=2 sts=2 et ci
 

@@ -82,7 +82,7 @@ class Solver : public SolverBase {
 
     SVisualEditorPtr editor;
     if (args.visualize) {
-      editor = std::make_shared<SVisualEditor>(args.problem, "visualize");
+      editor = std::make_shared<SVisualEditor>(args.problem, "ResetTempertureAnnealingSolver", "visualize");
     }
 
     const int N = vertices_.size();

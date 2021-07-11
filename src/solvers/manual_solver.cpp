@@ -11,42 +11,25 @@
 #include "judge.h"
 #include "visual_editor.h"
 
-struct SManualSolver {
-    SVisualEditorPtr editor;
-
-    SManualSolver(SProblemPtr problem, const std::string window_name = "manual")
-      : editor(std::make_shared<SVisualEditor>(problem, window_name)) {
-    }
-
-    static void callback(int e, int x, int y, int f, void* param) {
-        SManualSolver* s = static_cast<SManualSolver*>(param);
-        s->callback(e, x, y, f, param);
-    }
-
-    SSolutionPtr solve() {
-        while (true) {
-            int c = editor->show(15);
-            if (c == 27) {
-                return editor->get_pose();
-            }
-        }
-        return nullptr;
-    }
-};
-using SManualSolverPtr = std::shared_ptr<SManualSolver>;
-
 class ManualSolver : public SolverBase {
 public:
     ManualSolver() { }
     SolverOutputs solve(const SolverArguments &args) override {
         SolverOutputs ret;
-
-        SManualSolverPtr manual_solver = std::make_shared<SManualSolver>(args.problem);
+        
+        SVisualEditorPtr editor = std::make_shared<SVisualEditor>(args.problem, "ManualSolver", "manual");
         if (args.optional_initial_solution) {
-            manual_solver->editor->set_pose(args.optional_initial_solution);
+            editor->set_pose(args.optional_initial_solution);
         }
 
-        ret.solution = manual_solver->solve();
+        while (true) {
+            int c = editor->show(15);
+            if (c == 27) {
+                break;
+            }
+        }
+        ret.solution = editor->get_pose();
+
         return ret;
     }
 };

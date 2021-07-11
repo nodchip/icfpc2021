@@ -110,7 +110,7 @@ int main(int argc, char* argv[]) {
       }
 
       if (post_edit) {
-        visualize_and_edit(problem, out.solution);
+        visualize_and_edit(problem, out.solution, solver_name);
       }
 
       return 0;
@@ -182,7 +182,7 @@ int main(int argc, char* argv[]) {
           }
 
           if (post_edit) {
-            visualize_and_edit(problem, out[trial].solution);
+            visualize_and_edit(problem, out[trial].solution, solver_name);
           }
         }
       }

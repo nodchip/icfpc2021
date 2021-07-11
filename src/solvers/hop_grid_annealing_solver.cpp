@@ -63,7 +63,7 @@ class Solver : public SolverBase {
 
     SVisualEditorPtr editor;
     if (args.visualize) {
-      editor = std::make_shared<SVisualEditor>(args.problem, "visualize");
+      editor = std::make_shared<SVisualEditor>(args.problem, "HopGridAnnealingSolver", "visualize");
     }
 
     const int N = vertices_.size();
@@ -87,13 +87,13 @@ class Solver : public SolverBase {
     }
 
     // lesser version of tonagi's idea 
-    for (auto& p : pose) { p = hole_[0]; }
+    //for (auto& p : pose) { p = hole_[0]; }
 
     auto evaluate_and_descide_rollback = [&]() -> bool {
       auto [feasible, updated_cost] = Evaluate(pose);
 
       // tonagi's idea.
-      if (true || !best_feasible_pose.empty()) {
+      if (false || !best_feasible_pose.empty()) {
         auto res = judge(*args.problem, pose);
         if (!res.fit_in_hole()) {
           feasible = false;
