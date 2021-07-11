@@ -104,6 +104,9 @@
     <ClCompile Include="..\..\src\solvers\hop_grid_annealing_solver2.cpp">
       <Filter>ソース ファイル\solvers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\solvers\naive_search_solver.cpp">
+      <Filter>ソース ファイル\solvers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
