@@ -55,6 +55,9 @@ BoostPolygon ToBoostPolygon(const std::vector<T>& points) {
   for (std::size_t i = 0; i <= points.size(); ++i) {
     polygon.outer().push_back(ToBoostPoint(points[i % points.size()]));
   }
+  if (bg::area(polygon) < 0.0) {
+    bg::reverse(polygon);
+  }
   return polygon;
 }
 
