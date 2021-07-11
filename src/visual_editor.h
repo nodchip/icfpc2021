@@ -49,6 +49,7 @@ struct SVisualEditor {
 
     bool set_pose(SSolutionPtr pose);
     SSolutionPtr get_pose() const;
+    void save_intermediate() const;
     SShowResult show(int wait);
 };
 using SVisualEditorPtr = std::shared_ptr<SVisualEditor>;
