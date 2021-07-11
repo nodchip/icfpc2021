@@ -1,7 +1,9 @@
 #include "stdafx.h"
 #include <fstream>
 #include <iostream>
+#include <regex>
 #include <filesystem>
+#include <fmt/format.h>
 #include "contest_types.h"
 #include "util.h"
 
@@ -52,7 +54,17 @@ SProblemPtr SProblem::load_file(const std::string& path) {
     std::ifstream input_data_ifs(path);
     nlohmann::json j;
     input_data_ifs >> j;
-    return std::make_shared<SProblem>(j);
+    auto problem =  std::make_shared<SProblem>(j);
+
+    const std::regex re(R"((\d+)\.problem\.json)");
+    const std::string filename = std::filesystem::path(path).filename().string();
+    std::smatch mo;
+    if (std::regex_match(filename, mo, re)) {
+      problem->problem_id = std::stoi(mo[1].str());
+      LOG(INFO) << fmt::format("parsed problem_id = {}", *problem->problem_id);
+    }
+
+    return problem;
 }
 
 SProblemPtr SProblem::load_file_ext(const std::string& path) {

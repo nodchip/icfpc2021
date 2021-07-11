@@ -222,7 +222,8 @@ public:
             LOG(INFO) << fmt::format("#{} foud better solution {} -> {}", root_counter, best_dislikes, judge_res.dislikes);
             ret.solution = temp_solution;
             best_dislikes = judge_res.dislikes;
-            save_solution(args.problem, ret.solution, "NaiveSearchSolver", "bestsofar.pose.json");
+            const std::string filename = args.problem->problem_id ? fmt::format("{}.bestsofar.pose.json", *args.problem->problem_id) : "bestsofar.pose.json";
+            save_solution(args.problem, ret.solution, "NaiveSearchSolver", filename);
           }
           found = true;
           report = true;

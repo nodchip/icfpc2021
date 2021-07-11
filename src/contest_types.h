@@ -43,6 +43,7 @@ struct SProblem;
 using SProblemPtr = std::shared_ptr<SProblem>;
 struct SProblem {
     nlohmann::json json;
+    std::optional<int> problem_id;
     std::vector<SBonus> bonuses; // bonuses in the JSON. these bonuses are gaind by solving this problem.
     integer epsilon = 0;
     std::vector<Point> hole_polygon;
