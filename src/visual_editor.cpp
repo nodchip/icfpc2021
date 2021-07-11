@@ -61,12 +61,17 @@ cv::Mat_<cv::Vec3b> create_image(SProblemPtr prob) {
 }
 
 struct SCanvas {
+ private:
+  static constexpr int kBaseOffset = 5;
+  static constexpr int kWindowWidthPx = 1200;
+
+ public:
   SProblemPtr problem;
   SSolutionPtr solution;
   std::set<int> marked_vertex_indices;
 
-  integer img_offset_x{5};
-  integer img_offset_y{5};
+  integer img_offset_x{kBaseOffset};
+  integer img_offset_y{kBaseOffset};
   integer img_base_size;
   integer mag;
   integer img_size;
@@ -371,7 +376,11 @@ struct SCanvas {
   bool set_pose(SSolutionPtr pose) {
     CHECK(is_compatible(*problem, *pose));
     solution = pose;
-    // draw base image
+    update(-1);
+    return true;
+  }
+
+  void init() {
     auto rect_poly = calc_bb(problem->hole_polygon);
     auto rect_fig = calc_bb(problem->vertices);
     integer x_min = std::min(rect_poly.x, rect_fig.x);
@@ -380,9 +389,23 @@ struct SCanvas {
     integer y_min = std::min(rect_poly.y, rect_fig.y);
     integer y_max =
         std::max(rect_poly.y + rect_poly.height, rect_fig.y + rect_fig.height);
-    img_base_size = std::max(x_max, y_max) + img_offset_x * 2;  // ???
-    mag = 1200 / img_base_size;
+
+    img_base_size = std::max(x_max, y_max) + kBaseOffset * 2;  // ???
+    mag = kWindowWidthPx / img_base_size;
     img_size = img_base_size * mag;
+  }
+
+  void draw_base_image() {
+    auto rect_poly = calc_bb(problem->hole_polygon);
+    auto rect_fig = calc_bb(problem->vertices);
+    integer x_min = std::min(rect_poly.x, rect_fig.x);
+    integer x_max =
+        std::max(rect_poly.x + rect_poly.width, rect_fig.x + rect_fig.width);
+    integer y_min = std::min(rect_poly.y, rect_fig.y);
+    integer y_max =
+        std::max(rect_poly.y + rect_poly.height, rect_fig.y + rect_fig.height);
+
+    // draw base image
     base_img =
         cv::Mat_<cv::Vec3b>(img_size, img_size, cv::Vec3b(160, 160, 160));
     std::vector<std::vector<cv::Point>> cv_hole_polygon(
@@ -420,16 +443,11 @@ struct SCanvas {
       draw_line(base_img, x1, y1, x2, y2, cv::Scalar(0, 0, 0), 2);
     }
     edge_colors.resize(problem->edges.size(), cv::Scalar(0, 255, 0));
-    update(-1);
-    return true;
-  }
-
-  void init() {
-
   }
 
   SCanvas(SProblemPtr problem) : problem(problem) {
     init();
+    draw_base_image();
 
     auto pose = problem->create_solution();
     pose->vertices = problem->vertices;
