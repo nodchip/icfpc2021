@@ -69,6 +69,22 @@ void test_bg() {
 
 SJudgeResult judge(const SProblem& problem, const SSolution& solution) {
   SJudgeResult res;
+  res.is_wallhack_mode = problem.is_wallhack_mode;
+  res.is_globalist_mode = problem.is_globalist_mode;
+
+  // all figure points are inside the hole.
+  for (size_t ivert = 0; ivert < solution.vertices.size(); ++ivert) {
+    // (c) Every point located on any line segment of the figure in the assumed pose must either lay inside the hole, or on its boundary 
+    if (contains(problem.hole_polygon, solution.vertices[ivert]) == EContains::EOUT) {
+      res.out_of_hole_vertices.push_back(ivert);
+    }
+  }
+
+  if (res.is_wallhack_mode) {
+    if (res.out_of_hole_vertices.size() == 1) {
+      res.wallhacking_index = res.out_of_hole_vertices[0];
+    }
+  }
 
   // figure does not intersect with edges of the hole.
 #if defined(USE_BOOST_GEOMETRY)
@@ -79,6 +95,10 @@ SJudgeResult judge(const SProblem& problem, const SSolution& solution) {
     const auto [a, b] = problem.edges[iedge];
     BoostLinestring linestring{ToBoostPoint(solution.vertices[a]), ToBoostPoint(solution.vertices[b])};
     if (!bg::covered_by(linestring, hole_polygon_)) {
+      const bool wallhacking_edge = res.wallhacking_index.value_or(-1) == a || res.wallhacking_index.value_or(-1) == b;
+      if (!wallhacking_edge) {
+        res.out_of_hole_edges_except_wallhack.push_back(iedge);
+      }
       res.out_of_hole_edges.push_back(iedge);
     }
   }
@@ -138,17 +158,8 @@ SJudgeResult judge(const SProblem& problem, const SSolution& solution) {
     }
   }
 #endif
-
-  // all figure points are inside the hole.
-  for (size_t ivert = 0; ivert < solution.vertices.size(); ++ivert) {
-    // (c) Every point located on any line segment of the figure in the assumed pose must either lay inside the hole, or on its boundary 
-    if (contains(problem.hole_polygon, solution.vertices[ivert]) == EContains::EOUT) {
-      res.out_of_hole_vertices.push_back(ivert);
-    }
-  }
   
   // stretch
-  res.is_globalist_mode = problem.is_globalist_mode;
   if (problem.is_globalist_mode) {
     double globalist = 0.0;
     for (size_t iedge = 0; iedge < problem.edges.size(); ++iedge) {
