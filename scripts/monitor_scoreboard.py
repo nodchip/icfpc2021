@@ -45,18 +45,21 @@ def summarize():
 
     fig, ax = plt.subplots(1, 1, figsize=(12, 8))
     for team, scores in team_to_scoreseries.items():
-        best_place = min(*team_to_placeseries[team])
+        if len(team_to_placeseries[team]) == 1:
+            best_place = team_to_placeseries[team][0]
+        else:
+            best_place = min(*team_to_placeseries[team])
         curr_place = team_to_placeseries[team][-1]
         if best_place < 15 or team == 'sanma':
             label = f'{team} best {best_place} curr {curr_place}'
             cax, = ax.plot(scores, '.-')
             ax.text(len(scores), scores[-1], label, horizontalalignment='left', fontsize=8, color=cax.get_color())
-    ax.set_xlim(None, len(scores) + 2)
+    ax.set_xlim(0, ax.get_xlim()[1] + 2)
     ax.set_xlabel('Time')
     ax.set_ylabel('Score')
     ax.set_title(f'Scoreboard {df.iloc[-1].captured_at}')
     plt.show()
-    fig.savefig('scoreboard.png')
+    #fig.savefig('scoreboard.png')
 
 def main():
     while True:
