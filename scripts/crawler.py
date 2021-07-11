@@ -15,9 +15,6 @@ def get_options():
 
     options, args = parser.parse_args()
 
-    if options.get and options.problem is None:
-        print('"get" requires "problem"')
-        return ({}, [])
     if options.submit and (options.problem is None or options.file is None):
         print('"submit" requires "problem" and "file"')
         return ({}, [])
@@ -33,18 +30,24 @@ def hello():
     return 0
 
 
-def get(problem):
-    headers = {'Authorization': 'Bearer {}'.format(API_TOKEN)}
-    url = 'https://poses.live/api/problems/{}'.format(problem)
-    response = requests.get(url, headers=headers)
+def get(problems):
+    if problems is None:
+        problems = range(1, 133)
+    else:
+        problems = [problems]
 
-    filename = '{}.problem.json'.format(problem)
-    try:
-        with open(filename, 'w') as f:
-            f.write(response.text)
-            print('Saved problem in "{}"'.format(filename))
-    except:
-        print('Failed to open file "{}"'.format(filename))
+    headers = {'Authorization': 'Bearer {}'.format(API_TOKEN)}
+
+    for problem in problems:
+        url = 'https://poses.live/api/problems/{}'.format(problem)
+        response = requests.get(url, headers=headers)
+        filename = '{}.problem.json'.format(problem)
+        try:
+            with open(filename, 'w') as f:
+                f.write(response.text)
+                print('Saved problem in "{}"'.format(filename))
+        except:
+            print('Failed to open file "{}"'.format(filename))
 
     return 0
 
