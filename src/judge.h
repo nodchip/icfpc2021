@@ -62,8 +62,10 @@ struct SJudgeResult {
   bool fit_in_hole() const { return out_of_hole_edges.empty() && out_of_hole_vertices.empty(); }
   bool fit_in_hole_except_wallhack() const {
     return out_of_hole_edges_except_wallhack.empty() && (
-      out_of_hole_vertices.empty() || out_of_hole_vertices.size() == 1 && wallhacking_index && *wallhacking_index == out_of_hole_vertices[0]
-      );
+      out_of_hole_vertices.empty() || (
+        out_of_hole_vertices.size() == 1 && wallhacking_index && *wallhacking_index == out_of_hole_vertices[0]
+      )
+    );
   }
   bool satisfy_stretch() const { 
     if (is_globalist_mode) {
