@@ -80,6 +80,7 @@ struct SCanvas {
     bool draw_distant_hole_vertex = true;
     bool draw_tolerated_vertex = true;
     bool draw_edge_lengths_mode = true;
+    bool draw_index_mode = true;
 
     std::vector<cv::Scalar> edge_colors;
 
@@ -165,6 +166,15 @@ struct SCanvas {
             integer orig_d2 = distance2(orig_raw_u, orig_raw_v);
             auto col = get_edge_color(eid);
             cv::putText(img, std::to_string(d2) + "/" + std::to_string(orig_d2), (u + v) / 2, cv::FONT_HERSHEY_SIMPLEX, 0.35, col / 255 * 150, 1, cv::LINE_AA);
+        }
+    }
+
+    void draw_index(cv::Mat& img) {
+        int nv = solution->vertices.size();
+        for (int i = 0; i < nv; i++) {
+            Point raw_u = solution->vertices[i];
+            cv::Point u = cvt(raw_u);
+            cv::putText(img, std::to_string(i), u, cv::FONT_HERSHEY_SIMPLEX, 0.4, cv::Scalar(255, 0, 0), 1, cv::LINE_AA);
         }
     }
 
@@ -296,6 +306,9 @@ struct SCanvas {
         if (draw_edge_lengths_mode) {
             draw_edge_lengths(img);
         }
+        if (draw_index_mode) {
+            draw_index(img);
+        }
     }
 
     bool set_pose(SSolutionPtr pose) {
@@ -408,6 +421,7 @@ void SVisualEditor::set_persistent_custom_stat(const std::string& stat_str) {
 void SVisualEditor::set_marked_indices(const std::vector<int>& marked_indices) {
   canvas->marked_vertex_indices.clear();
   std::copy(marked_indices.begin(), marked_indices.end(), std::inserter(canvas->marked_vertex_indices, canvas->marked_vertex_indices.end()));
+  canvas->update(-1);
 }
 
 std::vector<int> SVisualEditor::get_marked_indices() const {
@@ -450,6 +464,10 @@ SShowResult SVisualEditor::show(int wait) {
     }
     if (res.key == 'e') {
         canvas->draw_edge_lengths_mode = !canvas->draw_edge_lengths_mode;
+        canvas->update(-1);
+    }
+    if (res.key == 'i') {
+        canvas->draw_index_mode = !canvas->draw_index_mode;
         canvas->update(-1);
     }
     if (res.key == 't') {
@@ -512,10 +530,10 @@ SShowResult SVisualEditor::show(int wait) {
         save_intermediate();
       }
     }
-    cv::imshow(window_name, canvas->img);
     if (!in_internal_edit_loop()) {
       canvas->oneshot_custom_stat.clear();
     }
+    cv::imshow(window_name, canvas->img);
     return res;
 }
 
