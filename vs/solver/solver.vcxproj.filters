@@ -98,6 +98,9 @@
     <ClCompile Include="..\..\src\solver_util.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\solvers\fit_hole_solver.cpp">
+      <Filter>ソース ファイル\solvers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
