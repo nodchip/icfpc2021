@@ -60,22 +60,19 @@ def make_problem_context(id, problem, solutions):
 
 def solution_context(problem, solution):
     meta = solution['meta']
-
-    context = {
-        'solver': meta['solver'],
-        'subdir': meta['subdir'],
-    }
     assert 'judge' in meta, '"judge" is not found'
     judge = meta['judge']
     dislikes = judge['dislikes']
-    context.update({
+
+    return {
+        'solver': meta['solver'],
+        'subdir': meta['subdir'],
+        'bonuses': solution.get('bonuses', []),
         'gained_bonuses': judge['gained_bonuses'],
         'dislikes': str(dislikes),
         'score': str(get_score(problem, dislikes)),
         'eligible': is_eligible_for_submit(solution),
-    })
- 
-    return context
+    }
 
 
 def get_all_solutions():
@@ -97,7 +94,7 @@ def get_all_solutions():
                 solutions[id] = []
             solutions[id].append(solution)
     for id in solutions.keys():
-        solutions[id].sort(key=lambda x: x['meta']['judge']['dislikes'] * 10 + len(x['meta']['judge']['gained_bonuses']))
+        solutions[id].sort(key=lambda x: x['meta']['judge']['dislikes'] * 100 - len(x['meta']['judge']['gained_bonuses']))
     return solutions
 
 
@@ -165,9 +162,4 @@ def get_score(problem, dislikes=None):
 def is_eligible_for_submit(solution):
     if not solution['meta']['judge']['is_valid']:
         return False
-    # if bonus exists, problem should be >= 0
-    if 'bonuses' in solution:
-        for bonus in solution['bonuses']:
-            if bonus.get('problem', -1) < 0:
-                return False
     return True
