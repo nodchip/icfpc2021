@@ -44,6 +44,9 @@ struct SVisualEditor {
     void set_oneshot_custom_stat(const std::string& stat_str);
     void set_persistent_custom_stat(const std::string& stat_str);
 
+    void set_marked_indices(const std::vector<int>& marked_indices);
+    std::vector<int> get_marked_indices() const;
+
     bool set_pose(SSolutionPtr pose);
     SSolutionPtr get_pose() const;
     SShowResult show(int wait);
