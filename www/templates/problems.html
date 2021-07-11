@@ -25,6 +25,7 @@ function submit(id, subdir) {
 <style>
   .line { white-space: nowrap; }
   .info { display: inline-block; }
+  .visual { max-width: 100px; max-height: 100px; }
 </style>
 {% endblock %}
 {% block content %}
@@ -43,7 +44,7 @@ function submit(id, subdir) {
     {% for problem in problems %}
     <tr{% if problem.state %} class="table-{{problem.state}}"{% endif %}>
         <td>{{ problem.id }}</td>
-        <td><a href="https://poses.live/problems/{{ problem.id }}"><img src="{{ problem.image }}" height="100" width="100"></a></td>
+        <td><a href="https://poses.live/problems/{{ problem.id }}"><img class="visual" src="{{ problem.image }}"></a></td>
         <td>
             #hole {{ problem.num_holes }}<br>
             #vert {{ problem.num_verts }}<br>
@@ -64,8 +65,8 @@ function submit(id, subdir) {
             {% endfor %}
         </td>
         {% for solution in problem.solutions %}
-            <td class="line">
-                <a href="{{solution.img_path}}"><img src="{{solution.img_path}}" height="100" width="100"></a>
+            <td class="line solution">
+                <a href="{{solution.img_path}}"><img class="visual" src="{{solution.img_path}}"></a>
                 <div class="info">
                     <span class="line">{{ solution.solver }}{% for bonus in solution.bonuses %}{{ emojis[bonus.bonus] }}({{ bonus.problem }}){% endfor %}</span><br>
                     <span class="line">DL {{ solution.dislikes }}</span><br>

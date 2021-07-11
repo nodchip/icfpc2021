@@ -43,10 +43,21 @@ def make_problem_context(id, problem, solutions):
             return 'success'
         return None
 
+    img_url_path = 'images/problems/{}.problem.png'.format(id)
+
+    # Create an image if it does not exit.
+    img_file_path = os.path.join(WWW_DIR, img_url_path)
+    if not os.path.isfile(img_file_path):
+        img_dir_path = os.path.dirname(img_file_path)
+        if not os.path.exists(img_dir_path):
+            os.makedirs(img_dir_path)
+        problem_file_path = os.path.join(PROBLEMS_DIR, '{}.problem.json'.format(id))
+        visualize.visualize(problem_file_path, None, img_file_path)
+
     local_dislikes = solutions[0]['meta']['judge']['dislikes'] if solutions else None
     return {
         'id': id,
-        'image': 'images/{}.problem.png'.format(id),
+        'image': img_url_path,
         'epsilon': problem['epsilon'],
         'max_score': problem['max_score'],
         'best_dislikes': str(problem['best_dislikes']),
