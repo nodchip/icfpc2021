@@ -1,0 +1,1 @@
+{"bonuses":[],"meta":{"created_at":"2021/07/11 11:25:08","elapsed_s":7.320780999999999,"git_commit":"45fdbd836b0f306db89a49e2d1fa77b67f60f7cc","judge":{"dislikes":116,"fit_in_hole":true,"is_valid":true,"satisfy_stretch":true},"solver":"HopGridAnnealingSolver"},"vertices":[[10,10],[10,0],[0,0]]}
