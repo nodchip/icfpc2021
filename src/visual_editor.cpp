@@ -289,6 +289,8 @@ struct SCanvas {
               color = cv::Scalar(32, 192, 192); 
             } else if (bonus.type == SBonus::Type::BREAK_A_LEG) {
               color = cv::Scalar(192, 192, 32); 
+            } else if (bonus.type == SBonus::Type::WALLHACK) {
+              color = cv::Scalar(64, 128, 255); 
             }
             cv::circle(img_base, cvt(x, y), 20, color, cv::FILLED);
         }
