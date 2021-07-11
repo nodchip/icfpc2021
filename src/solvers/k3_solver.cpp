@@ -193,7 +193,7 @@ public:
         SSolutionPtr sol = prob->create_solution(pose);
         auto res = judge(*prob, *sol);
         if (!res.fit_in_hole()) return std::numeric_limits<double>::max();
-        double stretch_cost = 0.0;
+        double stretch_cost = 0.0, dislike_cost = res.dislikes;
         auto calc_violation = [this](integer orig_g2, integer mod_g2) {
             double window = epsilon * orig_g2 / 1000000.0;
             double penalty = 0.0;
@@ -203,21 +203,24 @@ public:
             if (orig_g2 + window < mod_g2) {
                 penalty = mod_g2 - orig_g2 - window;
             }
-            //return penalty * penalty;
-            return abs(orig_g2 - mod_g2);
+            return penalty * penalty;
+            //return abs(orig_g2 - mod_g2);
         };
         for (int eid : res.stretch_violating_edges) {
             auto [uid, vid] = edges[eid];
             auto u = pose[uid], v = pose[vid];
             stretch_cost += calc_violation(d2_orig[eid], distance2(u, v));
         }
+        //for (int dislike : res.individual_dislikes) {
+        //    dislike_cost += dislike * dislike;
+        //}
         //return stretch_cost + res.dislikes * 3;
         // stretch_cost: 0.1 -> 0.9
         // dislike: 0.9 -> 0.1
         double weight = 0.8 * progress_rate;
         double stretch_ratio = 0.1 + weight;
         double dislike_ratio = 0.9 - weight;
-        return stretch_ratio * stretch_cost + dislike_ratio * res.dislikes;
+        return stretch_ratio * stretch_cost + dislike_ratio * dislike_cost;
     }
 
     SMovePtr calc_move_stat(Pose& pose, integer vid, const Point& to, double now_score) {
@@ -359,10 +362,11 @@ public:
             return etemp + (stemp - etemp) * (num_loop - loop) / num_loop;
         };
 
-        //pose = scatter(pose, 100000, rnd);
+        pose = scatter(pose, 10000, rnd);
 
         progress_rate = 0.0;
         double now_score = evaluate(pose);
+        LOG(INFO) << "initial score = " << now_score;
         integer loop = 0, num_loop = 3000000, accepted = 0;
         for(integer loop = 0; loop < num_loop; loop++) {
             if (editor && loop % 1000 == 0) {
@@ -380,7 +384,7 @@ public:
             }
             STransPtr trans = create_random_trans(pose, now_score, rnd);
             if (!trans) continue;
-            double temp = get_temp(100.0, 0.0, loop, num_loop);
+            double temp = get_temp(10.0, 0.0, loop, num_loop);
             double prob = exp(-trans->diff / temp);
             if (rnd.next_double() < prob) {
                 accepted++;

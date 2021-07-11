@@ -64,9 +64,10 @@ function submit(id, subdir) {
         </td>
         {% for solution in problem.solutions %}
             <td>
-                <span>{{ solution.solver }}</span><br>
+                <span class="line">{{ solution.solver }}{% for bonus in solution.bonuses %}{{ emojis[bonus.bonus] }}({{ bonus.problem }}){% endfor %}</span><br>
                 <span class="line">DL {{ solution.dislikes }}</span><br>
-                <span class="line">SC ({{ solution.score }})</span>
+                <span class="line">SC ({{ solution.score }})</span><br>
+                <span class="line">{% for bonus in solution.gained_bonuses%}{{ emojis[bonus.bonus] }}→{{ bonus.problem }} {% endfor %}</span>
                 {% if problem.state == 'danger' and loop.index == 1 and solution.eligible %}
                 <button type="button" id="button_{{solution.subdir}}_{{problem.id}}" onclick="submit({{problem.id}}, '{{solution.subdir}}')">Submit</button>
                 {% endif %}
