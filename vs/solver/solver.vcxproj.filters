@@ -110,6 +110,9 @@
     <ClCompile Include="..\..\src\solvers\simple_matching_solver.cpp">
       <Filter>ソース ファイル\solvers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\solvers\matching_and_annealing_solver.cpp">
+      <Filter>ソース ファイル\solvers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
