@@ -23,8 +23,10 @@ def show_problems():
     problem_contexts = [make_problem_context(id, problem, solutions.get(id, []))
                         for id, problem in enumerate(problems, start=1)]
 
+    total_points = sum(pc['score'] for pc in problem_contexts)
     context = {
         'problems': problem_contexts,
+        'total_points': total_points,
         'emojis': {'GLOBALIST': '🌏', 'BREAK_A_LEG': '🦵', 'WALLHACK': '🧱', 'SUPERFLEX': '🦯'},
     }
     return flask.render_template('problems.html', title='Problems', **context)
@@ -57,9 +59,11 @@ def make_problem_context(id, problem, solutions):
 
     local_dislikes = solutions[0]['meta']['judge']['dislikes'] if solutions else None
     possible_additional_score = problem['max_score']
+    score = 0
     if solutions:
         dislikes = solutions[0]['meta']['judge']['dislikes']
-        possible_additional_score -= get_score(problem, dislikes)
+        score = get_score(problem, dislikes)
+        possible_additional_score -= score
 
     return {
         'id': id,
@@ -74,6 +78,7 @@ def make_problem_context(id, problem, solutions):
         'state': get_state(problem, local_dislikes),
         'bonuses': problem['bonuses'],
         'possible_additional_score': possible_additional_score,
+        'score': score,
     }
 
 
