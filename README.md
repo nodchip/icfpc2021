@@ -23,6 +23,14 @@ make solver # or if you wish to build only the solver
 make test # or if you wish to build only tests
 ```
 
+### GUI on WSL
+
+1. start a X Server in Windows (VcXsrv https://sourceforge.net/projects/vcxsrv/)
+2. ```
+   export DISPLAY=0.0.0.0:0.0
+   ./solver solve ManualSolver 2
+   ````
+
 ## Build (Visual Studio)
 
 ```
@@ -74,6 +82,8 @@ cd vs\solver
 
 * d : toggle individual dislike score (large red circle means bad dislike)
 * t : toggle "tolerated grid points" view (dark blue indicates some of the edges tolerate the point. light blue indicates all edges agree to the point.)
+* e : toggle edge length annotation
+* i : toggle node id annotation
 * s : save current pose to intermediate.pose.json
 * h : move left
 * j : move down

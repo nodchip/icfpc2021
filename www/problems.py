@@ -25,7 +25,7 @@ def show_problems():
 
     context = {
         'problems': problem_contexts,
-        'emojis': {'GLOBALIST': '🌏', 'BREAK_A_LEG': '🦵', 'WALLHACK': '🧱'},
+        'emojis': {'GLOBALIST': '🌏', 'BREAK_A_LEG': '🦵', 'WALLHACK': '🧱', 'SUPERFLEX': '🦯'},
     }
     return flask.render_template('problems.html', title='Problems', **context)
 
@@ -43,13 +43,25 @@ def make_problem_context(id, problem, solutions):
             return 'success'
         return None
 
+    img_url_path = 'images/problems/{}.problem.png'.format(id)
+
+    # Create an image if it does not exit.
+    img_file_path = os.path.join(WWW_DIR, img_url_path)
+    if not os.path.isfile(img_file_path):
+        print('Create', img_file_path)
+        img_dir_path = os.path.dirname(img_file_path)
+        if not os.path.exists(img_dir_path):
+            os.makedirs(img_dir_path)
+        problem_file_path = os.path.join(PROBLEMS_DIR, '{}.problem.json'.format(id))
+        visualize.visualize(problem_file_path, None, img_file_path)
+
     local_dislikes = solutions[0]['meta']['judge']['dislikes'] if solutions else None
     return {
         'id': id,
-        'image': 'images/{}.problem.png'.format(id),
+        'image': img_url_path,
         'epsilon': problem['epsilon'],
         'max_score': problem['max_score'],
-        'best_dislikes': str(problem['best_dislikes']),
+        'best_dislikes': str(problem['best_dislikes']) if problem['best_dislikes'] is not None else None,
         'dislikes': str(problem['dislikes']) if problem['dislikes'] is not None else None,
         'num_holes': len(problem['hole']),
         'num_verts': len(problem['figure']['vertices']),
@@ -71,6 +83,7 @@ def solution_context(problem, solution):
     # Create an image if it does not exit.
     img_file_path = os.path.join(WWW_DIR, img_url_path)
     if not os.path.isfile(img_file_path):
+        print('Create', img_file_path)
         img_dir_path = os.path.dirname(img_file_path)
         if not os.path.exists(img_dir_path):
             os.makedirs(img_dir_path)
@@ -106,6 +119,8 @@ def get_all_solutions():
             if 'solver' not in solution['meta']:
                 solution['meta']['solver'] = subdir
             solution['meta']['subdir'] = subdir
+            if 'gained_bonuses' not in solution['meta']['judge']:
+                solution['meta']['judge']['gained_bonuses'] = []
             if id not in solutions:
                 solutions[id] = []
             solutions[id].append(solution)

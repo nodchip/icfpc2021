@@ -1,0 +1,1 @@
+{"bonuses":[],"meta":{"created_at":"2021/07/11 23:34:03","elapsed_s":4.682414,"git_commit":"","judge":{"dislikes":2338,"fit_in_hole":true,"gained_bonuses":[],"is_valid":true,"satisfy_stretch":true},"solver":"FlipAnnealingSolver"},"vertices":[[10,8],[33,1],[33,6],[40,23],[16,23],[36,51],[14,48]]}

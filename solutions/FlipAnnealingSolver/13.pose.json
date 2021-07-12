@@ -1,1 +1,1 @@
-{"meta":{"created_at":"2021/07/10 11:25:00","elapsed_s":0.6401279999999999,"judge":{"dislikes":940,"fit_in_hole":true,"gained_bonuses":[],"is_valid":true,"satisfy_stretch":true},"solver":"FlipAnnealingSolver"},"vertices":[[33,18],[5,22],[5,22],[33,26]]}
+{"bonuses":[],"meta":{"created_at":"2021/07/11 23:34:00","elapsed_s":2.1280479999999997,"git_commit":"83ac7283c60726b493b3e1974758ab4e935a9a61","judge":{"dislikes":456,"fit_in_hole":true,"gained_bonuses":[],"is_valid":true,"satisfy_stretch":true},"solver":"FlipAnnealingSolver"},"vertices":[[25,11],[21,39],[21,39],[1,19]]}

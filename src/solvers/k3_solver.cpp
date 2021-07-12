@@ -6,6 +6,7 @@
 
 #include "contest_types.h"
 #include "solver_registry.h"
+#include "solver_util.h"
 #include "visual_editor.h"
 #include "judge.h"
 
@@ -127,9 +128,12 @@ public:
     epsilon = prob->epsilon;
     edges = prob->edges;
     vertices_orig = prob->vertices;
+    adjlist.resize(vertices_orig.size());
     for (auto [uid, vid] : edges) {
       auto u = vertices_orig[uid], v = vertices_orig[vid];
       d2_orig.push_back(distance2(u, v));
+      adjlist[uid].push_back(vid);
+      adjlist[vid].push_back(uid);
     }
     hole_polygon = prob->hole_polygon;
     build_polygon_map();
@@ -189,10 +193,34 @@ public:
     return nearest_point;
   }
 
-  double evaluate(const Pose& pose) const {
+  double calc_phys_cost(const Pose& pose) const {
+    constexpr double eps = 1e-3;
+    constexpr double coulomb_const = 1e4;
+    constexpr double spring_const = 1.0;
+    double cost = 0.0;
+    for (int uid = 0; uid < pose.size(); uid++) {
+      for (int vid = 0; vid < pose.size(); vid++) {
+        // force: v -> u
+        if (uid == vid) continue;
+        cost += coulomb_const / (distance2(pose[uid], pose[vid]) + eps);
+      }
+    }
+    return cost;
+  }
+
+  double evaluate(const Pose& pose) {
     SSolutionPtr sol = prob->create_solution(pose);
     auto res = judge(*prob, *sol);
     if (!res.fit_in_hole()) return std::numeric_limits<double>::max();
+    //if (res.dislikes < best_dislikes) {
+    //  // fit in hole の best
+    //  best_dislikes = res.dislikes;
+    //  LOG(INFO) << "best dislikes updated: " << best_dislikes;
+    //  std::ofstream ofs("best_solution.json");
+    //  ofs << prob->create_solution(pose)->json();
+    //  LOG(INFO) << "best_solution.json saved.";
+    //  ofs.close();
+    //}
     double stretch_cost = 0.0, dislike_cost = res.dislikes;
     auto calc_violation = [this](integer orig_g2, integer mod_g2) {
       double window = epsilon * orig_g2 / 1000000.0;
@@ -218,9 +246,10 @@ public:
     // stretch_cost: 0.1 -> 0.9
     // dislike: 0.9 -> 0.1
     double weight = 0.8 * progress_rate;
+    double phys_ratio = 0.0;
     double stretch_ratio = 0.1 + weight;
     double dislike_ratio = 0.9 - weight;
-    return stretch_ratio * stretch_cost + dislike_ratio * dislike_cost;
+    return phys_ratio * calc_phys_cost(pose) + stretch_ratio * stretch_cost + dislike_ratio * dislike_cost;
   }
 
   SMovePtr calc_move_stat(Pose& pose, integer vid, const Point& to, double now_score) {
@@ -232,11 +261,13 @@ public:
     return std::make_shared<SMove>(vid, from, to, new_score - now_score);
   }
 
-  SSlidePtr calc_slide_stat(const Pose& pose, int dir, double now_score) const {
+  SSlidePtr calc_slide_stat(SPinnedIndex& pinned_index, const Pose& pose, int dir, double now_score) {
     static constexpr int di[] = { 0, -1, 0, 1 };
     static constexpr int dj[] = { 1, 0, -1, 0 };
     auto pose_cpy = pose;
-    for (auto& [x, y] : pose_cpy) {
+    for(int idx : pinned_index.movable_indices) {
+      auto& p = pose_cpy[idx];
+      auto& [x, y] = p;
       if (!is_inside_polygon(x + dj[dir], y + di[dir])) return nullptr;
       x += dj[dir]; y += di[dir];
     }
@@ -253,20 +284,22 @@ public:
     return std::make_shared<SSwap>(uid, vid, new_score - now_score);
   }
 
-  STransPtr create_random_trans(Pose& pose, double now_score, Xorshift& rnd) {
+  STransPtr create_random_trans(SPinnedIndex& pinned_index, Pose& pose, double now_score, Xorshift& rnd) {
     static constexpr int di[] = { 0, -1, 0, 1 };
     static constexpr int dj[] = { 1, 0, -1, 0 };
     int r = rnd.next_int(10);
+    auto cands = pinned_index.movable_indices;
     if (r < 4) {
-      int uid = rnd.next_int(pose.size()), vid;
+      int i = rnd.next_int(cands.size()), j;
       do {
-        vid = rnd.next_int(pose.size());
-      } while (uid == vid);
+        j = rnd.next_int(cands.size());
+      } while (i == j);
+      int uid = cands[i], vid = cands[j];
       return calc_swap_stat(pose, uid, vid, now_score);
     }
     if (r < 8) {
       // adjacent move
-      int vid = rnd.next_int(pose.size());
+      int vid = cands[rnd.next_int(cands.size())];
       auto [x, y] = pose[vid];
       int dir = rnd.next_int(4);
       if (!is_inside_polygon(x + dj[dir], y + di[dir])) return nullptr;
@@ -274,12 +307,12 @@ public:
     }
     if (r < 9) {
       // completely random warp
-      int vid = rnd.next_int(pose.size());
+      int vid = cands[rnd.next_int(cands.size())];
       int to_id = rnd.next_int(inner_polygon_points.size());
       return calc_move_stat(pose, vid, inner_polygon_points[to_id], now_score);
     }
     else {
-      return calc_slide_stat(pose, rnd.next_int(4), now_score);
+      return calc_slide_stat(pinned_index, pose, rnd.next_int(4), now_score);
     }
   }
 
@@ -287,15 +320,16 @@ public:
     pose[vid] = to;
   }
 
-  void slide_all_vertices(std::vector<Point>& pose, int dir) {
+  void slide_all_vertices(SPinnedIndex& pinned_index, std::vector<Point>& pose, int dir) {
     static constexpr int di[] = { 0, -1, 0, 1 };
     static constexpr int dj[] = { 1, 0, -1, 0 };
-    for (auto& [x, y] : pose) {
+    for(int idx : pinned_index.movable_indices) {
+      auto& [x, y] = pose[idx];
       x += dj[dir]; y += di[dir];
     }
   }
 
-  void transition(std::vector<Point>& pose, STransPtr trans) {
+  void transition(SPinnedIndex& pinned_index, std::vector<Point>& pose, STransPtr trans) {
     STrans::Type type = trans->type;
     switch (type) {
     case K3Solver::STrans::Type::MOVE:
@@ -307,7 +341,7 @@ public:
     case K3Solver::STrans::Type::SLIDE:
     {
       SSlidePtr sl = std::static_pointer_cast<SSlide>(trans);
-      slide_all_vertices(pose, sl->dir);
+      slide_all_vertices(pinned_index, pose, sl->dir);
     }
     break;
     case K3Solver::STrans::Type::SWAP:
@@ -345,29 +379,42 @@ public:
     initialize(args);
 
     int seed = 3;
-    Xorshift rnd; rnd.set_seed(1);
+    Xorshift rnd; rnd.set_seed(seed);
 
-    auto pose = vertices_orig;
-
-    // initial state
-    auto representative_point = calc_representative_polygon_point(inner_polygon_points);
-    for (int i = 0; i < pose.size(); i++) move_vertex(pose, i, representative_point);
-
+    constexpr bool scatter_mode = false;
     constexpr bool visualize = true;
     if (visualize) {
       editor = std::make_shared<SVisualEditor>(args.problem, "K3Solver", "visualize");
+    }
+    auto pose = (args.optional_initial_solution ? args.optional_initial_solution->vertices : vertices_orig);
+    SPinnedIndex pinned_index(rng, pose.size(), editor);
+
+    if (scatter_mode) {
+      // initial state
+      auto representative_point = calc_representative_polygon_point(inner_polygon_points);
+      for (int i = 0; i < pose.size(); i++) move_vertex(pose, i, representative_point);
+      pose = scatter(pose, 10000, rnd);
+    }
+    else {
+      editor->set_pose(prob->create_solution(pose));
+      while (true) {
+        int c = editor->show(1);
+        if (c == 27) {
+          break;
+        }
+      }
+      pose = editor->get_pose()->vertices;
+      pinned_index.update_movable_index();
     }
 
     auto get_temp = [](double stemp, double etemp, double loop, double num_loop) {
       return etemp + (stemp - etemp) * (num_loop - loop) / num_loop;
     };
 
-    pose = scatter(pose, 10000, rnd);
-
     progress_rate = 0.0;
     double now_score = evaluate(pose);
     LOG(INFO) << "initial score = " << now_score;
-    integer loop = 0, num_loop = 3000000, accepted = 0;
+    integer loop = 0, num_loop = 1000000, accepted = 0;
     for (integer loop = 0; loop < num_loop; loop++) {
       if (editor && loop % 1000 == 0) {
         progress_rate = double(loop) / num_loop;
@@ -380,15 +427,16 @@ public:
         editor->set_pose(prob->create_solution(pose));
         if (auto show_result = editor->show(1); show_result.edit_result) {
           pose = show_result.edit_result->pose_after_edit->vertices;
+          pinned_index.update_movable_index();
         }
       }
-      STransPtr trans = create_random_trans(pose, now_score, rnd);
+      STransPtr trans = create_random_trans(pinned_index, pose, now_score, rnd);
       if (!trans) continue;
-      double temp = get_temp(10.0, 0.0, loop, num_loop);
+      double temp = get_temp(100.0, 0.0, loop, num_loop);
       double prob = exp(-trans->diff / temp);
       if (rnd.next_double() < prob) {
         accepted++;
-        transition(pose, trans);
+        transition(pinned_index, pose, trans);
         now_score += trans->diff;
       }
     }
@@ -404,6 +452,7 @@ private:
   std::vector<SBonus> bonuses;
   integer epsilon;
   std::vector<Edge> edges;
+  std::vector<std::vector<integer>> adjlist;
   std::vector<integer> d2_orig;
   std::vector<Point> vertices_orig;
   std::vector<Point> hole_polygon;
@@ -412,8 +461,10 @@ private:
   std::vector<Point> inner_polygon_points;
   // for evaluation
   double progress_rate;
+  //integer best_dislikes = std::numeric_limits<integer>::max();
   // for visualize
   SVisualEditorPtr editor;
+  std::mt19937 rng;
 };
 
 REGISTER_SOLVER("K3Solver", K3Solver);

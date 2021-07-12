@@ -5,6 +5,7 @@
 #include "solver_registry.h"
 
 #include <queue>
+#include <set>
 #include <fmt/core.h>
 #include "visual_editor.h"
 using vec = std::vector<integer>;
@@ -22,6 +23,19 @@ integer upper_limit(integer len_given, integer epsilon) {
 	return len_given + tmp;
 }
 
+
+
+mat create_vertices_distances(SProblemPtr problem) {
+  int V = problem->vertices.size();
+  mat vertices_distances(V, vec(V, 0));
+
+  for (const auto& e : problem->edges) {
+    vertices_distances[e.first][e.second] = distance2(problem->vertices[e.first], problem->vertices[e.second]);
+    vertices_distances[e.second][e.first] = vertices_distances[e.first][e.second];
+  }
+  return vertices_distances;
+
+}
 struct vec_holenum {
 	std::vector<int> v2h;
 	std::vector<int> h2v;
@@ -45,7 +59,7 @@ struct vec_holenum {
 
   void Change_V2H(int v, int h) {
     if (v2h[v] == h) return;
-    int prev_v = h2v[v];
+    int prev_v = h2v[h];
     Swap(v, prev_v);
   }
 
@@ -61,6 +75,9 @@ struct vec_holenum {
 		for (int i = 0; i < 5; i++) Swap(rand(rng), rand(rng));
 		//for (int i = 0; i < H; i++) LOG(INFO) << v2h[i] << ' ' << h2v[i];
 	}
+  void check_valid() const{
+    for (int i = 0; i < H; i++) LOG(INFO) << i << ' ' << get_vecnum(i) << ' ' << get_holenum(get_vecnum(i));
+  }
 };
 
 
@@ -131,26 +148,92 @@ public:
 		return true;
 	}
 
+  integer size() {
+    return this->is_valid() ?  (x_max - x_min) * (y_max - y_min) : -1;
+  }
+
+  std::vector<Point> const all_points() {
+    std::vector<Point> ret;
+    for (auto x = x_min; x < x_max; x++) for (auto y = y_min; y, y_max; y++) ret.push_back(std::make_pair(x, y));
+    return ret;
+  }
+
 };
 
 constexpr integer LARGE = 1e15;
 constexpr integer VERYLARGE = 1e17;
 
-bool is_point_valid(SProblemPtr problem, SSolutionPtr solution, int vertex, std::vector<int> decided_points, const mat& vertices_distances, Point& point) {
-	for (auto e : decided_points) if (vertices_distances[e][vertex]) {
+struct Striction {
+  int vertex;
+  std::vector<Point> consider_points;
+  std::vector<int> use;
+  Striction(int vertex_, int Size) : vertex(vertex_) {
+    consider_points.resize(Size, std::make_pair(0, 0));
+    use.resize(Size, false);
+  }
+  Striction(const Striction& rhs) : vertex(rhs.vertex), consider_points(rhs.consider_points), use(rhs.use){}
+  void Add(int x, Point p) { consider_points[x] = p; use[x] = 1; }
+  void Delete(int x) { consider_points[x] = std::make_pair(0, 0); use[x] = 0; }
+  void Set(const std::vector<int> cand_points, SSolutionPtr solution, const mat& vertices_distances){
+    for (auto e : cand_points) if (vertices_distances[e][vertex]) {
+      use[e] = true;
+      consider_points[e] = solution->vertices[e];
+    }
+  }
+  bool operator<(const Striction& rhs) const {
+    if (vertex != rhs.vertex) return vertex < rhs.vertex;
+    return consider_points != rhs.consider_points ? consider_points < rhs.consider_points : use < rhs.use;
+  }
+  bool operator>(const Striction& rhs) const {
+    if (vertex != rhs.vertex) return vertex > rhs.vertex;
+    return consider_points != rhs.consider_points ? consider_points > rhs.consider_points : use > rhs.use;
+  }
+  bool operator==(const Striction& rhs) const {
+    if (vertex != rhs.vertex) return false;
+    return consider_points != rhs.consider_points ? false : use == rhs.use;
+  }
+};
+std::ostream& operator<<(std::ostream& os, const Striction& s) {
+  os << std::endl;
+  os << "vertex:::" << s.vertex<<std::endl;
+  for (int i = 0; i < s.use.size(); i++) if (s.use[i]) os << "i is " << i;
+  return os;
+}
+
+
+
+struct MapValue {
+  bool available;
+  SVOI voi;
+  std::vector<Point> cands;
+  MapValue() : available(false) {
+    cands = {};
+  }
+  MapValue(const SVOI& voi_, const std::vector<Point> cands_) : available(true), voi(voi_), cands(cands_) {}
+
+};
+
+using HashMap = std::map<Striction, MapValue>;
+bool is_point_valid(SProblemPtr problem, SSolutionPtr solution, const Striction& striction, const mat& vertices_distances, Point& point) {
+  int vertex = striction.vertex;
+  for (int e = 0; e < striction.consider_points.size();e++) if (striction.use[e]) {
 		auto length = distance2(solution->vertices[e], point);
 		if (!tolerate(vertices_distances[e][vertex], length, problem->epsilon)) return false;
 	}
 	return true;
 }
-std::vector<Point> able_points(SProblemPtr problem, SSolutionPtr solution, int vertex, std::vector<int> decided_points, const mat& vertices_distances, long long& counter) {
+
+
+
+MapValue able_points(SProblemPtr problem, SSolutionPtr solution, const Striction& striction, SVOI voi, const mat& vertices_distances, long long& counter) {
 	counter++;
+  //LOG(INFO) << "arrived able";
 	std::vector<Point> ret = {};
-	if (counter > LARGE) return ret;
-	SVOI voi(problem->hole_polygon);
+	if (counter > LARGE) return MapValue(voi,ret);
+  int vertex = striction.vertex;
 	int min_e = -1;
 	integer min_len = 1e18;
-	for (auto e : decided_points) if(vertices_distances[e][vertex]) {
+  for (int e = 0; e < striction.consider_points.size(); e++) if (striction.use[e]) {
 		SVOI tmp(solution->vertices[e], upper_limit(vertices_distances[e][vertex],problem->epsilon));
 		voi &= tmp;
 		if (min_len > vertices_distances[e][vertex]) {
@@ -158,10 +241,13 @@ std::vector<Point> able_points(SProblemPtr problem, SSolutionPtr solution, int v
 			min_len = vertices_distances[e][vertex];
 		}
 	}
-	CHECK(min_e >= 0);
+  //LOG(INFO) << "voi valid is " << voi.is_valid();
+  //LOG(INFO) << "min_e is " << min_e;
+  if (!voi.is_valid()) return MapValue(voi,ret);
+  //LOG(INFO) << "voi size is " << voi.size();
+  if (min_e < 0) return MapValue();
 	integer e_max2 = upper_limit(vertices_distances[min_e][vertex], problem->epsilon);
 	integer e_min2 = lower_limit(vertices_distances[min_e][vertex], problem->epsilon);
-	if (!voi.is_valid()) return ret;
 	for (integer y = voi.y_min; y < voi.y_max; y++) {
 		integer X = solution->vertices[min_e].first;
 		integer len = abs(solution->vertices[min_e].second - y); 
@@ -176,7 +262,7 @@ std::vector<Point> able_points(SProblemPtr problem, SSolutionPtr solution, int v
 				integer x_max = std::min(X + max_len + 1, voi.x_max);
 				for (integer x = x_min; x < x_max; x++) {
 					Point point = std::make_pair(x, y);
-					if (is_point_valid(problem, solution, vertex, decided_points, vertices_distances, point)) ret.push_back(point);
+          if (is_point_valid(problem, solution, striction, vertices_distances, point)) ret.push_back(point);
 				}
 			}
 
@@ -186,7 +272,7 @@ std::vector<Point> able_points(SProblemPtr problem, SSolutionPtr solution, int v
 				integer x_max = std::min(X - min_len + 1, voi.x_max);
 				for (integer x = x_min; x < x_max; x++) {
 					Point point = std::make_pair(x, y);
-					if (is_point_valid(problem, solution, vertex, decided_points, vertices_distances, point)) ret.push_back(point);
+          if (is_point_valid(problem, solution, striction, vertices_distances, point)) ret.push_back(point);
 				}
 				x_min = std::max(X + min_len, voi.x_min);
 				x_max = std::min(X + max_len + 1, voi.x_max);
@@ -197,14 +283,38 @@ std::vector<Point> able_points(SProblemPtr problem, SSolutionPtr solution, int v
 			}
 
 			
+  counter++;
+  //LOG(INFO) << "arrived hash able";
+  std::vector<Point> ret = {};
+  if (counter > LARGE) return ret;
 		}
 	}
 	return ret;
 }
+    hash_map_decided[str_holes] = able_points(problem, solution, str_holes, voi, vertices_distances, counter);
+  }
 
+  auto hash_value = hash_map_decided[str_holes];
+  if (hash_value.available) {
+    auto cand_points = hash_value.cands;
+    //LOG(INFO) << cand_points.size();
+    voi = hash_value.voi;
+    if (cand_points.size() == 0) return ret;
 
-SSolutionPtr dfs_able_points(SProblemPtr problem, SSolutionPtr solution, std::vector<int> decided_points, std::vector<int> restriction_edges, const mat& vertices_distances, int V, long long& counter) {
+    for (auto e : cand_points) {
+      if (is_point_valid(problem, solution, str_inside, vertices_distances, e)) ret.push_back(e);
+    }
+    return ret;
+  }
+
+  else {
+    return able_points(problem, solution, str_inside, voi, vertices_distances, counter).cands;
+  }
+}
+SSolutionPtr dfs_able_points(SProblemPtr problem, SSolutionPtr solution, const std::vector<Striction> &str_hole_memo, std::vector<int>& decided_points_inside, HashMap& hash_map_decided, std::vector<int> restriction_edges,  const mat& vertices_distances, int V, long long& counter) {
 	counter++;
+  int H = problem->hole_polygon.size();
+  //LOG(INFO) << "dfs_able_points "<<decided_points_inside.size();
 #if 0
 	SVisualEditor debug(problem);
 	debug.set_pose(solution);
@@ -215,7 +325,7 @@ SSolutionPtr dfs_able_points(SProblemPtr problem, SSolutionPtr solution, std::ve
 	if (counter > LARGE) return nullptr;
 	//if (counter % integer(1e4) == 0) LOG(INFO) << "counter is (able_points) " << counter;
 	//if (counter > 1e9) return nullptr;
-	if (decided_points.size() == V) {
+	if (decided_points_inside.size() == V-H) {
 		auto judgement = judge(*problem, *solution);
 		if (judgement.is_valid()) return solution;
 		return nullptr;
@@ -226,51 +336,71 @@ SSolutionPtr dfs_able_points(SProblemPtr problem, SSolutionPtr solution, std::ve
 		memo = restriction_edges[i];
 		most_restricted_point = i;
 	}
-	auto cands = able_points(problem, solution, most_restricted_point, decided_points, vertices_distances, counter);
+  SVOI voi(problem->hole_polygon);
+  Striction str_inside(most_restricted_point, V);
+  str_inside.Set(decided_points_inside, solution, vertices_distances);
+	auto cands = able_points_hash(problem, solution,str_hole_memo[most_restricted_point],str_inside, hash_map_decided, voi, vertices_distances, counter);
 	if (cands.size() == 0) return nullptr;
-	decided_points.push_back(most_restricted_point);
+	decided_points_inside.push_back(most_restricted_point);
 	for (int i = 0; i < V; i++) if (vertices_distances[most_restricted_point][i] && restriction_edges[i] >= 0) restriction_edges[i]++;
 	restriction_edges[most_restricted_point] = -10000000;
 	for (auto point : cands) {
 		solution->vertices[most_restricted_point] = point;
-		auto sol = dfs_able_points(problem, solution, decided_points, restriction_edges, vertices_distances, V, counter);
+		auto sol = dfs_able_points(problem, solution, str_hole_memo, decided_points_inside, hash_map_decided, restriction_edges, vertices_distances, V, counter);
 		if (sol) return sol;
 		solution->vertices[most_restricted_point] = problem->vertices[most_restricted_point];
 	}
+  decided_points_inside.pop_back();
 	return nullptr;
 
 
 }
 
-SSolutionPtr dfs_holes(SProblemPtr problem, SSolutionPtr solution, const mat& hole_distances, const mat& vertices_distances, const std::vector<std::vector<double>>& upperlimit_distances, std::vector<int>& v, int V, int H, Timer& timer, std::vector<int>& used_vertices, const vec_holenum &v_h, long long& counter) {
+
+SSolutionPtr Fit_Unstricted_Points(SProblemPtr problem, SSolutionPtr solution, const std::vector<int>& decided_points, const mat&vertices_distances, HashMap& hash_map_decided, long long &counter) {
+  int V = problem->vertices.size();
+  std::vector<bool> used_vertices(V, false);
+  for (auto e : decided_points) used_vertices[e] = true;
+	std::vector<int> restriction_edges(V,0);
+  for (auto e : decided_points) for (int i = 0; i < V; i++) if (vertices_distances[i][e]) restriction_edges[i]++;
+  for (auto e : decided_points) restriction_edges[e] = -100000;
+  std::vector<int> decided_points_inside = {};
+  std::vector<Striction> str_hole_memo;
+  for (int i = 0; i < V; i++) str_hole_memo.push_back(Striction(i, V));
+  //LOG(INFO) << str_hole_memo.size() << "SIZE==============";
+  for (int i = 0; i < V; i++) if (!used_vertices[i]) {
+    str_hole_memo[i].Set(decided_points, solution, vertices_distances);
+  }
+  return dfs_able_points(problem, solution, str_hole_memo, decided_points_inside, hash_map_decided, restriction_edges, vertices_distances, V, counter);
+
+}
+
+
+SSolutionPtr FitUnstrictedPoints(SProblemPtr problem, SSolutionPtr solution, const std::vector<int> decided_points) {
+  long long counter = 0;
+  HashMap hash_map_decided = {};
+  return Fit_Unstricted_Points(problem, solution, decided_points, create_vertices_distances(problem), hash_map_decided, counter);
+}
+
+SSolutionPtr dfs_holes(SProblemPtr problem, SSolutionPtr solution, HashMap& hash_map_decided, const mat& hole_distances, const mat& vertices_distances, const std::vector<std::vector<double>>& upperlimit_distances, std::vector<int>& v, int V, int H, Timer& timer, std::vector<int>& used_vertices, const vec_holenum &v_h, long long& counter) {
 	constexpr int one_min = 1000 * 60;
 	counter++;
-#if 0
-	SVisualEditor debug(problem);
+  if (/*counter % 50 == 0*/ false) {
+    SVisualEditor debug(problem, "full_research", "dfs_holes");
 	debug.set_pose(solution);
 	auto key = debug.show(3);
 	if (key == 'x') counter += LARGE;
 	if (key == 'q') counter += VERYLARGE;
+  }
 	if (counter > LARGE) return nullptr;
-#endif
+
 	//if(counter % integer(1e4) == 0) LOG(INFO) << "counter is (holes)" << counter;
 	//if (counter > 1e9) return nullptr;
 	//LOG(INFO) << "v.size is : " << v.size();
 	//if (timer.elapsed_ms() > one_min) return nullptr;
  	if (v.size() >= H) {
-		std::vector<int> decided_points = v_h.decided_points(v);
-		std::vector<int> restriction_edges(V,0);
-		for (auto e : decided_points) for (int i = 0; i < V; i++) if (vertices_distances[i][e]) restriction_edges[i]++;
-		for (auto e : decided_points) restriction_edges[e] = -100000;
-		std::vector<Point> points(V, std::make_pair(0,0));
-		for (int i = 0; i < H; i++) {
-			auto e = decided_points[i];
-			points[e] = problem->hole_polygon[i];
-		}
-		SSolutionPtr solution(new SSolution(points));
-		return dfs_able_points(problem, solution, decided_points, restriction_edges, vertices_distances, V, counter);
+    return Fit_Unstricted_Points(problem, solution, v, vertices_distances, hash_map_decided, counter);
 	}
-
 	else {
 		for (int x = 0; x < V; x++) if(!used_vertices[x]) {
 			if (counter > 1e15) return nullptr;
@@ -289,12 +419,12 @@ SSolutionPtr dfs_holes(SProblemPtr problem, SSolutionPtr solution, const mat& ho
 				if (uplimit_dist + 1 < std::sqrt(hole_dist)) okay = false;
 				if (!okay) break;
 			}
-			counter++;
+			//counter++;
 			if (okay) {
 				//LOG(INFO) << "dfs_holes:: v is ";
 				//for (auto e : v) LOG(INFO) << e;
 				solution->vertices[x] = problem->hole_polygon[hole_x];
-				auto sol = dfs_holes(problem, solution, hole_distances, vertices_distances, upperlimit_distances, v, V, H, timer, used_vertices, v_h, counter);
+				auto sol = dfs_holes(problem, solution, hash_map_decided, hole_distances, vertices_distances, upperlimit_distances, v, V, H, timer, used_vertices, v_h, counter);
 				if (sol) return sol;
 				solution->vertices[x] = problem->vertices[x];
 			}
@@ -307,25 +437,21 @@ SSolutionPtr dfs_holes(SProblemPtr problem, SSolutionPtr solution, const mat& ho
 
 
 
-
-
-
 #if 1
 bool full_research(SProblemPtr problem, SSolutionPtr& solution, Timer& timer) {
 	int V = problem->vertices.size();
 	int H = problem->hole_polygon.size();
+  LOG(INFO) << "V,H is " << V << ' ' << H;
 	unsigned int seed = 20210711;
 	std::mt19937_64 rng(seed);
 	
 	constexpr double BIGDOUBLE = 1e18;
 	vec_holenum v_h(H);
 
-	mat vertices_distances(V, vec(V, 0));
+  mat vertices_distances = create_vertices_distances(problem);
 	std::vector<std::vector<double>> upperlimit_distances(V, std::vector<double>(V, BIGDOUBLE));
 
 	for (const auto& e : problem->edges) {
-		vertices_distances[e.first][e.second] = distance2(problem->vertices[e.first], problem->vertices[e.second]);
-		vertices_distances[e.second][e.first] = vertices_distances[e.first][e.second];
 		upperlimit_distances[e.first][e.second] = std::sqrt(upper_limit(distance2(problem->vertices[e.first], problem->vertices[e.second]), problem->epsilon));
 		upperlimit_distances[e.second][e.first] = upperlimit_distances[e.first][e.second];
 	}
@@ -364,19 +490,63 @@ bool full_research(SProblemPtr problem, SSolutionPtr& solution, Timer& timer) {
     for (int j = 0; j < H; j++) {
       if (point == problem->hole_polygon[j]) {
         v_h.Change_V2H(i, j);
+        hole_same_counter++;
         break;
       }
     }
   }
+//  v_h.check_valid();
 
+  std::vector<int> v_init_memo;
+  for (auto e : decided_points_initial) v_init_memo.push_back(e);
 
+  HashMap hash_map_decided = {};
+  auto sol = dfs_holes(problem, solution_initial, hash_map_decided, hole_distances, vertices_distances, upperlimit_distances, decided_points_initial, V, H, timer, used_vertices, v_h, counter);
+  if (sol) {
+    solution = sol;
+    LOG(INFO) <<"hash_map_size is"<< hash_map_decided.size();
+    return true;
+  }
   
+#if 0
 
-	auto sol = dfs_holes(problem, solution_initial, hole_distances, vertices_distances, upperlimit_distances, decided_points_initial, V, H, timer, used_vertices, v_h, counter);
+  for (auto e : v_init_memo) {
+    LOG(INFO) << "arrived: changing e is "<<e;
+    SSolutionPtr sol(new SSolution(solution->vertices));
+    sol->vertices[e] = problem->vertices[e];
+    std::vector<int> dec = {};
+    for (auto x : v_init_memo) if (x != e) dec.push_back(x);
+    for (int i = 0; i < dec.size(); i++) {
+      auto e = dec[i];
+      Point point = sol->vertices[e];
+      for (int j = 0; j < H; j++) {
+        if (point == problem->hole_polygon[j]) {
+          v_h.Change_V2H(i, j);
+          hole_same_counter++;
+          break;
+        }
+      }
+    }
+    SVisualEditor debug(problem,"fullresearch","main");
+  	debug.set_pose(sol);
+	  auto key = debug.show(100);
+    std::vector<int> used(V, 0);
+    for (auto x : dec) if (x != e) used[x]++;
+    sol = dfs_holes(problem, sol, hole_distances, vertices_distances, upperlimit_distances, dec, V, H, timer, used, v_h, counter);
 	if (sol) {
 		solution = sol;
 		return true;
 	}
+
+
+  }
+
+#endif
+
+
+
+
+
 	return false;
 
 }
