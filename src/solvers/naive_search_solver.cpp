@@ -226,6 +226,8 @@ public:
 
     constexpr int USED = 1;
     constexpr int REMAINING = 0;
+    struct State;
+    using StatePtr = std::shared_ptr<State>;
     struct State {
       // placing vertices[vid] to position p.
       int depth = 0;
@@ -239,7 +241,6 @@ public:
       State(int depth, int vid, Point p, const std::vector<int>& indices_flag, const std::vector<Point>& vertices)
         : depth(depth), vid(vid), p(p), indices_flag(indices_flag), vertices(vertices) {}
     };
-    using StatePtr = std::shared_ptr<State>;
     auto create_fixed_indices = [&](StatePtr s) {
       std::vector<int> fixed_indices;
       for (int i = 0; i < V; ++i) {
@@ -251,16 +252,24 @@ public:
     };
 
     // infeasible placement cache
-    int max_key = V;
+    int min_x = std::numeric_limits<int>::max();
+    int min_y = std::numeric_limits<int>::max();
+    int max_x = std::numeric_limits<int>::min();
+    int max_y = std::numeric_limits<int>::min();
     for (auto& p : interior_points) {
-      chmax<int>(max_key, p.first);
-      chmax<int>(max_key, p.second);
+      chmin<int>(min_x, p.first);
+      chmax<int>(max_x, p.first);
+      chmin<int>(min_y, p.second);
+      chmax<int>(max_y, p.second);
     }
-    SZobristHash zobrist(max_key);
+    const int size_x = max_x - min_x + 1;
+    const int size_y = max_y - min_y + 1;
+    const int key_size = V * size_x * size_y;
+    SZobristHash zobrist(key_size);
     const size_t infeasible_placement_cache_size = infeasible_placement_cache_size_B * 8;
     std::vector<bool> infeasible_placement_cache;
     if (use_cache_for_infeasible_placement_set) {
-      LOG(INFO) << fmt::format("use_cache_for_infeasible_placement_set ON {:.2f} MB (smaller cache leads to increasing FP)", infeasible_placement_cache_size_B / 1024.0 / 1024.0);
+      LOG(INFO) << fmt::format("use_cache_for_infeasible_placement_set ON {:.2f} MB (smaller cache leads to increasing FP) {}x{}x{}", infeasible_placement_cache_size_B / 1024.0 / 1024.0, size_x, size_y, V);
       infeasible_placement_cache.assign(infeasible_placement_cache_size, false);
     } else {
       LOG(INFO) << "use_cache_for_infeasible_placement_set OFF";
@@ -269,9 +278,11 @@ public:
       SZobristHash::key_t hash = 0;
       for (int i = 0; i < V; ++i) {
         if (s->indices_flag[i] == USED) {
-          hash ^= zobrist[i];
-          hash ^= zobrist[s->vertices[i].first];
-          hash ^= zobrist[s->vertices[i].second];
+          const int dx = s->vertices[i].first - min_x;
+          const int dy = s->vertices[i].second - min_y;
+          const int idx = (i * size_y + dy) * size_x + dx;
+          //CHECK(idx < key_size);
+          hash ^= zobrist[idx];
         }
       }
       return hash;
@@ -445,15 +456,14 @@ public:
             new_vertices[counter_vid] = p;
             auto new_s = std::make_shared<State>(s->depth + 1, counter_vid, p, new_remaining_index_flag, new_vertices);
             if (!(use_cache_for_infeasible_placement_set && is_infeasible_placement(new_s))) {
-              stack.push(new_s);
               pushed = true;
+              stack.push(new_s);
             }
           }
         }
       }
 
-      if (!pushed) {
-        // leaf node (failure)
+      if (!pushed) { // failed to push .. infeable placement found.
         if (use_cache_for_infeasible_placement_set) {
           set_infeasible_placement(s);
         }
