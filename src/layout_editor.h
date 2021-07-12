@@ -146,11 +146,12 @@ namespace NLayoutEditor {
   }
 
   struct SEdge {
+    int id;
     int from, to;
     double orig_len;
     SEdge() {}
-    SEdge(int u, int v, double d) : from(u), to(v), orig_len(d) {}
-    inline std::string str() const { return fmt::format("SEdge [from={}, to={}, orig_len={}]", from, to, orig_len); }
+    SEdge(int id, int u, int v, double d) : id(id), from(u), to(v), orig_len(d) {}
+    inline std::string str() const { return fmt::format("SEdge [id={}, from={}, to={}, orig_len={}]", id, from, to, orig_len); }
     inline friend std::ostream& operator<<(std::ostream& o, const SEdge& obj) { o << obj.str(); return o; }
     inline uint64_t hash() const {
       static constexpr uint64_t p = 31;
@@ -232,6 +233,7 @@ namespace NLayoutEditor {
     std::vector<SNode> nodes;
     int num_edges;
     std::vector<SEdge> edges;
+    std::vector<cv::Scalar> edge_colors;
 
     SROI roi_poly, roi_fig;
     int img_width;
@@ -241,8 +243,10 @@ namespace NLayoutEditor {
     int offset_y = kBaseOffset;
     cv::Mat_<cv::Vec3b> base_img;
     cv::Mat_<cv::Vec3b> img;
+    cv::Mat_<float> img_dist;
+    std::vector<std::vector<P>> vec_field;
     
-    inline P cvt(double x, double y) {
+    inline P cvt(double x, double y) const {
       return P(
         (x + offset_x) * mag,
         (y + offset_y) * mag + kInfoBufferHeightPx
@@ -257,6 +261,7 @@ namespace NLayoutEditor {
     void init();
     void draw_base_image();
     void update(SEditorParamsPtr ep);
+    cv::Scalar get_edge_color(integer iedge) const;
   };
   using SLayoutPtr = std::shared_ptr<SLayout>;
 
@@ -268,82 +273,10 @@ namespace NLayoutEditor {
     SMouseParamsPtr mp;
     SEditorParamsPtr ep;
 
-    SLayoutEditor(SProblemPtr problem, const std::string& solver_name, const std::string window_name, int seed = 0)
-      : window_name(window_name), solver_name(solver_name) {
-      layout = std::make_shared<SLayout>(problem, seed);
-      mp = std::make_shared<SMouseParams>();
-      ep = std::make_shared<SEditorParams>();
-      cv::namedWindow(window_name, cv::WINDOW_AUTOSIZE);
-      cv::setMouseCallback(window_name, callback, this);
-    }
-
-    int get_nearest_node_id() const {
-      int x = mp->x, y = mp->y;
-      int idx = -1;
-      double min_d2 = std::numeric_limits<double>::max();
-      for (int i = 0; i < layout->nodes.size(); i++) {
-        const auto& node = layout->nodes[i];
-        double d2 = (layout->cvt(node.r) - P(x, y)).length2();
-        if (d2 < min_d2) {
-          min_d2 = d2;
-          idx = i;
-        }
-      }
-      return idx;
-    }
-
-    void force_directed_layout(bool clipping = true) {
-      static constexpr double decay_const = 0.99;
-      static constexpr double dt = 0.01;
-      static constexpr double randomness = 0.1;
-      // 同一点・同一直線上に来ないようにバラす
-      for (int u = 0; u < layout->num_nodes; u++) {
-        layout->nodes[u].r += P(
-          layout->rnd.next_double() * randomness - randomness * 0.5,
-          layout->rnd.next_double() * randomness - randomness * 0.5
-        );
-      }
-      int loop = 0;
-      while (true) {
-        double energy = 0.0;
-        std::vector<P> fs = layout->calc_forces();
-        loop++;
-        // update
-        for (SNode& n : layout->nodes) {
-          n.v = (n.v + dt * fs[n.id]) * decay_const;
-          n.r += n.v * dt;
-          if (clipping) layout->roi_poly.clip(n.r);
-          energy += n.v.length2();
-        }
-        if (ep->selected_node_id != -1) {
-          auto& p = layout->nodes[ep->selected_node_id].r;
-          p = layout->icvt(mp->x, mp->y);
-        }
-        if (loop % 100 == 0) {
-          layout->update(ep);
-          cv::imshow(window_name, layout->img);
-          cv::waitKey(15);
-        }
-        if (energy < 1e-3) break;
-      }
-    }
-
-    static void callback(int e, int x, int y, int f, void* param) {
-      SLayoutEditor* s = static_cast<SLayoutEditor*>(param);
-      auto mp = s->mp;
-      auto ep = s->ep;
-      mp->load(e, x, y, f);
-      ep->nearest_node_id = s->get_nearest_node_id();
-      if (mp->clicked_left()) {
-        if (ep->nearest_node_id != -1) {
-          ep->selected_node_id = ep->nearest_node_id;
-        }
-      }
-      if (mp->released_left()) {
-        ep->selected_node_id = -1;
-      }
-      s->layout->update(ep);
-    }
+    SLayoutEditor(SProblemPtr problem, const std::string& solver_name, const std::string window_name, int seed = 0);
+    int get_nearest_node_id() const;
+    void force_directed_layout(bool clipping = true);
+    static void callback(int e, int x, int y, int f, void* param);
   };
 
 }
