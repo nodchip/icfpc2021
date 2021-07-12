@@ -4,7 +4,8 @@
 
 namespace NLayoutEditor {
 
-  SLayout::SLayout(SProblemPtr problem, SEditorParamsPtr ep, int seed) : problem(problem), ep(ep) {
+  SLayout::SLayout(SProblemPtr problem, SSolutionPtr optional_initial_solution, SEditorParamsPtr ep, int seed)
+    : problem(problem), optional_initial_solution(optional_initial_solution), ep(ep) {
     rnd.set_seed(seed + 10007);
     init();
     draw_base_image();
@@ -95,9 +96,19 @@ namespace NLayoutEditor {
     num_edges = problem->edges.size();
     nodes.resize(num_nodes);
     edge_colors.resize(num_edges);
-    for (int vid = 0; vid < num_nodes; vid++) {
-      nodes[vid].id = vid;
-      nodes[vid].r = P(problem->vertices[vid].first, problem->vertices[vid].second);
+    // decay
+    if (optional_initial_solution) {
+      for (int vid = 0; vid < num_nodes; vid++) {
+        nodes[vid].id = vid;
+        auto p = optional_initial_solution->vertices[vid];
+        nodes[vid].r = P(p.first, p.second);
+      }
+    }
+    else {
+      for (int vid = 0; vid < num_nodes; vid++) {
+        nodes[vid].id = vid;
+        nodes[vid].r = P(problem->vertices[vid].first, problem->vertices[vid].second);
+      }
     }
     auto original_length = [&](int uid, int vid) {
       auto u = problem->vertices[uid], v = problem->vertices[vid];
@@ -223,11 +234,13 @@ namespace NLayoutEditor {
   }
 
 
-  SLayoutEditor::SLayoutEditor(SProblemPtr problem, const std::string& solver_name, const std::string window_name, int seed)
-    : window_name(window_name), solver_name(solver_name) {
+  SLayoutEditor::SLayoutEditor(
+    SProblemPtr problem, SSolutionPtr optional_initial_solution,
+    const std::string& solver_name, const std::string window_name, int seed
+  ) : window_name(window_name), solver_name(solver_name) {
     mp = std::make_shared<SMouseParams>();
     ep = std::make_shared<SEditorParams>();
-    layout = std::make_shared<SLayout>(problem, ep, seed);
+    layout = std::make_shared<SLayout>(problem, optional_initial_solution, ep, seed);
     cv::namedWindow(window_name, cv::WINDOW_AUTOSIZE);
     cv::setMouseCallback(window_name, mouse_callback, this);
 

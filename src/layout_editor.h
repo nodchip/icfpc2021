@@ -235,6 +235,7 @@ namespace NLayoutEditor {
   public:
     Xorshift rnd;
     SProblemPtr problem;
+    SSolutionPtr optional_initial_solution;
     SEditorParamsPtr ep;
     int num_nodes;
     std::vector<SNode> nodes;
@@ -262,7 +263,7 @@ namespace NLayoutEditor {
     inline P cvt(const P& p) { return cvt(p.x, p.y); }
     inline P cvt(const Point& p) { return cvt(p.first, p.second); }
     inline P icvt(int x, int y) { return { double(x) / mag - offset_x, double(y - kInfoBufferHeightPx) / mag - offset_y }; }
-    SLayout(SProblemPtr problem, SEditorParamsPtr ep, int seed = 0);
+    SLayout(SProblemPtr problem, SSolutionPtr optional_initial_solution, SEditorParamsPtr ep, int seed = 0);
     std::vector<P> calc_forces() const;
     void vis(int delay = 0) const;
     void init();
@@ -280,7 +281,10 @@ namespace NLayoutEditor {
     SMouseParamsPtr mp;
     SEditorParamsPtr ep;
 
-    SLayoutEditor(SProblemPtr problem, const std::string& solver_name, const std::string window_name, int seed = 0);
+    SLayoutEditor(
+      SProblemPtr problem, SSolutionPtr optional_initial_solution,
+      const std::string& solver_name, const std::string window_name, int seed = 0
+    );
     int get_nearest_node_id() const;
     SSolutionPtr get_rounded_pose() const;
     SSolutionPtr force_directed_layout(bool clipping = true);
