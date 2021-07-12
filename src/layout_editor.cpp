@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "layout_editor.h"
 #include "visual_editor.h"
+#include "judge.h"
 
 namespace NLayoutEditor {
 
@@ -182,6 +183,11 @@ namespace NLayoutEditor {
     //cv::waitKey(0);
   }
 
+  void SLayout::display_approx_dislike() const {
+    auto res = judge(*problem, *get_rounded_pose());
+    LOG(INFO) << "approx. dislikes = " << res.dislikes;
+  }
+
   void SLayout::update() {
     img = base_img.clone();
     for (int eid = 0; eid < num_edges; eid++) {
@@ -245,15 +251,15 @@ namespace NLayoutEditor {
     cv::setMouseCallback(window_name, mouse_callback, this);
 
     cv::createTrackbar("spring", window_name, nullptr, 1000, spring_callback, &(*ep));
-    cv::setTrackbarPos("spring", window_name, 10);
+    cv::setTrackbarPos("spring", window_name, ep->spring_const);
     cv::createTrackbar("coulomb", window_name, nullptr, 1000, coulomb_callback, &(*ep));
-    cv::setTrackbarPos("coulomb", window_name, 10);
+    cv::setTrackbarPos("coulomb", window_name, ep->coulomb_const);
     cv::createTrackbar("edge", window_name, nullptr, 1000, edge_callback, &(*ep));
-    cv::setTrackbarPos("edge", window_name, 10);
+    cv::setTrackbarPos("edge", window_name, ep->edge_const);
     cv::createTrackbar("field", window_name, nullptr, 1000, field_callback, &(*ep));
-    cv::setTrackbarPos("field", window_name, 10);
-    cv::createTrackbar("edge_field", window_name, nullptr, 1000, edge_callback, &(*ep));
-    cv::setTrackbarPos("edge_field", window_name, 10);
+    cv::setTrackbarPos("field", window_name, ep->field_const);
+    cv::createTrackbar("edge_field", window_name, nullptr, 1000, edge_field_callback, &(*ep));
+    cv::setTrackbarPos("edge_field", window_name, ep->edge_field_const);
   }
 
   int SLayoutEditor::get_nearest_node_id() const {
@@ -271,12 +277,12 @@ namespace NLayoutEditor {
     return idx;
   }
 
-  SSolutionPtr SLayoutEditor::get_rounded_pose() const {
+  SSolutionPtr SLayout::get_rounded_pose() const {
     std::vector<Point> rounded_pose;
-    for (const auto& node : layout->nodes) {
+    for (const auto& node : nodes) {
       rounded_pose.emplace_back((integer)round(node.r.x), (integer)round(node.r.y));
     }
-    return layout->problem->create_solution(rounded_pose);
+    return problem->create_solution(rounded_pose);
   }
 
   SSolutionPtr SLayoutEditor::force_directed_layout(bool clipping) {
@@ -311,9 +317,12 @@ namespace NLayoutEditor {
         cv::imshow(window_name, layout->img);
         int key = cv::waitKey(15);
         if (key == 27) break;
+        if (key == 'd') {
+          layout->display_approx_dislike();
+        }
       }
     }
-    return get_rounded_pose();
+    return layout->get_rounded_pose();
   }
 
   void SLayoutEditor::mouse_callback(int e, int x, int y, int f, void* param) {

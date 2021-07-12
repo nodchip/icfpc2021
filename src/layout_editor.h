@@ -268,8 +268,10 @@ namespace NLayoutEditor {
     void vis(int delay = 0) const;
     void init();
     void draw_base_image();
+    void display_approx_dislike() const;
     void update();
     cv::Scalar get_edge_color(integer iedge) const;
+    SSolutionPtr get_rounded_pose() const;
   };
   using SLayoutPtr = std::shared_ptr<SLayout>;
 
@@ -286,7 +288,6 @@ namespace NLayoutEditor {
       const std::string& solver_name, const std::string window_name, int seed = 0
     );
     int get_nearest_node_id() const;
-    SSolutionPtr get_rounded_pose() const;
     SSolutionPtr force_directed_layout(bool clipping = true);
     static void mouse_callback(int e, int x, int y, int f, void* param);
     static void spring_callback(int val, void* param);
