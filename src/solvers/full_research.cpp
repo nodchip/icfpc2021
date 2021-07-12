@@ -293,7 +293,7 @@ MapValue able_points(SProblemPtr problem, SSolutionPtr solution, const Striction
 
 std::vector<Point> able_points_hash(SProblemPtr problem, SSolutionPtr solution, const Striction& str_holes, const Striction& str_inside, HashMap& hash_map_decided, SVOI voi, const mat& vertices_distances, HashMap& hash_map_unrestricted, long long& counter) {
   counter++;
-  LOG(INFO) << "arrived hash able";
+ // LOG(INFO) << "arrived hash able";
   std::vector<Point> ret = {};
   if (counter > LARGE) return ret;
   int vertex = str_holes.vertex;
@@ -339,7 +339,7 @@ std::vector<Point> able_points_hash(SProblemPtr problem, SSolutionPtr solution, 
 SSolutionPtr dfs_able_points(SProblemPtr problem, SSolutionPtr solution, const std::vector<Striction>& str_hole_memo, std::vector<int>& decided_points_inside, HashMap& hash_map_decided, std::vector<int> restriction_edges, const mat& vertices_distances, int V, int H, HashMap& hash_map_unrestricted, long long& counter) {
   counter++;
 //  int H = problem->hole_polygon.size();
-  LOG(INFO) << "dfs_able_points "<<decided_points_inside.size();
+ // LOG(INFO) << "dfs_able_points "<<decided_points_inside.size();
 #if 0
   SVisualEditor debug(problem);
   debug.set_pose(solution);
@@ -363,6 +363,7 @@ SSolutionPtr dfs_able_points(SProblemPtr problem, SSolutionPtr solution, const s
   }
   SVOI voi(problem->hole_polygon);
   Striction str_inside(most_restricted_point, V);
+  str_inside.Set(decided_points_inside, solution, vertices_distances);
   auto cands = able_points_hash(problem, solution, str_hole_memo[most_restricted_point], str_inside, hash_map_decided, voi, vertices_distances, hash_map_unrestricted, counter);
   if (cands.size() == 0) return nullptr;
   decided_points_inside.push_back(most_restricted_point);
@@ -602,9 +603,40 @@ public:
     auto solution = args.problem->create_solution();
     if (args.optional_initial_solution) solution = args.optional_initial_solution;
     std::vector<int> decided_points;
-    for (int i = 0; i < args.problem->vertices.size(); i++) if (args.problem->vertices[i] != solution->vertices[i]) decided_points.push_back(i);
+    int V = args.problem->vertices.size();
+        std::vector<int> bad_vertex_count(V, 0);
+    for (auto e : args.problem->edges) {
+      integer a = e.first, b = e.second;
+      integer dis_p = distance2(args.problem->vertices[a], args.problem->vertices[b]);
+      integer dis_s = distance2(solution->vertices[a], solution->vertices[b]);
+      if (!tolerate(dis_p, dis_s, args.problem->epsilon)) {
+        bad_vertex_count[a]++;
+        bad_vertex_count[b]++;
+      }
+    }
+    std::vector<std::pair<int, int>> baddest;
+    for (int i = 0; i < V; i++) baddest.push_back(std::make_pair(bad_vertex_count[i], i));
+    std::sort(baddest.begin(), baddest.end());
+        for (auto e : baddest) decided_points.push_back(e.second);
+
+    SolverOutputs ret;
+    for (int i = 0; i < 90 ; i++) {
+      LOG(INFO)<< "CHAllENGE " << i;
+      decided_points.pop_back();
+      auto sol = FitUnstrictedPoints(args.problem, solution, decided_points);
+      if (sol) {
+        ret.solution = sol;
+        return ret;
+      }
+    }
+    ret.solution = solution;
+    return ret;
+
+   // for (int i = 0; i < args.problem->vertices.size(); i++) if (args.problem->vertices[i] != solution->vertices[i]) decided_points.push_back(i);
 
   //  bool quit = false;
+
+/*
 
     if(args.visualize){
       SVisualEditor manual_solver(args.problem, "FitUnstricted", "Select Points");
@@ -617,13 +649,7 @@ public:
       solution = manual_solver.get_pose();
       decided_points = manual_solver.get_marked_indices();
     }
-
-      auto sol = FitUnstrictedPoints(args.problem, solution, decided_points);
-    SolverOutputs ret;
-    if (sol) ret.solution = sol;
-    else ret.solution = solution;
-
-    return ret;
+*/
   }
 
 };
