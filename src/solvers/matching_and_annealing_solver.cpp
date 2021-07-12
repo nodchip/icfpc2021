@@ -71,7 +71,7 @@ class Solver : public SolverBase {
     const int N = vertices_.size();
     auto pose = initial_solution.solution->vertices;
     double cost = std::numeric_limits<double>::infinity();
-    double best_feasible_cost = std::numeric_limits<double>::infinity();
+    integer best_dislikes = std::numeric_limits<integer>::max();
     std::vector<Point> best_feasible_pose;
 
     SVisualEditorPtr editor;
@@ -151,10 +151,12 @@ class Solver : public SolverBase {
       }
 #endif
 
-      if (feasible && updated_cost < best_feasible_cost) {
-        best_feasible_cost = updated_cost;
+      const auto judge_result = judge(*args.problem, pose);
+      if (judge_result.is_valid() && judge_result.dislikes < best_dislikes) {
+        best_dislikes = judge_result.dislikes;
         best_feasible_pose = pose;
-        if (editor) editor->set_persistent_custom_stat(fmt::format("best_cost = {}", best_feasible_cost));
+        LOG(INFO) << "valid solution found with dislikes = " << best_dislikes;
+        if (editor) editor->set_persistent_custom_stat(fmt::format("best_dislikes = {}", best_dislikes));
       }
       const double T = std::pow(T0, 1.0 - progress) * std::pow(T1, progress);
       if (std::uniform_real_distribution(0.0, 1.0)(rng_) < std::exp(-(updated_cost - cost) / T)) {
