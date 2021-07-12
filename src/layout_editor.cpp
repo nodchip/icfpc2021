@@ -257,7 +257,16 @@ namespace NLayoutEditor {
     }
     return idx;
   }
-  void SLayoutEditor::force_directed_layout(bool clipping) {
+
+  SSolutionPtr SLayoutEditor::get_rounded_pose() const {
+    std::vector<Point> rounded_pose;
+    for (const auto& node : layout->nodes) {
+      rounded_pose.emplace_back((integer)round(node.r.x), (integer)round(node.r.y));
+    }
+    return layout->problem->create_solution(rounded_pose);
+  }
+
+  SSolutionPtr SLayoutEditor::force_directed_layout(bool clipping) {
     static constexpr double decay_const = 0.99;
     static constexpr double dt = 0.01;
     static constexpr double randomness = 0.1;
@@ -291,6 +300,7 @@ namespace NLayoutEditor {
         if (key == 27) break;
       }
     }
+    return get_rounded_pose();
   }
 
   void SLayoutEditor::mouse_callback(int e, int x, int y, int f, void* param) {

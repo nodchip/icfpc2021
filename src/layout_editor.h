@@ -282,7 +282,8 @@ namespace NLayoutEditor {
 
     SLayoutEditor(SProblemPtr problem, const std::string& solver_name, const std::string window_name, int seed = 0);
     int get_nearest_node_id() const;
-    void force_directed_layout(bool clipping = true);
+    SSolutionPtr get_rounded_pose() const;
+    SSolutionPtr force_directed_layout(bool clipping = true);
     static void mouse_callback(int e, int x, int y, int f, void* param);
     static void spring_callback(int val, void* param);
     static void coulomb_callback(int val, void* param);
