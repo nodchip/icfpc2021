@@ -254,19 +254,26 @@ namespace OptunaAnnealingSolver {
         double total_votes = 0;
         for (int y = ymin; y <= ymax; ++y) {
           for (int x = xmin; x <= xmax; ++x) {
+            if (good_pos[y - ymin][x - xmin] == 0) {
+              continue;
+            }
             good_pos[y - ymin][x - xmin] = std::pow(good_pos[y - ymin][x - xmin], vote_pow);
             total_votes += good_pos[y - ymin][x - xmin];
           }
         }
         const double select_accum_vote = std::uniform_real_distribution<double>(0.0, total_votes)(rng_);
         double accum_vote = 0;
-        for (int y = ymin; y <= ymax; ++y) {
-          for (int x = xmin; x <= xmax; ++x) {
+        bool found = false;
+        for (int y = ymin; !found && y <= ymax; ++y) {
+          for (int x = xmin; !found && x <= xmax; ++x) {
+            if (good_pos[y - ymin][x - xmin] == 0) {
+              continue;
+            }
             double adjusted_vote = good_pos[y - ymin][x - xmin];
             accum_vote += adjusted_vote;
             if (select_accum_vote <= accum_vote) {
               pose[pivot] = {x, y};
-              break;
+              found = true;
             }
           }
         }
