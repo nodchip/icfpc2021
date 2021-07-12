@@ -4,19 +4,18 @@
 
 namespace NLayoutEditor {
 
-  SLayout::SLayout(SProblemPtr problem, int seed) : problem(problem) {
+  SLayout::SLayout(SProblemPtr problem, SEditorParamsPtr ep, int seed) : problem(problem), ep(ep) {
     rnd.set_seed(seed + 10007);
     init();
     draw_base_image();
-    update(nullptr);
+    update();
   }
   std::vector<P> SLayout::calc_forces() const {
-    // TODO: should be variable
-    static constexpr double spring_const = 1.0;
-    static constexpr double coulomb_const = 10.0;
-    static constexpr double edge_const = 10.0; // 辺の中点から斥力が生じる
-    static constexpr double field_const = 1.0;
-    static constexpr double edge_field_const = 1.0;
+    double spring_const = ep->spring_const * 0.01;
+    double coulomb_const = ep->coulomb_const * 0.1;
+    double edge_const = ep->edge_const * 0.1;
+    double field_const = ep->field_const * 0.1;
+    double edge_field_const = ep->edge_field_const * 0.1;
     static P fs[max_num_vertices][max_num_vertices];
     for (int i = 0; i < num_nodes; i++) {
       memset(fs[i], 0, sizeof(P) * num_nodes);
@@ -63,8 +62,8 @@ namespace NLayoutEditor {
       {
         auto p = n1.r;
         auto xy = cvt(p.x, p.y);
-        int ix = (int)round(xy.x); ix = std::clamp(ix, 0, img_dist.rows - 1);
-        int iy = (int)round(xy.y); iy = std::clamp(iy, 0, img_dist.cols - 1);
+        int ix = (int)round(xy.x); ix = std::clamp(ix, 0, img_dist.cols - 1);
+        int iy = (int)round(xy.y); iy = std::clamp(iy, 0, img_dist.rows - 1);
         fs[u][u] -= field_const * vec_field[iy][ix];
       }
 #ifdef _MSC_VER
@@ -77,8 +76,8 @@ namespace NLayoutEditor {
       double len = edge.orig_len; // orig ?
       auto pu = nodes[edge.from].r, pv = nodes[edge.to].r, pm = (pu + pv) * 0.5;
       auto xy = cvt(pm.x, pm.y);
-      int ix = (int)round(xy.x); ix = std::clamp(ix, 0, img_dist.rows - 1);
-      int iy = (int)round(xy.y); iy = std::clamp(iy, 0, img_dist.cols - 1);
+      int ix = (int)round(xy.x); ix = std::clamp(ix, 0, img_dist.cols - 1);
+      int iy = (int)round(xy.y); iy = std::clamp(iy, 0, img_dist.rows - 1);
       auto vec = vec_field[iy][ix];
       fs[u][u] -= edge_field_const * len * vec;
       fs[v][v] -= edge_field_const * len * vec;
@@ -172,7 +171,7 @@ namespace NLayoutEditor {
     //cv::waitKey(0);
   }
 
-  void SLayout::update(SEditorParamsPtr ep) {
+  void SLayout::update() {
     img = base_img.clone();
     for (int eid = 0; eid < num_edges; eid++) {
       edge_colors[eid] = get_edge_color(eid);
@@ -223,13 +222,25 @@ namespace NLayoutEditor {
     return cv::Scalar(0, 255, 0);
   }
 
+
   SLayoutEditor::SLayoutEditor(SProblemPtr problem, const std::string& solver_name, const std::string window_name, int seed)
     : window_name(window_name), solver_name(solver_name) {
-    layout = std::make_shared<SLayout>(problem, seed);
     mp = std::make_shared<SMouseParams>();
     ep = std::make_shared<SEditorParams>();
+    layout = std::make_shared<SLayout>(problem, ep, seed);
     cv::namedWindow(window_name, cv::WINDOW_AUTOSIZE);
-    cv::setMouseCallback(window_name, callback, this);
+    cv::setMouseCallback(window_name, mouse_callback, this);
+
+    cv::createTrackbar("spring", window_name, nullptr, 1000, spring_callback, &(*ep));
+    cv::setTrackbarPos("spring", window_name, 10);
+    cv::createTrackbar("coulomb", window_name, nullptr, 1000, coulomb_callback, &(*ep));
+    cv::setTrackbarPos("coulomb", window_name, 10);
+    cv::createTrackbar("edge", window_name, nullptr, 1000, edge_callback, &(*ep));
+    cv::setTrackbarPos("edge", window_name, 10);
+    cv::createTrackbar("field", window_name, nullptr, 1000, field_callback, &(*ep));
+    cv::setTrackbarPos("field", window_name, 10);
+    cv::createTrackbar("edge_field", window_name, nullptr, 1000, edge_callback, &(*ep));
+    cv::setTrackbarPos("edge_field", window_name, 10);
   }
 
   int SLayoutEditor::get_nearest_node_id() const {
@@ -274,7 +285,7 @@ namespace NLayoutEditor {
         p = layout->icvt(mp->x, mp->y);
       }
       if (loop % 100 == 0) {
-        layout->update(ep);
+        layout->update();
         cv::imshow(window_name, layout->img);
         int key = cv::waitKey(15);
         if (key == 27) break;
@@ -282,7 +293,7 @@ namespace NLayoutEditor {
     }
   }
 
-  void SLayoutEditor::callback(int e, int x, int y, int f, void* param) {
+  void SLayoutEditor::mouse_callback(int e, int x, int y, int f, void* param) {
     SLayoutEditor* s = static_cast<SLayoutEditor*>(param);
     auto mp = s->mp;
     auto ep = s->ep;
@@ -296,7 +307,28 @@ namespace NLayoutEditor {
     if (mp->released_left()) {
       ep->selected_node_id = -1;
     }
-    s->layout->update(ep);
+    s->layout->update();
+  }
+
+  void SLayoutEditor::spring_callback(int val, void* param) {
+    SEditorParams* s = static_cast<SEditorParams*>(param);
+    s->spring_const = val;
+  }
+  void SLayoutEditor::coulomb_callback(int val, void* param) {
+    SEditorParams* s = static_cast<SEditorParams*>(param);
+    s->coulomb_const = val;
+  }
+  void SLayoutEditor::edge_callback(int val, void* param) {
+    SEditorParams* s = static_cast<SEditorParams*>(param);
+    s->edge_const = val;
+  }
+  void SLayoutEditor::field_callback(int val, void* param) {
+    SEditorParams* s = static_cast<SEditorParams*>(param);
+    s->field_const = val;
+  }
+  void SLayoutEditor::edge_field_callback(int val, void* param) {
+    SEditorParams* s = static_cast<SEditorParams*>(param);
+    s->edge_field_const = val;
   }
 }
 

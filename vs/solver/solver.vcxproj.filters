@@ -122,6 +122,9 @@
     <ClCompile Include="..\..\src\solvers\random_restart_solver.cpp">
       <Filter>ソース ファイル\solvers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\solvers\k3_phys_solver.cpp">
+      <Filter>ソース ファイル\solvers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
