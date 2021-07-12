@@ -293,7 +293,7 @@ MapValue able_points(SProblemPtr problem, SSolutionPtr solution, const Striction
 
 std::vector<Point> able_points_hash(SProblemPtr problem, SSolutionPtr solution, const Striction& str_holes, const Striction& str_inside, HashMap& hash_map_decided, SVOI voi, const mat& vertices_distances, HashMap& hash_map_unrestricted, long long& counter) {
   counter++;
-  //LOG(INFO) << "arrived hash able";
+  LOG(INFO) << "arrived hash able";
   std::vector<Point> ret = {};
   if (counter > LARGE) return ret;
   int vertex = str_holes.vertex;
@@ -315,7 +315,7 @@ std::vector<Point> able_points_hash(SProblemPtr problem, SSolutionPtr solution, 
   auto hash_value = hash_map_decided[str_holes];
   if (hash_value.available) {
     auto cand_points = hash_value.cands;
-    //LOG(INFO) << cand_points.size();
+    LOG(INFO) << cand_points.size();
     voi = hash_value.voi;
     if (cand_points.size() == 0) {
       hash_map_unrestricted[str_inside] = MapValue(voi, ret);
@@ -332,13 +332,14 @@ std::vector<Point> able_points_hash(SProblemPtr problem, SSolutionPtr solution, 
   else {
     MapValue mpv(able_points(problem, solution, str_inside, voi, vertices_distances, counter));
     hash_map_unrestricted[str_inside] = mpv;
+    LOG(INFO) << mpv.cands.size();
     return mpv.cands;
   }
 }
-SSolutionPtr dfs_able_points(SProblemPtr problem, SSolutionPtr solution, const std::vector<Striction>& str_hole_memo, std::vector<int>& decided_points_inside, HashMap& hash_map_decided, std::vector<int> restriction_edges, const mat& vertices_distances, int V, HashMap& hash_map_unrestricted, long long& counter) {
+SSolutionPtr dfs_able_points(SProblemPtr problem, SSolutionPtr solution, const std::vector<Striction>& str_hole_memo, std::vector<int>& decided_points_inside, HashMap& hash_map_decided, std::vector<int> restriction_edges, const mat& vertices_distances, int V, int H, HashMap& hash_map_unrestricted, long long& counter) {
   counter++;
-  int H = problem->hole_polygon.size();
-  //LOG(INFO) << "dfs_able_points "<<decided_points_inside.size();
+//  int H = problem->hole_polygon.size();
+  LOG(INFO) << "dfs_able_points "<<decided_points_inside.size();
 #if 0
   SVisualEditor debug(problem);
   debug.set_pose(solution);
@@ -369,7 +370,7 @@ SSolutionPtr dfs_able_points(SProblemPtr problem, SSolutionPtr solution, const s
   restriction_edges[most_restricted_point] = -10000000;
   for (auto point : cands) {
     solution->vertices[most_restricted_point] = point;
-    auto sol = dfs_able_points(problem, solution, str_hole_memo, decided_points_inside, hash_map_decided, restriction_edges, vertices_distances, V, hash_map_unrestricted, counter);
+    auto sol = dfs_able_points(problem, solution, str_hole_memo, decided_points_inside, hash_map_decided, restriction_edges, vertices_distances, V,H, hash_map_unrestricted, counter);
     if (sol) return sol;
     solution->vertices[most_restricted_point] = problem->vertices[most_restricted_point];
   }
@@ -382,6 +383,7 @@ SSolutionPtr dfs_able_points(SProblemPtr problem, SSolutionPtr solution, const s
 
 SSolutionPtr Fit_Unstricted_Points(SProblemPtr problem, SSolutionPtr solution, const std::vector<int>& decided_points, const mat& vertices_distances, HashMap& hash_map_decided, long long& counter) {
   int V = problem->vertices.size();
+  int H = decided_points.size();
   std::vector<bool> used_vertices(V, false);
   for (auto e : decided_points) used_vertices[e] = true;
   std::vector<int> restriction_edges(V, 0);
@@ -395,8 +397,8 @@ SSolutionPtr Fit_Unstricted_Points(SProblemPtr problem, SSolutionPtr solution, c
     str_hole_memo[i].Set(decided_points, solution, vertices_distances);
   }
   HashMap hash_map_unstricted = {};
-  auto ptr_ans = dfs_able_points(problem, solution, str_hole_memo, decided_points_inside, hash_map_decided, restriction_edges, vertices_distances, V, hash_map_unstricted, counter);
-  //LOG(INFO) << "hash_map_unstricted size is " << hash_map_unstricted.size();
+  auto ptr_ans = dfs_able_points(problem, solution, str_hole_memo, decided_points_inside, hash_map_decided, restriction_edges, vertices_distances, V, H,  hash_map_unstricted, counter);
+  LOG(INFO) << "hash_map_unstricted size is " << hash_map_unstricted.size();
   return ptr_ans;
 
 }
@@ -592,6 +594,41 @@ public:
 REGISTER_SOLVER("FullResearch", FullResearch);
 #endif
 
+class FitUnstricted : public SolverBase {
+public:
+  FitUnstricted() { }
+  SolverOutputs solve(const SolverArguments& args) override {
+
+    auto solution = args.problem->create_solution();
+    if (args.optional_initial_solution) solution = args.optional_initial_solution;
+    std::vector<int> decided_points;
+    for (int i = 0; i < args.problem->vertices.size(); i++) if (args.problem->vertices[i] != solution->vertices[i]) decided_points.push_back(i);
+
+  //  bool quit = false;
+
+    if(args.visualize){
+      SVisualEditor manual_solver(args.problem, "FitUnstricted", "Select Points");
+      manual_solver.set_pose(solution);
+      manual_solver.set_marked_indices(decided_points);
+      while (true) {
+        auto key = manual_solver.show(15);
+        if (key == 27) break;
+      }
+      solution = manual_solver.get_pose();
+      decided_points = manual_solver.get_marked_indices();
+    }
+
+      auto sol = FitUnstrictedPoints(args.problem, solution, decided_points);
+    SolverOutputs ret;
+    if (sol) ret.solution = sol;
+    else ret.solution = solution;
+
+    return ret;
+  }
+
+};
+
+REGISTER_SOLVER("FitUnstricted",FitUnstricted);
 
 
 namespace SimpleMatchFullResearch {
@@ -711,14 +748,15 @@ class Solver : public SolverBase {
       queued_[i] = -1;
     }
 
-    //Cleanup(0);
-    auto clean_candidates = Cleanup();
-    RevertClean(clean_candidates);
+    auto cand_clean_points = Cleanup();
 
     auto tmp_pose = pose;
+    std::vector<int> decided_points;
+    for (int i = 0; i < N_; i++) if (assigned_[i] >= 0) decided_points.push_back(i);
     SSolutionPtr solution_simple = std::make_shared<SSolution>(tmp_pose);
-    auto solved = full_research(args.problem, solution_simple);
+    auto solved = FitUnstrictedPoints(args.problem, solution_simple, decided_points);
     if (solved) return  SolverOutputs{ solution_simple };
+    return SolverOutputs{ std::make_shared<SSolution>(pose) };
 
     for (int j = 0; j < N_; j++) if (assigned_[j] >= 0) {
       tmp_pose[j] = args.problem->vertices[j];
@@ -730,7 +768,6 @@ class Solver : public SolverBase {
 
     }
     
-    return SolverOutputs{ std::make_shared<SSolution>(pose) };
   }
 
 
