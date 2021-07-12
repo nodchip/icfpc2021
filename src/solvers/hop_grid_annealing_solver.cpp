@@ -61,6 +61,10 @@ double SquaredEdgeLength(const T& vertices, const Edge& edge) {
 class Solver : public SolverBase {
  public:
   SolverOutputs solve(const SolverArguments& args) override {
+    if (args.random_seed) {
+      rng_.seed(*args.random_seed);
+      LOG(INFO) << fmt::format("HopGridAnnealingSolver random sampling test={}", rng_());
+    }
     hole_ = args.problem->hole_polygon;
     vertices_ = args.problem->vertices;
     edges_ = args.problem->edges;
@@ -75,7 +79,7 @@ class Solver : public SolverBase {
     const int N = vertices_.size();
     auto pose = vertices_;
     double cost = std::numeric_limits<double>::infinity();
-    double best_feasible_cost = std::numeric_limits<double>::infinity();
+    integer best_feasible_dislikes = std::numeric_limits<integer>::infinity();
     std::vector<Point> best_feasible_pose;
 
     SPinnedIndex pinned_index(rng_, N, editor);
@@ -94,18 +98,19 @@ class Solver : public SolverBase {
       ymax = std::max(ymax, get_y(p));
     }
 
-    // lesser version of tonagi's idea
-    for (auto& p : pose) { p = hole_[0]; }
-
+    bool once_fit = false;
     auto evaluate_and_descide_rollback = [&]() -> bool {
-      auto [feasible, updated_cost] = Evaluate(pose);
+      auto [_, updated_cost] = Evaluate(pose);
+
+      auto judge_res = judge(*args.problem, pose);
+      if (judge_res.fit_in_hole()) {
+        once_fit = true;
+      }
 
       // tonagi's idea.
-      if (false || !best_feasible_pose.empty()) {
-        auto res = judge(*args.problem, pose);
-        if (!res.fit_in_hole()) {
-          feasible = false;
-          updated_cost = DBL_MAX;
+      if (once_fit) {
+        if (!judge_res.fit_in_hole()) {
+          updated_cost = DBL_MAX; // forbid transition.
         }
       }
 
@@ -123,11 +128,13 @@ class Solver : public SolverBase {
       }
 #endif
 
-      if (feasible && updated_cost < best_feasible_cost) {
-        best_feasible_cost = updated_cost;
+      // use the exact judge to keep the best solution.
+      if (judge_res.is_valid() && judge_res.dislikes < best_feasible_dislikes) {
+        best_feasible_dislikes = judge_res.dislikes;
         best_feasible_pose = pose;
-        if (editor) editor->set_persistent_custom_stat(fmt::format("best_cost = {}", best_feasible_cost));
+        if (editor) editor->set_persistent_custom_stat(fmt::format("best_feasible_dislikes = {}", best_feasible_dislikes));
       }
+
       const double T = std::pow(T0, 1.0 - progress) * std::pow(T1, progress);
       if (std::uniform_real_distribution(0.0, 1.0)(rng_) < std::exp(-(updated_cost - cost) / T)) {
         cost = updated_cost;
@@ -213,12 +220,21 @@ class Solver : public SolverBase {
       }
     };
 
+    const double vote_pow = 5.0;
     auto edges_cache = edges_from_vertex(*args.problem);
+    std::vector<std::vector<int> > good_pos(ymax - ymin + 1, std::vector<int>(xmax - xmin + 1));
+    std::vector<double> pow_table;
+    for (int i = 0; i < 1024; ++i) {
+      pow_table.push_back(std::pow(static_cast<double>(i), vote_pow));
+    }
+
     auto hop_grid = [&] { // jump to a tolerated (by at least one edge) point.
-      const int pivot = pinned_index.sample_movable_index();
+      const int pivot = std::uniform_int_distribution(0, N - 1)(rng_);
       const auto pivot_bak = pose[pivot];
       const auto& edges = edges_cache[pivot];
-      std::map<Point, double> good_pos; // position -> number of good grid vote.
+      for (auto& row : good_pos) {
+        fill(row.begin(), row.end(), 0);
+      }
       for (auto eid : edges) {
         auto [u, v] = args.problem->edges[eid];
         const int counter_vid = u == pivot ? v : u;
@@ -227,30 +243,28 @@ class Solver : public SolverBase {
           for (int x = xmin; x <= xmax; ++x) {
             const auto moved_d2 = distance2({ x, y }, pose[counter_vid]);
             if (tolerate(org_d2, moved_d2, epsilon_)) {
-              Point jump {x, y};
-              auto it = good_pos.find(jump);
-              if (it == good_pos.end()) {
-                good_pos.insert(it, {jump, 1.0});
-              } else {
-                it->second += 1.0;
-              }
+              ++good_pos[y - ymin][x - xmin];
             }
           }
         }
       }
       // emphasize large votes.
       double total_votes = 0;
-      for (auto& [pos, vote] : good_pos) {
-        vote = std::pow(vote, 5);
-        total_votes += vote;
+      for (int y = ymin; y <= ymax; ++y) {
+        for (int x = xmin; x <= xmax; ++x) {
+          total_votes += pow_table[good_pos[y - ymin][x - xmin]];
+        }
       }
       const double select_accum_vote = std::uniform_real_distribution<double>(0.0, total_votes)(rng_);
       double accum_vote = 0;
-      for (auto& [pos, vote] : good_pos) {
-        accum_vote += vote;
-        if (select_accum_vote <= accum_vote) {
-          pose[pivot] = pos;
-          break;
+      bool found = false;
+      for (int y = ymin; !found && y <= ymax; ++y) {
+        for (int x = xmin; !found && x <= xmax; ++x) {
+          accum_vote += pow_table[good_pos[y - ymin][x - xmin]];
+          if (select_accum_vote <= accum_vote) {
+            pose[pivot] = { x, y };
+            found = true;
+          }
         }
       }
       if (evaluate_and_descide_rollback()) {

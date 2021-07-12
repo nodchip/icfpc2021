@@ -20,6 +20,8 @@ struct SolverArguments {
   /// パラメーターファイルのパス。OptunaAnnealingSolverのみで使用する。
   /// </summary>
   std::string parameters_file_path;
+
+  std::optional<unsigned int> random_seed;
 };
 
 struct SolverOutputs {

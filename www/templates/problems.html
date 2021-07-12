@@ -1,5 +1,8 @@
 {% extends "common.html" %}
 {% block additional_header %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.3/js/jquery.tablesorter.min.js" integrity="sha512-qzgd5cYSZcosqpzpn7zF2ZId8f/8CHmFKZ8j7mU4OUXTNRd5g+ZHBPsgKEwoqxCtdQvExE5LprwwPAgoicguNg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.3/js/jquery.tablesorter.widgets.min.js" integrity="sha512-dj/9K5GRIEZu+Igm9tC16XPOTz0RdPk9FGxfZxShWf65JJNU2TjbElGjuOo3EhwAJRPhJxwEJ5b+/Ouo+VqZdQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
 <script>
 function submit(id, subdir) {
     const button_id = "button_" + subdir + "_" + id;
@@ -21,11 +24,17 @@ function submit(id, subdir) {
     };
     xhr.send('{"id": ' + id + ', "subdir": "' + subdir + '"}');
 }
+
+$(document).ready(function() {
+     $("#problems").tablesorter();
+});
+
 </script>
 <style>
   .line { white-space: nowrap; }
   .info { display: inline-block; }
   .visual { max-width: 100px; max-height: 100px; }
+  #problems .tablesorter-header-inner::after { content: '▼'; }
 </style>
 {% endblock %}
 {% block content %}
@@ -41,7 +50,7 @@ function submit(id, subdir) {
     {% endfor %}
 </table>
 
-<table class="table">
+<table class="table tablesorter" id="problems">
     <thead>
         <tr>
             <th>ID</th>
@@ -50,7 +59,7 @@ function submit(id, subdir) {
             <th>dislike<br>score</th>
             <th>Bonus</th>
             <th>+Score?</th>
-            <th>Solutions</th>
+            <th colspan="1000">Solutions</th>
         </tr>
     </thead>
     <tbody>

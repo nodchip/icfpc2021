@@ -9,9 +9,10 @@
 
 namespace SimpleMatchingSolver {
 
-constexpr int kNumTrialsPerComponent = 100000;
+constexpr int kNumTrialsPerComponent = 1000000;
 constexpr int kMinComponentSize = 10;
 constexpr int kMinDegree = 2;
+constexpr bool kPruneLeavesOnly = true;
 
 namespace bg = boost::geometry;
 using BoostPoint = bg::model::d2::point_xy<double>;
@@ -108,46 +109,79 @@ class Solver : public SolverBase {
     last_updated_ = 0;
     component_sizes_.assign(M_, M_);
     best_sizes_.assign(M_, 0);
-    auto pose = vertices_;
+    bool found = false;
     for (int i = 0; i < N_; ++i) {
       queued_[i] = N_;
       vertex_candidates_.push_back(i);
       assigned_counts_.assign(1, 0);
       if (Search()) {
-        Cleanup();
-        for (int j = 0; j < N_; ++j) {
-          if (assigned_[j] < 0) continue;
-          pose[j] = hole_[assigned_[j]];
-        }
+        found = true;
         break;
       }
       vertex_candidates_.pop_back();
       queued_[i] = -1;
     }
-    return SolverOutputs{std::make_shared<SSolution>(pose)};
+
+    SolverOutputs outputs;
+    if (found) {
+      auto pose = vertices_;
+      const auto assigned_vertices = kPruneLeavesOnly ? CleanupLeaves() : Cleanup();
+      for (const int vertex : assigned_vertices) {
+        pose[vertex] = hole_[assigned_[vertex]];
+      }
+      outputs.solution = args.problem->create_solution(pose);
+    } else {
+      outputs.solution = args.problem->create_solution();
+    }
+    return outputs;
   }
 
-  void Cleanup() {
+  std::set<int> Cleanup() const {
+    std::set<int> assigned_vertices;
+    for (int i = 0; i < N_; ++i) {
+      if (assigned_[i] < 0) continue;
+      assigned_vertices.insert(i);
+    }
     while (true) {
       bool converged = true;
       for (int i = 0; i < N_; ++i) {
-        if (assigned_[i] < 0) continue;
+        if (!assigned_vertices.count(i)) continue;
         int degree = 0;
         for (const auto& [next, min, max] : adjacent_[i]) {
-          degree += assigned_[next] >= 0;
+          degree += assigned_vertices.count(next);
         }
         if (degree < kMinDegree) {
           converged = false;
-          assigned_[i] = -1;
+          assigned_vertices.erase(i);
         }
       }
-      if (converged) return;
+      if (converged) break;
     }
+    return assigned_vertices;
+  }
+
+  std::set<int> CleanupLeaves() const {
+    std::set<int> assigned_vertices;
+    for (int i = 0; i < N_; ++i) {
+      if (assigned_[i] < 0) continue;
+      assigned_vertices.insert(i);
+    }
+    for (int i = 0; i < N_; ++i) {
+      if (assigned_[i] < 0) continue;
+      int degree = 0;
+      for (const auto& [next, min, max] : adjacent_[i]) {
+        degree += assigned_[next] >= 0;
+      }
+      if (degree < kMinDegree) {
+        assigned_vertices.erase(i);
+      }
+    }
+    return assigned_vertices;
   }
 
   bool Search() {
     if (hole_candidates_.empty()) return true;
-    if (++counter_ % 1000 == 0 && editor_) {
+    if (++counter_ % 10000 == 0 && editor_) {
       auto pose = vertices_;
       std::vector<int> marked;
       for (int j = 0; j < N_; ++j) {
