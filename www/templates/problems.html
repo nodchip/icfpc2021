@@ -49,6 +49,7 @@ function submit(id, subdir) {
             <th>#hole/#vert/ε</th>
             <th>dislike<br>score</th>
             <th>Bonus</th>
+            <th>+Score?</th>
             <th>Solutions</th>
         </tr>
     </thead>
@@ -76,6 +77,7 @@ function submit(id, subdir) {
                 {% endif %}
             {% endfor %}
         </td>
+        <td>+{{ problem.possible_additional_score }}</td>
         {% for solution in problem.solutions %}
             <td class="line solution">
                 <a href="{{solution.img_path}}"><img class="visual" src="{{solution.img_path}}"></a>

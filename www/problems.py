@@ -56,6 +56,11 @@ def make_problem_context(id, problem, solutions):
         visualize.visualize(problem_file_path, None, img_file_path)
 
     local_dislikes = solutions[0]['meta']['judge']['dislikes'] if solutions else None
+    possible_additional_score = problem['max_score']
+    if solutions:
+        dislikes = solutions[0]['meta']['judge']['dislikes']
+        possible_additional_score -= get_score(problem, dislikes)
+
     return {
         'id': id,
         'image': img_url_path,
@@ -68,6 +73,7 @@ def make_problem_context(id, problem, solutions):
         'solutions': [solution_context(problem, x) for x in solutions],
         'state': get_state(problem, local_dislikes),
         'bonuses': problem['bonuses'],
+        'possible_additional_score': possible_additional_score,
     }
 
 
