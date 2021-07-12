@@ -415,6 +415,14 @@ struct SCanvas {
       }
     }
 
+    // Draw bonus ids.
+    for (auto& bonus : problem->bonuses) {
+      auto [x, y] = bonus.position;
+      cv::putText(base_img, std::to_string(bonus.problem_id), cvt(x, y),
+                  cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0), 1,
+                  cv::LINE_AA);
+    }
+
     const int n = problem->hole_polygon.size();
     for (int i = 0; i < n; ++i) {
       auto [x1, y1] = cvt(problem->hole_polygon[i]);
