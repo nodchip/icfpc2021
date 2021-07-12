@@ -226,6 +226,21 @@ struct SCanvas {
     }
   }
 
+  void rotate_pose(double rotate_deg) {
+    auto rect_poly = calc_bb(problem->hole_polygon);
+    const int cx = rect_poly.x + rect_poly.width / 2;
+    const int cy = rect_poly.y + rect_poly.height / 2;
+
+    const double sin = std::sin(rotate_deg * 3.1415 / 180.0);
+    const double cos = std::cos(rotate_deg * 3.1415 / 180.0);
+    for (auto& p : solution->vertices) {
+      const double dx = p.first - cx;
+      const double dy = p.second - cy;
+      p.first  = std::round(dx * cos - dy * sin + cx);
+      p.second = std::round(dx * sin + dy * cos + cy);
+    }
+  }
+
   void zoom(int dmag) {
     mag += dmag;
     mag = std::max(std::min(mag, kMaxMag), kMinMag);
@@ -624,6 +639,14 @@ SShowResult SVisualEditor::show(int delay_ms) {
       break;
     case 'r':
       canvas->rotate_pose();
+      canvas->update(-1);
+      break;
+    case 'y':
+      canvas->rotate_pose(-5.0);
+      canvas->update(-1);
+      break;
+    case 'u':
+      canvas->rotate_pose(5.0);
       canvas->update(-1);
       break;
     case '/':
