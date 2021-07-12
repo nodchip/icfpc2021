@@ -37,9 +37,11 @@ int main(int argc, char* argv[]) {
     bool post_edit = false;
     double timeout_s = -1.0;
     std::string parameters_json;
+    std::optional<int64_t> num_iters;
     std::optional<int> offer_globalist_bonus;
     std::optional<int> offer_wallhack_bonus;
     std::optional<int> offer_superflex_bonus;
+    std::function<void(const int64_t& p)> set_num_iters_func = [&](int64_t p) { num_iters = p; };
     std::function<void(const int& p)> set_globalist_func = [&](int p) { offer_globalist_bonus = p; };
     std::function<void(const int& p)> set_wallhack_func = [&](int p) { offer_wallhack_bonus = p; };
     std::function<void(const int& p)> set_superflex_func = [&](int p) { offer_superflex_bonus = p; };
@@ -49,6 +51,7 @@ int main(int argc, char* argv[]) {
     sub_solve->add_option("initial_solution_json", initial_solution_json, "input solution JSON file path (optional)");
     sub_solve->add_flag("-m,--output-meta,!--no-output-meta", output_meta, "output meta info to solution JSON");
     sub_solve->add_flag("-j,--output-judge,!--no-output-judge", output_judge, "output judge info to solution JSON");
+    sub_solve->add_option_function("--num-iters", set_num_iters_func, "number of iterations (up to solver)");
     sub_solve->add_option_function("--offer-globalist", set_globalist_func, "problem id that offers GLOBALIST bonus to this problem. AND USE IT!");
     sub_solve->add_option_function("--offer-wallhack", set_wallhack_func, "problem id that offers WALLHACK bonus to this problem. AND USE IT!");
     sub_solve->add_option_function("--offer-superflex", set_superflex_func, "problem id that offers SUPERFLEX bonus to this problem. AND USE IT!");
@@ -117,6 +120,7 @@ int main(int argc, char* argv[]) {
       arg.optional_initial_solution = initial_solution;
       arg.visualize = visualize;
       arg.parameters_file_path = parameters_json;
+      arg.num_iters = num_iters;
       if (timeout_s > 0) {
         arg.timeout_s = timeout_s;
       }

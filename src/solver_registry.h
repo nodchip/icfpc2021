@@ -21,6 +21,7 @@ struct SolverArguments {
   /// </summary>
   std::string parameters_file_path;
 
+  std::optional<int64_t> num_iters;
   std::optional<unsigned int> random_seed;
 };
 
