@@ -28,7 +28,7 @@ def objective(trial):
         'single_small_change_max_delta': trial.suggest_int('single_small_change_max_delta', 1, 3),
         'shift_max_delta': trial.suggest_int('shift_max_delta', 1, 3),
         'slight_rotate_max_deg': trial.suggest_float('slight_rotate_max_deg', 1.0, 5.0),
-        'vote_pow': trial.suggest_float('vote_pow', 1.0, 5.0),
+        'vote_pow': trial.suggest_float('vote_pow', 1.0, 9.0),
         'slide_protrusion_max_delta': trial.suggest_float('slide_protrusion_max_delta', 1, 3),
         'single_small_change_probability': trial.suggest_float('single_small_change_probability', 0.0, 1.0),
         'slight_rotate_probability': trial.suggest_float('slight_rotate_probability', 0.0, 1.0),
