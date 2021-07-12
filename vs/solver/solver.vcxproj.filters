@@ -39,6 +39,9 @@
     <ClInclude Include="..\..\src\solver_util.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\layout_editor.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\main.cpp">
@@ -111,6 +114,9 @@
       <Filter>ソース ファイル\solvers</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\solvers\matching_and_annealing_solver.cpp">
+      <Filter>ソース ファイル\solvers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\layout_editor.cpp">
       <Filter>ソース ファイル\solvers</Filter>
     </ClCompile>
   </ItemGroup>
