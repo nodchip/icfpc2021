@@ -319,7 +319,6 @@ bool full_research(SProblemPtr problem, SSolutionPtr& solution, Timer& timer) {
 	
 	constexpr double BIGDOUBLE = 1e18;
 	vec_holenum v_h(H);
-	//v_h.shuffle(rng);
 
 	mat vertices_distances(V, vec(V, 0));
 	std::vector<std::vector<double>> upperlimit_distances(V, std::vector<double>(V, BIGDOUBLE));
@@ -341,8 +340,9 @@ bool full_research(SProblemPtr problem, SSolutionPtr& solution, Timer& timer) {
 	std::vector<std::vector<int>> ret;
 	std::vector<int> used_vertices(V, 0);
 	std::vector<int> v = {};
-	//std::vector<Point> points(V, std::make_pair(0, 0));
-	SSolutionPtr solution_initial(new SSolution(problem->vertices));
+	SSolutionPtr solution_initial(new SSolution(solution->vertices));
+
+  /*
 
   SVisualEditor give_points_first(problem,"full_research", "initial_state");
   give_points_first.set_pose(solution_initial);
@@ -354,6 +354,9 @@ bool full_research(SProblemPtr problem, SSolutionPtr& solution, Timer& timer) {
   }
   solution_initial = give_points_first.get_pose();
   std::vector<int> decided_points_initial = give_points_first.get_marked_indices();
+  */
+  std::vector<int> decided_points_initial = {};
+  for (int i = 0; i < V; i++) if (solution->vertices[i] != problem->vertices[i]) decided_points_initial.push_back(i);
 
   for (int i = 0; i < decided_points_initial.size(); i++) {
     auto e = decided_points_initial[i];
@@ -387,7 +390,8 @@ public:
 		SolverOutputs ret;
 
 		Timer timer;
-		ret.solution = args.problem->create_solution();
+  	//ret.solution = args.problem->create_solution();
+    ret.solution = args.optional_initial_solution;
 		full_research(args.problem, ret.solution, timer);
 
 		// dummy.
