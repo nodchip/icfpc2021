@@ -30,26 +30,15 @@ function submit(id, subdir) {
 {% endblock %}
 {% block content %}
 <table class="table">
-    <tr>
-        <th>改善できる</th>
-        <td>{{ problems | rejectattr('state') | map(attribute='id') | join(', ')}}</td>
-    </tr>
-    <tr class="table-secondary">
-        <th>未提出</th>
-        <td>{{ problems | selectattr('state', 'eq', 'secondary') | map(attribute='id') | join(', ') }}</td>
-    </tr>
-    <tr class="table-danger">
-        <th>最良解が未提出</th>
-        <td>{{ problems | selectattr('state', 'eq', 'danger') | map(attribute='id') | join(', ') }}</td>
-    </tr>
-    <tr class="table-warning">
-        <th>未知の提出が最良</th>
-        <td>{{ problems | selectattr('state', 'eq', 'warning') | map(attribute='id') | join(', ') }}</td>
-    </tr>
-    <tr class="table-success">
-        <th>改善不可</th>
-        <td>{{ problems | selectattr('state', 'eq', 'success') | map(attribute='id') | join(', ') }}</td>
-    </tr>
+    {% for state, desc in [[None, '改善できる'], ['secondary', '未提出'], ['danger', '最良解が未提出'], ['warning', '未知の提出が最良'], ['success', '改善不可']] %}
+        {% set ps = problems | selectattr('state', 'eq', state) | list %}
+        {% if ps %}
+        <tr {% if state %}class="table-{{state}}"{% endif %}>
+            <th>{{ desc }}</th>
+            <td>{{ ps | map(attribute='id') | join(', ') }}</td>
+        </tr>
+        {% endif %}
+    {% endfor %}
 </table>
 
 <table class="table">
