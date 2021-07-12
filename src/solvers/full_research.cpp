@@ -154,7 +154,7 @@ public:
 
   std::vector<Point> const all_points() {
     std::vector<Point> ret;
-    for (auto x = x_min; x < x_max; x++) for (auto y = y_min; y, y_max; y++) ret.push_back(std::make_pair(x, y));
+    for (auto x = x_min; x < x_max; x++) for (auto y = y_min; y< y_max; y++) ret.push_back(std::make_pair(x, y));
     return ret;
   }
 
