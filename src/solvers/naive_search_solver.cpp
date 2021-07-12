@@ -2,6 +2,8 @@
 #include <cmath>
 #include <vector>
 #include <stack>
+#include <unordered_map>
+#include <unordered_set>
 #include <iostream>
 #include <fmt/format.h>
 #include <boost/geometry.hpp>
@@ -98,6 +100,10 @@ public:
     constexpr int report_every_iter = 100000;
     constexpr int editor_sleep = 1;
     constexpr bool exhaustive_search = true;
+    constexpr bool use_cache_for_good_edge = false;
+    constexpr bool use_cache_for_movable_edges_with_tolerance = true;
+    constexpr bool use_cache_for_infeasible_placement_set = true;
+    constexpr size_t infeasible_placement_cache_size_B = 4 * 1024ull * 1024ull * 1024ull;
     const std::optional<int> subsample_roots = std::nullopt;
     SVisualEditorPtr editor;
     if (args.visualize) {
@@ -110,18 +116,65 @@ public:
     const std::vector<std::vector<int>> edges_from_vertex_cache = edges_from_vertex(*args.problem);
     const int V = args.problem->vertices.size();
 
+    // good edge
     auto bg_hole_polygon = ToBoostPolygon(args.problem->hole_polygon);
-    auto is_good_edge = [&](const Point& p, const Point& q) {
+    auto _is_good_edge = [&](const Point& p, const Point& q) {
       BoostLinestring linestring{ToBoostPoint(p), ToBoostPoint(q)};
       std::vector<BoostLinestring> differences;
       bg::difference(linestring, bg_hole_polygon, differences);
       return differences.empty();
     };
+    struct Line_hash {
+      std::size_t operator()(const Line& line) const {
+        return std::hash<int>()(line[0].first)
+             ^ std::hash<int>()(line[0].second)
+             ^ std::hash<int>()(line[1].first)
+             ^ std::hash<int>()(line[1].second)
+          ;
+      }
+    };
+    std::unordered_set<Line, Line_hash> is_bad_edge_cache; // assume |bad edges| < |good edges|
+    if (use_cache_for_good_edge) {
+      LOG(INFO) << "bad_edge_cache ON: building";
+      Timer t("build is_bad_edge_cache");
+      const size_t N = interior_points.size();
+      size_t c = 0;
+      for (size_t i = 0; i < N; ++i) {
+        const auto& p = interior_points[i];
+        for (size_t j = i; j < N; ++j) {
+          const auto& q = interior_points[j];
+          if (!_is_good_edge(p, q)) {
+            is_bad_edge_cache.insert({p, q});
+            is_bad_edge_cache.insert({q, p});
+          }
+          ++c;
+          if (c % 100000 == 0) LOG(INFO) << fmt::format("{}/{} ({:.2f}%) bad_edges={}", c, N * (N + 1) / 2, 100.0 * c / double(N * (N + 1) / 2), is_bad_edge_cache.size());
+        }
+      }
+      LOG(INFO) << fmt::format("is_bad_edge_cache #{}", is_bad_edge_cache.size());
+    } else {
+      LOG(INFO) << "bad_edge_cache OFF";
+    }
+    auto is_good_edge = [&](const Point& p, const Point& q) -> bool {
+      if (!use_cache_for_good_edge)
+        return _is_good_edge(p, q);
+
+      auto it = is_bad_edge_cache.find({p, q});
+      return it == is_bad_edge_cache.end();
+    };
 
     // (starting position, radius**2) -> (available points)
     using SKey = std::pair<Point, int>;
+    struct SKey_hash {
+      std::size_t operator()(const SKey& key) const {
+        return std::hash<int>()(key.first.first)
+             ^ std::hash<int>()(key.first.second)
+             ^ std::hash<int>()(key.second)
+          ;
+      }
+    };
     int64_t movable_cache_count = 0;
-    std::map<SKey, std::vector<Point>> movable_cache;
+    std::unordered_map<SKey, std::vector<Point>, SKey_hash> movable_cache;
     // exact lookup.
     auto get_movable_points = [&](Point p, int d2) -> std::vector<Point> {
       const SKey query {p, d2};
@@ -140,7 +193,9 @@ public:
       return points;
     };
     // consider tolerance.
-    auto get_movable_points_with_tolerance = [&](Point p, int original_distance2) -> std::vector<Point> {
+    LOG(INFO) << (use_cache_for_movable_edges_with_tolerance ? "movable_points_with_tolerance_cache ON" : "movable_points_with_tolerance_cache OFF");
+    std::unordered_map<SKey, std::vector<Point>, SKey_hash> movable_points_with_tolerance_cache;
+    auto _get_movable_points_with_tolerance = [&](Point p, int original_distance2) -> std::vector<Point> {
       // |d_new/d_old - 1| <= eps / 1000000
       constexpr int k = 1'000'000;
       const int e = args.problem->epsilon;
@@ -153,6 +208,19 @@ public:
           std::copy(points.begin(), points.end(), std::back_inserter(all_points));
         }
       }
+      return all_points;
+    };
+    auto get_movable_points_with_tolerance = [&](Point p, int original_distance2) -> std::vector<Point> {
+      if (!use_cache_for_movable_edges_with_tolerance)
+        return _get_movable_points_with_tolerance(p, original_distance2);
+
+      const SKey query {p, original_distance2};
+      auto it = movable_points_with_tolerance_cache.find(query);
+      if (it != movable_points_with_tolerance_cache.end()) {
+        return it->second;
+      }
+      auto all_points = _get_movable_points_with_tolerance(p, original_distance2);
+      movable_points_with_tolerance_cache.insert(it, {query, all_points});
       return all_points;
     };
 
@@ -182,8 +250,45 @@ public:
       return fixed_indices;
     };
 
-    std::stack<StatePtr> stack;
+    // infeasible placement cache
+    int max_key = V;
+    for (auto& p : interior_points) {
+      chmax<int>(max_key, p.first);
+      chmax<int>(max_key, p.second);
+    }
+    SZobristHash zobrist(max_key);
+    const size_t infeasible_placement_cache_size = infeasible_placement_cache_size_B * 8;
+    std::vector<bool> infeasible_placement_cache;
+    if (use_cache_for_infeasible_placement_set) {
+      LOG(INFO) << fmt::format("use_cache_for_infeasible_placement_set ON {:.2f} MB (smaller cache leads to increasing FP)", infeasible_placement_cache_size_B / 1024.0 / 1024.0);
+      infeasible_placement_cache.assign(infeasible_placement_cache_size, false);
+    } else {
+      LOG(INFO) << "use_cache_for_infeasible_placement_set OFF";
+    }
+    auto State_to_zobrist = [&](StatePtr s) {
+      SZobristHash::key_t hash = 0;
+      for (int i = 0; i < V; ++i) {
+        if (s->indices_flag[i] == USED) {
+          hash ^= zobrist[i];
+          hash ^= zobrist[s->vertices[i].first];
+          hash ^= zobrist[s->vertices[i].second];
+        }
+      }
+      return hash;
+    };
+    size_t infeasible_cache_hit_count = 0;
+    size_t infeasible_cache_query_count = 0;
+    auto is_infeasible_placement = [&](StatePtr s) {
+      const bool infeasible = infeasible_placement_cache[State_to_zobrist(s) % infeasible_placement_cache_size];
+      ++infeasible_cache_query_count;
+      if (infeasible) ++infeasible_cache_hit_count;
+      return infeasible;
+    };
+    auto set_infeasible_placement = [&](StatePtr s) {
+      infeasible_placement_cache[State_to_zobrist(s) % infeasible_placement_cache_size] = true;
+    };
 
+    std::stack<StatePtr> stack;
     // start from any valid points.
     {
       const int start_index = 0;
@@ -255,12 +360,14 @@ public:
       if (report) {
         lazy_elapsed_ms = timer.elapsed_ms();
         const double root_per_s = root_counter / lazy_elapsed_ms * 1e3;
-        const auto stat = fmt::format("[{}][best DL={}] root {}/{}({:.2f}%) {:.2f} root/s, ETA {:.2f} s, visited {}, max depth {}, {:.2f} ms, {:.2f} node/s, cache {:.2f} MB",
+        const auto stat = fmt::format("[{}][{}][best DL={}] root {}/{}({:.2f}%) {:.2f} root/s, ETA {:.2f} s, visited {}, max depth {}, {:.2f} ms, {:.2f} node/s, cache {:.2f} MB, infi {}/{}({:.2f}%)",
+          args.problem->problem_id ? *args.problem->problem_id : -1, 
           found ? "O" : "X", found ? best_dislikes : -1,
           root_counter, interior_points.size(), 100.0 * root_counter / interior_points.size(), root_per_s,
           double(n_roots) / root_per_s,
           counter, max_depth, lazy_elapsed_ms, counter / lazy_elapsed_ms * 1e3,
-          movable_cache_count * sizeof(Point) / 1024.0 / 1024.0
+          movable_cache_count * sizeof(Point) / 1024.0 / 1024.0,
+          infeasible_cache_hit_count, infeasible_cache_query_count, 100.0 * infeasible_cache_hit_count / infeasible_cache_query_count
           );
         LOG(INFO) << stat;
         if (editor) {
@@ -305,6 +412,7 @@ public:
       }
       std::sort(remaining_edges.begin(), remaining_edges.end());
 
+      bool pushed = false;
       for (const SEdgeItem& edge : remaining_edges) {
         const int eid = edge.eid;
         auto [u, v] = args.problem->edges[eid];
@@ -335,8 +443,19 @@ public:
             new_remaining_index_flag[counter_vid] = USED;
             auto new_vertices = s->vertices;
             new_vertices[counter_vid] = p;
-            stack.push(std::make_shared<State>(s->depth + 1, counter_vid, p, new_remaining_index_flag, new_vertices));
+            auto new_s = std::make_shared<State>(s->depth + 1, counter_vid, p, new_remaining_index_flag, new_vertices);
+            if (!(use_cache_for_infeasible_placement_set && is_infeasible_placement(new_s))) {
+              stack.push(new_s);
+              pushed = true;
+            }
           }
+        }
+      }
+
+      if (!pushed) {
+        // leaf node (failure)
+        if (use_cache_for_infeasible_placement_set) {
+          set_infeasible_placement(s);
         }
       }
     }

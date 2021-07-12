@@ -107,6 +107,7 @@ XCOPY /D $(ProjectDir)..\..\libs\opencv\build\x64\vc15\bin\opencv_world453.* $(O
   <ItemGroup>
     <ClInclude Include="..\..\src\contest_types.h" />
     <ClInclude Include="..\..\src\judge.h" />
+    <ClInclude Include="..\..\src\layout_editor.h" />
     <ClInclude Include="..\..\src\solver_registry.h" />
     <ClInclude Include="..\..\src\solver_util.h" />
     <ClInclude Include="..\..\src\timer.h" />
@@ -116,6 +117,7 @@ XCOPY /D $(ProjectDir)..\..\libs\opencv\build\x64\vc15\bin\opencv_world453.* $(O
   <ItemGroup>
     <ClCompile Include="..\..\src\contest_types.cpp" />
     <ClCompile Include="..\..\src\judge.cpp" />
+    <ClCompile Include="..\..\src\layout_editor.cpp" />
     <ClCompile Include="..\..\src\main.cpp" />
     <ClCompile Include="..\..\src\solvers\empty_solver.cpp" />
     <ClCompile Include="..\..\src\solvers\fit_hole_solver.cpp" />

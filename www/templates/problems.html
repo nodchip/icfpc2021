@@ -30,6 +30,18 @@ function submit(id, subdir) {
 {% endblock %}
 {% block content %}
 <table class="table">
+    {% for state, desc in [[None, '改善できる'], ['secondary', '未提出'], ['danger', '最良解が未提出'], ['warning', '未知の提出が最良'], ['success', '改善不可']] %}
+        {% set ps = problems | selectattr('state', 'eq', state) | list %}
+        {% if ps %}
+        <tr {% if state %}class="table-{{state}}"{% endif %}>
+            <th>{{ desc }}</th>
+            <td>{{ ps | map(attribute='id') | join(', ') }}</td>
+        </tr>
+        {% endif %}
+    {% endfor %}
+</table>
+
+<table class="table">
     <thead>
         <tr>
             <th>ID</th>
@@ -37,6 +49,7 @@ function submit(id, subdir) {
             <th>#hole/#vert/ε</th>
             <th>dislike<br>score</th>
             <th>Bonus</th>
+            <th>+Score?</th>
             <th>Solutions</th>
         </tr>
     </thead>
@@ -64,6 +77,7 @@ function submit(id, subdir) {
                 {% endif %}
             {% endfor %}
         </td>
+        <td>+{{ problem.possible_additional_score }}</td>
         {% for solution in problem.solutions %}
             <td class="line solution">
                 <a href="{{solution.img_path}}"><img class="visual" src="{{solution.img_path}}"></a>
