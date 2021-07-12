@@ -83,6 +83,41 @@ std::vector<Point> enumerate_interior_points(const SProblem& problem) {
   return points;
 }
 
+std::vector<Point> enumerate_interior_border_points(const SProblem& problem, double border_distance) {
+  integer ymin = INT_MAX, ymax = INT_MIN;
+  integer xmin = INT_MAX, xmax = INT_MIN;
+  for (auto p : problem.hole_polygon) {
+    xmin = std::min(xmin, get_x(p));
+    ymin = std::min(ymin, get_y(p));
+    xmax = std::max(xmax, get_x(p));
+    ymax = std::max(ymax, get_y(p));
+  }
+
+  auto bg_hole_polygon = ToBoostPolygon(problem.hole_polygon);
+
+  std::vector<Point> points;
+  for (int y = ymin; y <= ymax; ++y) {
+    for (int x = xmin; x <= xmax; ++x) {
+      if (contains(problem.hole_polygon, {x, y}) != EContains::EOUT) { // include points on the edge/vertex of the hole.
+        // minimum distance to an edge.
+        double d = DBL_MAX;
+        for (int eid = 0; eid <= problem.hole_polygon.size(); ++eid) {
+          BoostLinestring linestring{ToBoostPoint(problem.hole_polygon[eid]), ToBoostPoint(problem.hole_polygon[(eid + 1) % problem.hole_polygon.size()])};
+          std::vector<BoostLinestring> differences;
+          chmin(d, bg::distance(linestring, ToBoostPoint(Point{x, y})));
+        }
+
+        if (d < border_distance) {
+          points.emplace_back(x, y);
+        }
+      }
+    }
+  }
+
+  LOG(INFO) << fmt::format("found {} border points", points.size());
+  return points;
+}
+
 class NaiveSearchSolver : public SolverBase {
 private:
   std::mt19937 rng;
@@ -104,6 +139,7 @@ public:
     constexpr bool use_cache_for_movable_edges_with_tolerance = true;
     constexpr bool use_cache_for_infeasible_placement_set = true;
     constexpr size_t infeasible_placement_cache_size_B = 4 * 1024ull * 1024ull * 1024ull;
+    const std::optional<double> start_from_border_distance = 3.0;
     const std::optional<int> subsample_roots = std::nullopt;
     SVisualEditorPtr editor;
     if (args.visualize) {
@@ -113,6 +149,12 @@ public:
     // prepare.
     auto interior_points = enumerate_interior_points(*args.problem);
     std::shuffle(interior_points.begin(), interior_points.end(), rng);
+    std::vector<Point> interior_border_points;
+    if (start_from_border_distance) {
+      LOG(INFO) << fmt::format("start from border r={}", *start_from_border_distance);
+      interior_border_points = enumerate_interior_border_points(*args.problem, *start_from_border_distance);
+      std::shuffle(interior_border_points.begin(), interior_border_points.end(), rng);
+    }
     const std::vector<std::vector<int>> edges_from_vertex_cache = edges_from_vertex(*args.problem);
     const int V = args.problem->vertices.size();
 
@@ -305,7 +347,7 @@ public:
       const int start_index = 0;
       std::vector<int> indices_flag(V, REMAINING);
       indices_flag[start_index] = USED;
-      for (auto ip : interior_points) {
+      for (auto ip : start_from_border_distance ? interior_border_points : interior_points) {
         auto vertices = ret.solution->vertices;
         vertices[start_index] = ip;
         stack.push(std::make_shared<State>(1 /* depth */, start_index, ip, indices_flag, vertices));
