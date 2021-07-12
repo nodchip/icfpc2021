@@ -147,20 +147,20 @@ struct SCanvas {
         marked_vertex_indices.size());
     int y = 30;
     cv::putText(img, stat_str, cv::Point(20, y), cv::FONT_HERSHEY_SIMPLEX, 0.5,
-                is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 128), 1,
+                is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 255), 1,
                 cv::LINE_AA);
     y += 30;
     if (!persistent_custom_stat.empty()) {
       cv::putText(img, persistent_custom_stat, cv::Point(20, y),
                   cv::FONT_HERSHEY_SIMPLEX, 0.5,
-                  is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 128), 1,
+                  is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 255), 1,
                   cv::LINE_AA);
     }
     y += 30;
     if (!oneshot_custom_stat.empty()) {
       cv::putText(img, oneshot_custom_stat, cv::Point(20, y),
                   cv::FONT_HERSHEY_SIMPLEX, 0.5,
-                  is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 128), 1,
+                  is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 255), 1,
                   cv::LINE_AA);
     }
   }
