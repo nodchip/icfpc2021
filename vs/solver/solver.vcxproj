@@ -131,6 +131,7 @@ XCOPY /D $(ProjectDir)..\..\libs\opencv\build\x64\vc15\bin\opencv_world453.* $(O
     <ClCompile Include="..\..\src\solvers\naive_annealing_solver.cpp" />
     <ClCompile Include="..\..\src\solvers\naive_search_solver.cpp" />
     <ClCompile Include="..\..\src\solvers\optuna_annealing_solver.cpp" />
+    <ClCompile Include="..\..\src\solvers\random_restart_solver.cpp" />
     <ClCompile Include="..\..\src\solvers\reset_temperture_annealing_solver.cpp" />
     <ClCompile Include="..\..\src\solvers\simple_matching_solver.cpp" />
     <ClCompile Include="..\..\src\solvers\slide_protrusion_annealing_solver.cpp" />

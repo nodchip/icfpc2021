@@ -61,6 +61,10 @@ double SquaredEdgeLength(const T& vertices, const Edge& edge) {
 class Solver : public SolverBase {
  public:
   SolverOutputs solve(const SolverArguments& args) override {
+    if (args.random_seed) {
+      rng_.seed(*args.random_seed);
+      LOG(INFO) << fmt::format("HopGridAnnealingSolver random sampling test={}", rng_());
+    }
     hole_ = args.problem->hole_polygon;
     vertices_ = args.problem->vertices;
     edges_ = args.problem->edges;
