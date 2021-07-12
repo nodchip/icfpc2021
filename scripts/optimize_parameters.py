@@ -7,16 +7,17 @@ import os
 from common import *
 
 PROBLEM_ID = None
+SOLVER_NAME = None
 
 
 def objective(trial):
     global PROBLEM_ID
-    pose_directory_path = SOLUTIONS_DIR / 'OptunaAnnealingSolver'
+    global SOLVER_NAME
+    pose_directory_path = SOLUTIONS_DIR / SOLVER_NAME
     pose_directory_path.mkdir(exist_ok=True)
     pose_file_path = pose_directory_path / f'{PROBLEM_ID}.pose.json'
     temporary_pose_file_path = pose_directory_path / f'{PROBLEM_ID}.pose.tmp'
     solver_subcommand = 'solve'
-    solver_name = 'OptunaAnnealingSolver'
     problem_json_file_path = DEFAULT_PROBLEMS_DIR / \
         f'{PROBLEM_ID}.problem.json'
     parameters_json_file_path = EXE_DIR / f'{PROBLEM_ID}.parameters.json'
@@ -44,19 +45,20 @@ def objective(trial):
 
     # (initialize_pose_by_hole = false かつ prohibit_unfeasible_after_feasible = true は禁止)
     if parameters_json['initialize_pose_by_hole']:
-        parameters_json['prohibit_unfeasible_after_feasible'] = trial.suggest_int('prohibit_unfeasible_after_feasible', 0, 1)
+        parameters_json['prohibit_unfeasible_after_feasible'] = trial.suggest_int(
+            'prohibit_unfeasible_after_feasible', 0, 1)
     else:
         parameters_json['prohibit_unfeasible_after_feasible'] = 0
 
     with open(parameters_json_file_path, 'w') as file:
         json.dump(parameters_json, file)
 
-    subprocess_args = [str(EXE_DIR / 'solver'), solver_subcommand, solver_name, str(problem_json_file_path),
+    subprocess_args = [str(EXE_DIR / 'solver'), solver_subcommand, SOLVER_NAME, str(problem_json_file_path),
                        str(temporary_pose_file_path), f'--parameters_json={parameters_json_file_path}']
     completed_process = subprocess.run(subprocess_args, cwd=EXE_DIR)
     if completed_process.returncode:
         raise Exception(completed_process)
-    
+
     with open(temporary_pose_file_path, 'r') as file:
         temporary_pose_json = json.load(file)
     temporary_dislike = temporary_pose_json['meta']['judge']['dislikes']
@@ -85,11 +87,16 @@ def objective(trial):
 
 def main():
     global PROBLEM_ID
+    global SOLVER_NAME
     parser = argparse.ArgumentParser(description='Optimize parameters.')
-    parser.add_argument('--problem_id', type=int, help='Problem ID', required=True)
+    parser.add_argument('--problem_id', type=int,
+                        help='Problem ID', required=True)
+    parser.add_argument('--solver_name', type=int,
+                        help='Solver name', required=True)
     args = parser.parse_args()
 
     PROBLEM_ID = args.problem_id
+    SOLVER_NAME = args.solver_name
 
     SQLITE_DIR.mkdir(exist_ok=True)
 

@@ -18,8 +18,10 @@ from common import *
 def main():
     parser = argparse.ArgumentParser(description='Brain Wall batch solver')
     parser.add_argument('token', help='Jenkins API Token.')
-    parser.add_argument('--stop', action='store_true', help='Stop the current jobs.')
+    parser.add_argument('--stop', action='store_true',
+                        help='Stop the current jobs.')
     parser.add_argument('--start', action='store_true', help='Start jobs.')
+    parser.add_argument('--solver_name', type=int, help='Solver name')
     args = parser.parse_args()
 
     if args.stop:
@@ -42,7 +44,7 @@ def main():
                 if dislikes == 0:
                     continue
                 # Parameterized Build - Jenkins - Jenkins Wiki https://wiki.jenkins.io/display/JENKINS/Parameterized+Build
-                url = f'http://hnoda-dt2:8080/job/ICFPC2021.optimize_parameters.2021-07-11/buildWithParameters?token={args.token}&problem_id={problem_id}'
+                url = f'http://hnoda-dt2:8080/job/ICFPC2021.optimize_parameters.2021-07-11/buildWithParameters?token={args.token}&problem_id={problem_id}&solver_name={args.solver_name}'
                 print(url)
                 with urllib.request.urlopen(url) as f:
                     pass
