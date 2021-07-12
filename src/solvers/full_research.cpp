@@ -172,7 +172,7 @@ struct Striction {
     use.resize(Size, false);
   }
   Striction(const Striction& rhs) : vertex(rhs.vertex), consider_points(rhs.consider_points), use(rhs.use){}
-  void Add(int x, Point p) { consider_points[x] = p; use[x] = 1; }
+  void Add(int x, Point p, const mat& vertices_distances) { if(vertices_distances[x][vertex] )consider_points[x] = p; use[x] = 1; }
   void Delete(int x) { consider_points[x] = std::make_pair(0, 0); use[x] = 0; }
   void Set(const std::vector<int> cand_points, SSolutionPtr solution, const mat& vertices_distances){
     for (auto e : cand_points) if (vertices_distances[e][vertex]) {
@@ -210,6 +210,7 @@ struct MapValue {
     cands = {};
   }
   MapValue(const SVOI& voi_, const std::vector<Point> cands_) : available(true), voi(voi_), cands(cands_) {}
+  //MapValue(const MapValue& rhs) : available(rhs.available), voi(rhs.voi), cands(rhs.cands) {}
 
 };
 
@@ -289,12 +290,13 @@ MapValue able_points(SProblemPtr problem, SSolutionPtr solution, const Striction
 }
 
 
-std::vector<Point> able_points_hash(SProblemPtr problem, SSolutionPtr solution, const Striction& str_holes, const Striction& str_inside, HashMap& hash_map_decided, SVOI voi, const mat& vertices_distances, long long& counter) {
+std::vector<Point> able_points_hash(SProblemPtr problem, SSolutionPtr solution, const Striction& str_holes, const Striction& str_inside, HashMap& hash_map_decided, SVOI voi, const mat& vertices_distances, HashMap& hash_map_unrestricted, long long& counter) {
   counter++;
   //LOG(INFO) << "arrived hash able";
   std::vector<Point> ret = {};
   if (counter > LARGE) return ret;
   int vertex = str_holes.vertex;
+  if (hash_map_unrestricted.count(str_inside)) return hash_map_unrestricted[str_inside].cands;
   if (!hash_map_decided.count(str_holes)) {
     for (int e = 0; e < str_holes.consider_points.size(); e++) {
       if (str_holes.use[e]) {
@@ -314,19 +316,25 @@ std::vector<Point> able_points_hash(SProblemPtr problem, SSolutionPtr solution, 
     auto cand_points = hash_value.cands;
     //LOG(INFO) << cand_points.size();
     voi = hash_value.voi;
-    if (cand_points.size() == 0) return ret;
+    if (cand_points.size() == 0) {
+      hash_map_unrestricted[str_inside] = MapValue(voi, ret);
+      return ret;
+    }
 
     for (auto e : cand_points) {
       if (is_point_valid(problem, solution, str_inside, vertices_distances, e)) ret.push_back(e);
     }
+    hash_map_unrestricted[str_inside] = MapValue(voi, ret);
     return ret;
   }
 
   else {
-    return able_points(problem, solution, str_inside, voi, vertices_distances, counter).cands;
+    MapValue mpv(able_points(problem, solution, str_inside, voi, vertices_distances, counter));
+    hash_map_unrestricted[str_inside] = mpv;
+    return mpv.cands;
   }
 }
-SSolutionPtr dfs_able_points(SProblemPtr problem, SSolutionPtr solution, const std::vector<Striction> &str_hole_memo, std::vector<int>& decided_points_inside, HashMap& hash_map_decided, std::vector<int> restriction_edges,  const mat& vertices_distances, int V, long long& counter) {
+SSolutionPtr dfs_able_points(SProblemPtr problem, SSolutionPtr solution, const std::vector<Striction> &str_hole_memo, std::vector<int>& decided_points_inside, HashMap& hash_map_decided, std::vector<int> restriction_edges,  const mat& vertices_distances, int V, HashMap& hash_map_unrestricted, long long& counter) {
 	counter++;
   int H = problem->hole_polygon.size();
   //LOG(INFO) << "dfs_able_points "<<decided_points_inside.size();
@@ -353,15 +361,14 @@ SSolutionPtr dfs_able_points(SProblemPtr problem, SSolutionPtr solution, const s
 	}
   SVOI voi(problem->hole_polygon);
   Striction str_inside(most_restricted_point, V);
-  str_inside.Set(decided_points_inside, solution, vertices_distances);
-	auto cands = able_points_hash(problem, solution,str_hole_memo[most_restricted_point],str_inside, hash_map_decided, voi, vertices_distances, counter);
+	auto cands = able_points_hash(problem, solution,str_hole_memo[most_restricted_point],str_inside, hash_map_decided, voi, vertices_distances, hash_map_unrestricted, counter);
 	if (cands.size() == 0) return nullptr;
 	decided_points_inside.push_back(most_restricted_point);
 	for (int i = 0; i < V; i++) if (vertices_distances[most_restricted_point][i] && restriction_edges[i] >= 0) restriction_edges[i]++;
 	restriction_edges[most_restricted_point] = -10000000;
 	for (auto point : cands) {
 		solution->vertices[most_restricted_point] = point;
-		auto sol = dfs_able_points(problem, solution, str_hole_memo, decided_points_inside, hash_map_decided, restriction_edges, vertices_distances, V, counter);
+		auto sol = dfs_able_points(problem, solution, str_hole_memo,  decided_points_inside, hash_map_decided, restriction_edges, vertices_distances, V, hash_map_unrestricted, counter);
 		if (sol) return sol;
 		solution->vertices[most_restricted_point] = problem->vertices[most_restricted_point];
 	}
@@ -386,7 +393,10 @@ SSolutionPtr Fit_Unstricted_Points(SProblemPtr problem, SSolutionPtr solution, c
   for (int i = 0; i < V; i++) if (!used_vertices[i]) {
     str_hole_memo[i].Set(decided_points, solution, vertices_distances);
   }
-  return dfs_able_points(problem, solution, str_hole_memo, decided_points_inside, hash_map_decided, restriction_edges, vertices_distances, V, counter);
+  HashMap hash_map_unstricted = {};
+  auto ptr_ans = dfs_able_points(problem, solution, str_hole_memo,  decided_points_inside, hash_map_decided, restriction_edges, vertices_distances, V, hash_map_unstricted, counter);
+  //LOG(INFO) << "hash_map_unstricted size is " << hash_map_unstricted.size();
+  return ptr_ans;
 
 }
 
@@ -504,6 +514,8 @@ bool full_research(SProblemPtr problem, SSolutionPtr& solution, Timer& timer) {
   std::vector<int> v_init_memo;
   for (auto e : decided_points_initial) v_init_memo.push_back(e);
 
+
+  LOG(INFO) << "start decided is " << decided_points_initial.size();
   HashMap hash_map_decided = {};
   auto sol = dfs_holes(problem, solution_initial, hash_map_decided, hole_distances, vertices_distances, upperlimit_distances, decided_points_initial, V, H, timer, used_vertices, v_h, counter);
   if (sol) {
