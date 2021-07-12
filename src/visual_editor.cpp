@@ -724,7 +724,7 @@ SShowResult SVisualEditor::show(int delay_ms) {
 }
 
 int SVisualEditor::get_mouseover_node_id() const {
-  int radius = canvas->mag / 2;
+  int radius = std::max<int>(3, canvas->mag / 2);
   int x = mp->x, y = mp->y;
   int idx = -1, min_d2 = INT_MAX;
   for (int i = 0; i < canvas->solution->vertices.size(); i++) {
