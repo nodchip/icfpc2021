@@ -1,6 +1,5 @@
 {% extends "common.html" %}
 {% block additional_header %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.3/css/theme.blue.min.css" integrity="sha512-jJ9r3lTLaH5XXa9ZOsCQU8kLvxdAVzyTWO/pnzdZrshJQfnw1oevJFpoyCDr7K1lqt1hUgqoxA5e2PctVtlSTg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.3/js/jquery.tablesorter.min.js" integrity="sha512-qzgd5cYSZcosqpzpn7zF2ZId8f/8CHmFKZ8j7mU4OUXTNRd5g+ZHBPsgKEwoqxCtdQvExE5LprwwPAgoicguNg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.3/js/jquery.tablesorter.widgets.min.js" integrity="sha512-dj/9K5GRIEZu+Igm9tC16XPOTz0RdPk9FGxfZxShWf65JJNU2TjbElGjuOo3EhwAJRPhJxwEJ5b+/Ouo+VqZdQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
@@ -35,6 +34,7 @@ $(document).ready(function() {
   .line { white-space: nowrap; }
   .info { display: inline-block; }
   .visual { max-width: 100px; max-height: 100px; }
+  #problems .tablesorter-header-inner::after { content: '▼'; }
 </style>
 {% endblock %}
 {% block content %}
@@ -50,7 +50,7 @@ $(document).ready(function() {
     {% endfor %}
 </table>
 
-<table class="table tablesorter-blue" id="problems">
+<table class="table tablesorter" id="problems">
     <thead>
         <tr>
             <th>ID</th>
