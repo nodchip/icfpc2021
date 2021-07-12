@@ -102,6 +102,8 @@ public:
     constexpr bool exhaustive_search = true;
     constexpr bool use_cache_for_good_edge = false;
     constexpr bool use_cache_for_movable_edges_with_tolerance = true;
+    constexpr bool use_cache_for_infeasible_placement_set = true;
+    constexpr size_t infeasible_placement_cache_size_B = 4 * 1024ull * 1024ull * 1024ull;
     const std::optional<int> subsample_roots = std::nullopt;
     SVisualEditorPtr editor;
     if (args.visualize) {
@@ -248,8 +250,45 @@ public:
       return fixed_indices;
     };
 
-    std::stack<StatePtr> stack;
+    // infeasible placement cache
+    int max_key = V;
+    for (auto& p : interior_points) {
+      chmax<int>(max_key, p.first);
+      chmax<int>(max_key, p.second);
+    }
+    SZobristHash zobrist(max_key);
+    const size_t infeasible_placement_cache_size = infeasible_placement_cache_size_B * 8;
+    std::vector<bool> infeasible_placement_cache;
+    if (use_cache_for_infeasible_placement_set) {
+      LOG(INFO) << fmt::format("use_cache_for_infeasible_placement_set ON {:.2f} MB (smaller cache leads to increasing FP)", infeasible_placement_cache_size_B / 1024.0 / 1024.0);
+      infeasible_placement_cache.assign(infeasible_placement_cache_size, false);
+    } else {
+      LOG(INFO) << "use_cache_for_infeasible_placement_set OFF";
+    }
+    auto State_to_zobrist = [&](StatePtr s) {
+      SZobristHash::key_t hash = 0;
+      for (int i = 0; i < V; ++i) {
+        if (s->indices_flag[i] == USED) {
+          hash ^= zobrist[i];
+          hash ^= zobrist[s->vertices[i].first];
+          hash ^= zobrist[s->vertices[i].second];
+        }
+      }
+      return hash;
+    };
+    size_t infeasible_cache_hit_count = 0;
+    size_t infeasible_cache_query_count = 0;
+    auto is_infeasible_placement = [&](StatePtr s) {
+      const bool infeasible = infeasible_placement_cache[State_to_zobrist(s) % infeasible_placement_cache_size];
+      ++infeasible_cache_query_count;
+      if (infeasible) ++infeasible_cache_hit_count;
+      return infeasible;
+    };
+    auto set_infeasible_placement = [&](StatePtr s) {
+      infeasible_placement_cache[State_to_zobrist(s) % infeasible_placement_cache_size] = true;
+    };
 
+    std::stack<StatePtr> stack;
     // start from any valid points.
     {
       const int start_index = 0;
@@ -321,12 +360,14 @@ public:
       if (report) {
         lazy_elapsed_ms = timer.elapsed_ms();
         const double root_per_s = root_counter / lazy_elapsed_ms * 1e3;
-        const auto stat = fmt::format("[{}][best DL={}] root {}/{}({:.2f}%) {:.2f} root/s, ETA {:.2f} s, visited {}, max depth {}, {:.2f} ms, {:.2f} node/s, cache {:.2f} MB",
+        const auto stat = fmt::format("[{}][{}][best DL={}] root {}/{}({:.2f}%) {:.2f} root/s, ETA {:.2f} s, visited {}, max depth {}, {:.2f} ms, {:.2f} node/s, cache {:.2f} MB, infi {}/{}({:.2f}%)",
+          args.problem->problem_id ? *args.problem->problem_id : -1, 
           found ? "O" : "X", found ? best_dislikes : -1,
           root_counter, interior_points.size(), 100.0 * root_counter / interior_points.size(), root_per_s,
           double(n_roots) / root_per_s,
           counter, max_depth, lazy_elapsed_ms, counter / lazy_elapsed_ms * 1e3,
-          movable_cache_count * sizeof(Point) / 1024.0 / 1024.0
+          movable_cache_count * sizeof(Point) / 1024.0 / 1024.0,
+          infeasible_cache_hit_count, infeasible_cache_query_count, 100.0 * infeasible_cache_hit_count / infeasible_cache_query_count
           );
         LOG(INFO) << stat;
         if (editor) {
@@ -371,6 +412,7 @@ public:
       }
       std::sort(remaining_edges.begin(), remaining_edges.end());
 
+      bool pushed = false;
       for (const SEdgeItem& edge : remaining_edges) {
         const int eid = edge.eid;
         auto [u, v] = args.problem->edges[eid];
@@ -401,8 +443,19 @@ public:
             new_remaining_index_flag[counter_vid] = USED;
             auto new_vertices = s->vertices;
             new_vertices[counter_vid] = p;
-            stack.push(std::make_shared<State>(s->depth + 1, counter_vid, p, new_remaining_index_flag, new_vertices));
+            auto new_s = std::make_shared<State>(s->depth + 1, counter_vid, p, new_remaining_index_flag, new_vertices);
+            if (!(use_cache_for_infeasible_placement_set && is_infeasible_placement(new_s))) {
+              stack.push(new_s);
+              pushed = true;
+            }
           }
+        }
+      }
+
+      if (!pushed) {
+        // leaf node (failure)
+        if (use_cache_for_infeasible_placement_set) {
+          set_infeasible_placement(s);
         }
       }
     }
