@@ -220,12 +220,21 @@ class Solver : public SolverBase {
       }
     };
 
+    const double vote_pow = 5.0;
     auto edges_cache = edges_from_vertex(*args.problem);
+    std::vector<std::vector<int> > good_pos(ymax - ymin + 1, std::vector<int>(xmax - xmin + 1));
+    std::vector<double> pow_table;
+    for (int i = 0; i < 1024; ++i) {
+      pow_table.push_back(std::pow(static_cast<double>(i), vote_pow));
+    }
+
     auto hop_grid = [&] { // jump to a tolerated (by at least one edge) point.
-      const int pivot = pinned_index.sample_movable_index();
+      const int pivot = std::uniform_int_distribution(0, N - 1)(rng_);
       const auto pivot_bak = pose[pivot];
       const auto& edges = edges_cache[pivot];
-      std::map<Point, double> good_pos; // position -> number of good grid vote.
+      for (auto& row : good_pos) {
+        fill(row.begin(), row.end(), 0);
+      }
       for (auto eid : edges) {
         auto [u, v] = args.problem->edges[eid];
         const int counter_vid = u == pivot ? v : u;
@@ -234,30 +243,28 @@ class Solver : public SolverBase {
           for (int x = xmin; x <= xmax; ++x) {
             const auto moved_d2 = distance2({ x, y }, pose[counter_vid]);
             if (tolerate(org_d2, moved_d2, epsilon_)) {
-              Point jump {x, y};
-              auto it = good_pos.find(jump);
-              if (it == good_pos.end()) {
-                good_pos.insert(it, {jump, 1.0});
-              } else {
-                it->second += 1.0;
-              }
+              ++good_pos[y - ymin][x - xmin];
             }
           }
         }
       }
       // emphasize large votes.
       double total_votes = 0;
-      for (auto& [pos, vote] : good_pos) {
-        vote = std::pow(vote, 5);
-        total_votes += vote;
+      for (int y = ymin; y <= ymax; ++y) {
+        for (int x = xmin; x <= xmax; ++x) {
+          total_votes += pow_table[good_pos[y - ymin][x - xmin]];
+        }
       }
       const double select_accum_vote = std::uniform_real_distribution<double>(0.0, total_votes)(rng_);
       double accum_vote = 0;
-      for (auto& [pos, vote] : good_pos) {
-        accum_vote += vote;
-        if (select_accum_vote <= accum_vote) {
-          pose[pivot] = pos;
-          break;
+      bool found = false;
+      for (int y = ymin; !found && y <= ymax; ++y) {
+        for (int x = xmin; !found && x <= xmax; ++x) {
+          accum_vote += pow_table[good_pos[y - ymin][x - xmin]];
+          if (select_accum_vote <= accum_vote) {
+            pose[pivot] = { x, y };
+            found = true;
+          }
         }
       }
       if (evaluate_and_descide_rollback()) {
