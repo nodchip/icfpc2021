@@ -9,7 +9,7 @@
 
 namespace SimpleMatchingSolver {
 
-constexpr int kNumTrialsPerComponent = 100000;
+constexpr int kNumTrialsPerComponent = 1000000;
 constexpr int kMinComponentSize = 10;
 constexpr int kMinDegree = 2;
 constexpr bool kPruneLeavesOnly = true;
@@ -181,7 +181,7 @@ class Solver : public SolverBase {
 
   bool Search() {
     if (hole_candidates_.empty()) return true;
-    if (++counter_ % 1000 == 0 && editor_) {
+    if (++counter_ % 10000 == 0 && editor_) {
       auto pose = vertices_;
       std::vector<int> marked;
       for (int j = 0; j < N_; ++j) {
