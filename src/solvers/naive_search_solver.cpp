@@ -83,6 +83,41 @@ std::vector<Point> enumerate_interior_points(const SProblem& problem) {
   return points;
 }
 
+std::vector<Point> enumerate_interior_border_points(const SProblem& problem, double border_distance) {
+  integer ymin = INT_MAX, ymax = INT_MIN;
+  integer xmin = INT_MAX, xmax = INT_MIN;
+  for (auto p : problem.hole_polygon) {
+    xmin = std::min(xmin, get_x(p));
+    ymin = std::min(ymin, get_y(p));
+    xmax = std::max(xmax, get_x(p));
+    ymax = std::max(ymax, get_y(p));
+  }
+
+  auto bg_hole_polygon = ToBoostPolygon(problem.hole_polygon);
+
+  std::vector<Point> points;
+  for (int y = ymin; y <= ymax; ++y) {
+    for (int x = xmin; x <= xmax; ++x) {
+      if (contains(problem.hole_polygon, {x, y}) != EContains::EOUT) { // include points on the edge/vertex of the hole.
+        // minimum distance to an edge.
+        double d = DBL_MAX;
+        for (int eid = 0; eid <= problem.hole_polygon.size(); ++eid) {
+          BoostLinestring linestring{ToBoostPoint(problem.hole_polygon[eid]), ToBoostPoint(problem.hole_polygon[(eid + 1) % problem.hole_polygon.size()])};
+          std::vector<BoostLinestring> differences;
+          chmin(d, bg::distance(linestring, ToBoostPoint(Point{x, y})));
+        }
+
+        if (d < border_distance) {
+          points.emplace_back(x, y);
+        }
+      }
+    }
+  }
+
+  LOG(INFO) << fmt::format("found {} border points", points.size());
+  return points;
+}
+
 class NaiveSearchSolver : public SolverBase {
 private:
   std::mt19937 rng;
@@ -100,10 +135,11 @@ public:
     constexpr int report_every_iter = 100000;
     constexpr int editor_sleep = 1;
     constexpr bool exhaustive_search = true;
-    constexpr bool use_cache_for_good_edge = false;
+    constexpr bool use_cache_for_good_edge = true;
     constexpr bool use_cache_for_movable_edges_with_tolerance = true;
     constexpr bool use_cache_for_infeasible_placement_set = true;
     constexpr size_t infeasible_placement_cache_size_B = 4 * 1024ull * 1024ull * 1024ull;
+    const std::optional<double> start_from_border_distance = 3.0;
     const std::optional<int> subsample_roots = std::nullopt;
     SVisualEditorPtr editor;
     if (args.visualize) {
@@ -113,10 +149,16 @@ public:
     // prepare.
     auto interior_points = enumerate_interior_points(*args.problem);
     std::shuffle(interior_points.begin(), interior_points.end(), rng);
+    std::vector<Point> interior_border_points;
+    if (start_from_border_distance) {
+      LOG(INFO) << fmt::format("start from border r={}", *start_from_border_distance);
+      interior_border_points = enumerate_interior_border_points(*args.problem, *start_from_border_distance);
+      std::shuffle(interior_border_points.begin(), interior_border_points.end(), rng);
+    }
     const std::vector<std::vector<int>> edges_from_vertex_cache = edges_from_vertex(*args.problem);
     const int V = args.problem->vertices.size();
 
-    // good edge
+    // good edge. assume p and q are both interiors.
     auto bg_hole_polygon = ToBoostPolygon(args.problem->hole_polygon);
     auto _is_good_edge = [&](const Point& p, const Point& q) {
       BoostLinestring linestring{ToBoostPoint(p), ToBoostPoint(q)};
@@ -226,6 +268,8 @@ public:
 
     constexpr int USED = 1;
     constexpr int REMAINING = 0;
+    struct State;
+    using StatePtr = std::shared_ptr<State>;
     struct State {
       // placing vertices[vid] to position p.
       int depth = 0;
@@ -235,11 +279,12 @@ public:
       std::vector<int> indices_flag;
       // vertices after placing this node.
       std::vector<Point> vertices;
+      StatePtr parent;
+      bool is_last = false;
 
       State(int depth, int vid, Point p, const std::vector<int>& indices_flag, const std::vector<Point>& vertices)
         : depth(depth), vid(vid), p(p), indices_flag(indices_flag), vertices(vertices) {}
     };
-    using StatePtr = std::shared_ptr<State>;
     auto create_fixed_indices = [&](StatePtr s) {
       std::vector<int> fixed_indices;
       for (int i = 0; i < V; ++i) {
@@ -251,16 +296,24 @@ public:
     };
 
     // infeasible placement cache
-    int max_key = V;
+    int min_x = std::numeric_limits<int>::max();
+    int min_y = std::numeric_limits<int>::max();
+    int max_x = std::numeric_limits<int>::min();
+    int max_y = std::numeric_limits<int>::min();
     for (auto& p : interior_points) {
-      chmax<int>(max_key, p.first);
-      chmax<int>(max_key, p.second);
+      chmin<int>(min_x, p.first);
+      chmax<int>(max_x, p.first);
+      chmin<int>(min_y, p.second);
+      chmax<int>(max_y, p.second);
     }
-    SZobristHash zobrist(max_key);
+    const int size_x = max_x - min_x + 1;
+    const int size_y = max_y - min_y + 1;
+    const int key_size = V * size_x * size_y;
+    SZobristHash zobrist(key_size);
     const size_t infeasible_placement_cache_size = infeasible_placement_cache_size_B * 8;
     std::vector<bool> infeasible_placement_cache;
     if (use_cache_for_infeasible_placement_set) {
-      LOG(INFO) << fmt::format("use_cache_for_infeasible_placement_set ON {:.2f} MB (smaller cache leads to increasing FP)", infeasible_placement_cache_size_B / 1024.0 / 1024.0);
+      LOG(INFO) << fmt::format("use_cache_for_infeasible_placement_set ON {:.2f} MB (smaller cache leads to increasing FP) {}x{}x{}", infeasible_placement_cache_size_B / 1024.0 / 1024.0, size_x, size_y, V);
       infeasible_placement_cache.assign(infeasible_placement_cache_size, false);
     } else {
       LOG(INFO) << "use_cache_for_infeasible_placement_set OFF";
@@ -269,15 +322,18 @@ public:
       SZobristHash::key_t hash = 0;
       for (int i = 0; i < V; ++i) {
         if (s->indices_flag[i] == USED) {
-          hash ^= zobrist[i];
-          hash ^= zobrist[s->vertices[i].first];
-          hash ^= zobrist[s->vertices[i].second];
+          const int dx = s->vertices[i].first - min_x;
+          const int dy = s->vertices[i].second - min_y;
+          const int idx = (i * size_y + dy) * size_x + dx;
+          //CHECK(idx < key_size);
+          hash ^= zobrist[idx];
         }
       }
       return hash;
     };
     size_t infeasible_cache_hit_count = 0;
     size_t infeasible_cache_query_count = 0;
+    size_t infeasible_cache_set_count = 0;
     auto is_infeasible_placement = [&](StatePtr s) {
       const bool infeasible = infeasible_placement_cache[State_to_zobrist(s) % infeasible_placement_cache_size];
       ++infeasible_cache_query_count;
@@ -285,6 +341,7 @@ public:
       return infeasible;
     };
     auto set_infeasible_placement = [&](StatePtr s) {
+      ++infeasible_cache_set_count;
       infeasible_placement_cache[State_to_zobrist(s) % infeasible_placement_cache_size] = true;
     };
 
@@ -294,7 +351,7 @@ public:
       const int start_index = 0;
       std::vector<int> indices_flag(V, REMAINING);
       indices_flag[start_index] = USED;
-      for (auto ip : interior_points) {
+      for (auto ip : start_from_border_distance ? interior_border_points : interior_points) {
         auto vertices = ret.solution->vertices;
         vertices[start_index] = ip;
         stack.push(std::make_shared<State>(1 /* depth */, start_index, ip, indices_flag, vertices));
@@ -341,10 +398,10 @@ public:
         }
       }
 
-      if (max_depth == V) {
+      if (s->depth == V) {
         auto temp_solution = args.problem->create_solution(s->vertices);
         auto judge_res = judge(*args.problem, *temp_solution);
-        if (judge_res.is_valid()) {
+        if (judge_res.is_valid()) { // essentially, we do not need this. but for sure..
           if (judge_res.dislikes < best_dislikes) {
             LOG(INFO) << fmt::format("#{} foud better solution {} -> {}", root_counter, best_dislikes, judge_res.dislikes);
             ret.solution = temp_solution;
@@ -354,20 +411,36 @@ public:
           }
           found = true;
           report = true;
+        } else {
+          if (false) { // debug.
+            auto p = s;
+            while (p) {
+              LOG(INFO) << p->vid;
+              p = p->parent;
+            }
+            if (editor) {
+              editor->set_oneshot_custom_stat("#invalid");
+              editor->set_marked_indices(create_fixed_indices(s));
+              editor->set_pose(args.problem->create_solution(s->vertices));
+              while (editor->show(editor_sleep) != 27)
+                ;
+            }
+          }
         }
       }
 
       if (report) {
         lazy_elapsed_ms = timer.elapsed_ms();
         const double root_per_s = root_counter / lazy_elapsed_ms * 1e3;
-        const auto stat = fmt::format("[{}][{}][best DL={}] root {}/{}({:.2f}%) {:.2f} root/s, ETA {:.2f} s, visited {}, max depth {}, {:.2f} ms, {:.2f} node/s, cache {:.2f} MB, infi {}/{}({:.2f}%)",
+        const auto stat = fmt::format("[{}][{}][best DL={}] root {}/{}({:.2f}%) {:.2f} root/s, ETA {:.2f} s, visited {}, max depth {}, {:.2f} ms, {:.2f} node/s, cache {:.2f} MB, infi {}/{}({:.2f}%)/{}({:.2f}%)",
           args.problem->problem_id ? *args.problem->problem_id : -1, 
           found ? "O" : "X", found ? best_dislikes : -1,
           root_counter, interior_points.size(), 100.0 * root_counter / interior_points.size(), root_per_s,
           double(n_roots) / root_per_s,
           counter, max_depth, lazy_elapsed_ms, counter / lazy_elapsed_ms * 1e3,
           movable_cache_count * sizeof(Point) / 1024.0 / 1024.0,
-          infeasible_cache_hit_count, infeasible_cache_query_count, 100.0 * infeasible_cache_hit_count / infeasible_cache_query_count
+          infeasible_cache_hit_count, infeasible_cache_query_count, 100.0 * infeasible_cache_hit_count / infeasible_cache_query_count,
+          infeasible_cache_set_count, 100.0 * infeasible_cache_hit_count / infeasible_cache_set_count
           );
         LOG(INFO) << stat;
         if (editor) {
@@ -412,7 +485,7 @@ public:
       }
       std::sort(remaining_edges.begin(), remaining_edges.end());
 
-      bool pushed = false;
+      StatePtr last_pushed;
       for (const SEdgeItem& edge : remaining_edges) {
         const int eid = edge.eid;
         auto [u, v] = args.problem->edges[eid];
@@ -421,7 +494,6 @@ public:
         // push nodes for this unused edge (s->vid, counter_vid)
         auto original_distance2 = distance2(args.problem->vertices[s->vid], args.problem->vertices[counter_vid]);
         auto movable_points = get_movable_points_with_tolerance(s->p, original_distance2);
-
 
         for (auto p : movable_points) {
           // all fixed neighbors of counter_vid should agree with this move.
@@ -432,7 +504,8 @@ public:
             if (s->indices_flag[neighbor_vid] == USED) {
               const double neighbor_original_distance2 = distance2(args.problem->vertices[neighbor_vid], args.problem->vertices[counter_vid]);
               const double neighbor_distance2 = distance2(s->vertices[neighbor_vid], p);
-              if (!tolerate(neighbor_original_distance2, neighbor_distance2, args.problem->epsilon)) {
+              if (!tolerate(neighbor_original_distance2, neighbor_distance2, args.problem->epsilon) // check this first!
+                || !is_good_edge(s->vertices[neighbor_vid], p)) { // heavy.
                 agree = false;
                 break;
               }
@@ -444,18 +517,22 @@ public:
             auto new_vertices = s->vertices;
             new_vertices[counter_vid] = p;
             auto new_s = std::make_shared<State>(s->depth + 1, counter_vid, p, new_remaining_index_flag, new_vertices);
+            new_s->parent = s;
             if (!(use_cache_for_infeasible_placement_set && is_infeasible_placement(new_s))) {
+              last_pushed = new_s;
               stack.push(new_s);
-              pushed = true;
             }
           }
         }
       }
 
-      if (!pushed) {
-        // leaf node (failure)
+      if (last_pushed) last_pushed->is_last = true;
+
+      if (s->parent && s->is_last) {
+        // invoke cleanup process of s->parent.
         if (use_cache_for_infeasible_placement_set) {
-          set_infeasible_placement(s);
+          //LOG(INFO) << fmt::format("infeasible processing {}(depth={}) ({},{}) hash=0x{:x}", s->parent->vid, s->parent->depth, s->parent->p.first, s->parent->p.second, State_to_zobrist(s->parent));
+          set_infeasible_placement(s->parent);
         }
       }
     }

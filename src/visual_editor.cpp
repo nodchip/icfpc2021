@@ -147,20 +147,20 @@ struct SCanvas {
         marked_vertex_indices.size());
     int y = 30;
     cv::putText(img, stat_str, cv::Point(20, y), cv::FONT_HERSHEY_SIMPLEX, 0.5,
-                is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 128), 1,
+                is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 255), 1,
                 cv::LINE_AA);
     y += 30;
     if (!persistent_custom_stat.empty()) {
       cv::putText(img, persistent_custom_stat, cv::Point(20, y),
                   cv::FONT_HERSHEY_SIMPLEX, 0.5,
-                  is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 128), 1,
+                  is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 255), 1,
                   cv::LINE_AA);
     }
     y += 30;
     if (!oneshot_custom_stat.empty()) {
       cv::putText(img, oneshot_custom_stat, cv::Point(20, y),
                   cv::FONT_HERSHEY_SIMPLEX, 0.5,
-                  is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 128), 1,
+                  is_valid ? cv::Scalar(0, 0, 0) : cv::Scalar(0, 0, 255), 1,
                   cv::LINE_AA);
     }
   }
@@ -223,6 +223,21 @@ struct SCanvas {
       int y = p.second - cy;
       p.first = -y + cx;
       p.second = x + cy;
+    }
+  }
+
+  void rotate_pose(double rotate_deg) {
+    auto rect_poly = calc_bb(problem->hole_polygon);
+    const int cx = rect_poly.x + rect_poly.width / 2;
+    const int cy = rect_poly.y + rect_poly.height / 2;
+
+    const double sin = std::sin(rotate_deg * 3.1415 / 180.0);
+    const double cos = std::cos(rotate_deg * 3.1415 / 180.0);
+    for (auto& p : solution->vertices) {
+      const double dx = p.first - cx;
+      const double dy = p.second - cy;
+      p.first  = std::round(dx * cos - dy * sin + cx);
+      p.second = std::round(dx * sin + dy * cos + cy);
     }
   }
 
@@ -626,6 +641,14 @@ SShowResult SVisualEditor::show(int delay_ms) {
       canvas->rotate_pose();
       canvas->update(-1);
       break;
+    case 'y':
+      canvas->rotate_pose(-5.0);
+      canvas->update(-1);
+      break;
+    case 'u':
+      canvas->rotate_pose(5.0);
+      canvas->update(-1);
+      break;
     case '/':
       canvas->zoom(1);
       canvas->draw_base_image();
@@ -701,7 +724,7 @@ SShowResult SVisualEditor::show(int delay_ms) {
 }
 
 int SVisualEditor::get_mouseover_node_id() const {
-  int radius = canvas->mag / 2;
+  int radius = std::max<int>(3, canvas->mag / 2);
   int x = mp->x, y = mp->y;
   int idx = -1, min_d2 = INT_MAX;
   for (int i = 0; i < canvas->solution->vertices.size(); i++) {

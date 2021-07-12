@@ -1,22 +1,23 @@
 #include "stdafx.h"
 #include "layout_editor.h"
 #include "visual_editor.h"
+#include "judge.h"
 
 namespace NLayoutEditor {
 
-  SLayout::SLayout(SProblemPtr problem, int seed) : problem(problem) {
+  SLayout::SLayout(SProblemPtr problem, SSolutionPtr optional_initial_solution, SEditorParamsPtr ep, int seed)
+    : problem(problem), optional_initial_solution(optional_initial_solution), ep(ep) {
     rnd.set_seed(seed + 10007);
     init();
     draw_base_image();
-    update(nullptr);
+    update();
   }
   std::vector<P> SLayout::calc_forces() const {
-    // TODO: should be variable
-    static constexpr double spring_const = 1.0;
-    static constexpr double coulomb_const = 10.0;
-    static constexpr double edge_const = 10.0; // 辺の中点から斥力が生じる
-    static constexpr double field_const = 1.0;
-    static constexpr double edge_field_const = 1.0;
+    double spring_const = ep->spring_const * 0.01;
+    double coulomb_const = ep->coulomb_const * 0.1;
+    double edge_const = ep->edge_const * 0.1;
+    double field_const = ep->field_const * 0.1;
+    double edge_field_const = ep->edge_field_const * 0.1;
     static P fs[max_num_vertices][max_num_vertices];
     for (int i = 0; i < num_nodes; i++) {
       memset(fs[i], 0, sizeof(P) * num_nodes);
@@ -63,8 +64,8 @@ namespace NLayoutEditor {
       {
         auto p = n1.r;
         auto xy = cvt(p.x, p.y);
-        int ix = (int)round(xy.x); ix = std::clamp(ix, 0, img_dist.rows - 1);
-        int iy = (int)round(xy.y); iy = std::clamp(iy, 0, img_dist.cols - 1);
+        int ix = (int)round(xy.x); ix = std::clamp(ix, 0, img_dist.cols - 1);
+        int iy = (int)round(xy.y); iy = std::clamp(iy, 0, img_dist.rows - 1);
         fs[u][u] -= field_const * vec_field[iy][ix];
       }
 #ifdef _MSC_VER
@@ -77,8 +78,8 @@ namespace NLayoutEditor {
       double len = edge.orig_len; // orig ?
       auto pu = nodes[edge.from].r, pv = nodes[edge.to].r, pm = (pu + pv) * 0.5;
       auto xy = cvt(pm.x, pm.y);
-      int ix = (int)round(xy.x); ix = std::clamp(ix, 0, img_dist.rows - 1);
-      int iy = (int)round(xy.y); iy = std::clamp(iy, 0, img_dist.cols - 1);
+      int ix = (int)round(xy.x); ix = std::clamp(ix, 0, img_dist.cols - 1);
+      int iy = (int)round(xy.y); iy = std::clamp(iy, 0, img_dist.rows - 1);
       auto vec = vec_field[iy][ix];
       fs[u][u] -= edge_field_const * len * vec;
       fs[v][v] -= edge_field_const * len * vec;
@@ -96,9 +97,19 @@ namespace NLayoutEditor {
     num_edges = problem->edges.size();
     nodes.resize(num_nodes);
     edge_colors.resize(num_edges);
-    for (int vid = 0; vid < num_nodes; vid++) {
-      nodes[vid].id = vid;
-      nodes[vid].r = P(problem->vertices[vid].first, problem->vertices[vid].second);
+    // decay
+    if (optional_initial_solution) {
+      for (int vid = 0; vid < num_nodes; vid++) {
+        nodes[vid].id = vid;
+        auto p = optional_initial_solution->vertices[vid];
+        nodes[vid].r = P(p.first, p.second);
+      }
+    }
+    else {
+      for (int vid = 0; vid < num_nodes; vid++) {
+        nodes[vid].id = vid;
+        nodes[vid].r = P(problem->vertices[vid].first, problem->vertices[vid].second);
+      }
     }
     auto original_length = [&](int uid, int vid) {
       auto u = problem->vertices[uid], v = problem->vertices[vid];
@@ -172,7 +183,12 @@ namespace NLayoutEditor {
     //cv::waitKey(0);
   }
 
-  void SLayout::update(SEditorParamsPtr ep) {
+  void SLayout::display_approx_dislike() const {
+    auto res = judge(*problem, *get_rounded_pose());
+    LOG(INFO) << "approx. dislikes = " << res.dislikes;
+  }
+
+  void SLayout::update() {
     img = base_img.clone();
     for (int eid = 0; eid < num_edges; eid++) {
       edge_colors[eid] = get_edge_color(eid);
@@ -223,13 +239,27 @@ namespace NLayoutEditor {
     return cv::Scalar(0, 255, 0);
   }
 
-  SLayoutEditor::SLayoutEditor(SProblemPtr problem, const std::string& solver_name, const std::string window_name, int seed)
-    : window_name(window_name), solver_name(solver_name) {
-    layout = std::make_shared<SLayout>(problem, seed);
+
+  SLayoutEditor::SLayoutEditor(
+    SProblemPtr problem, SSolutionPtr optional_initial_solution,
+    const std::string& solver_name, const std::string window_name, int seed
+  ) : window_name(window_name), solver_name(solver_name) {
     mp = std::make_shared<SMouseParams>();
     ep = std::make_shared<SEditorParams>();
+    layout = std::make_shared<SLayout>(problem, optional_initial_solution, ep, seed);
     cv::namedWindow(window_name, cv::WINDOW_AUTOSIZE);
-    cv::setMouseCallback(window_name, callback, this);
+    cv::setMouseCallback(window_name, mouse_callback, this);
+
+    cv::createTrackbar("spring", window_name, nullptr, 1000, spring_callback, &(*ep));
+    cv::setTrackbarPos("spring", window_name, ep->spring_const);
+    cv::createTrackbar("coulomb", window_name, nullptr, 1000, coulomb_callback, &(*ep));
+    cv::setTrackbarPos("coulomb", window_name, ep->coulomb_const);
+    cv::createTrackbar("edge", window_name, nullptr, 1000, edge_callback, &(*ep));
+    cv::setTrackbarPos("edge", window_name, ep->edge_const);
+    cv::createTrackbar("field", window_name, nullptr, 1000, field_callback, &(*ep));
+    cv::setTrackbarPos("field", window_name, ep->field_const);
+    cv::createTrackbar("edge_field", window_name, nullptr, 1000, edge_field_callback, &(*ep));
+    cv::setTrackbarPos("edge_field", window_name, ep->edge_field_const);
   }
 
   int SLayoutEditor::get_nearest_node_id() const {
@@ -246,7 +276,16 @@ namespace NLayoutEditor {
     }
     return idx;
   }
-  void SLayoutEditor::force_directed_layout(bool clipping) {
+
+  SSolutionPtr SLayout::get_rounded_pose() const {
+    std::vector<Point> rounded_pose;
+    for (const auto& node : nodes) {
+      rounded_pose.emplace_back((integer)round(node.r.x), (integer)round(node.r.y));
+    }
+    return problem->create_solution(rounded_pose);
+  }
+
+  SSolutionPtr SLayoutEditor::force_directed_layout(bool clipping) {
     static constexpr double decay_const = 0.99;
     static constexpr double dt = 0.01;
     static constexpr double randomness = 0.1;
@@ -274,15 +313,19 @@ namespace NLayoutEditor {
         p = layout->icvt(mp->x, mp->y);
       }
       if (loop % 100 == 0) {
-        layout->update(ep);
+        layout->update();
         cv::imshow(window_name, layout->img);
         int key = cv::waitKey(15);
         if (key == 27) break;
+        if (key == 'd') {
+          layout->display_approx_dislike();
+        }
       }
     }
+    return layout->get_rounded_pose();
   }
 
-  void SLayoutEditor::callback(int e, int x, int y, int f, void* param) {
+  void SLayoutEditor::mouse_callback(int e, int x, int y, int f, void* param) {
     SLayoutEditor* s = static_cast<SLayoutEditor*>(param);
     auto mp = s->mp;
     auto ep = s->ep;
@@ -296,7 +339,28 @@ namespace NLayoutEditor {
     if (mp->released_left()) {
       ep->selected_node_id = -1;
     }
-    s->layout->update(ep);
+    s->layout->update();
+  }
+
+  void SLayoutEditor::spring_callback(int val, void* param) {
+    SEditorParams* s = static_cast<SEditorParams*>(param);
+    s->spring_const = val;
+  }
+  void SLayoutEditor::coulomb_callback(int val, void* param) {
+    SEditorParams* s = static_cast<SEditorParams*>(param);
+    s->coulomb_const = val;
+  }
+  void SLayoutEditor::edge_callback(int val, void* param) {
+    SEditorParams* s = static_cast<SEditorParams*>(param);
+    s->edge_const = val;
+  }
+  void SLayoutEditor::field_callback(int val, void* param) {
+    SEditorParams* s = static_cast<SEditorParams*>(param);
+    s->field_const = val;
+  }
+  void SLayoutEditor::edge_field_callback(int val, void* param) {
+    SEditorParams* s = static_cast<SEditorParams*>(param);
+    s->edge_field_const = val;
   }
 }
 

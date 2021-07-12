@@ -216,6 +216,12 @@ namespace NLayoutEditor {
   struct SEditorParams {
     int nearest_node_id = -1;
     int selected_node_id = -1;
+
+    int spring_const = 10;
+    int coulomb_const = 100;
+    int edge_const = 100;
+    int field_const = 10;
+    int edge_field_const = 10;
   };
   using SEditorParamsPtr = std::shared_ptr<SEditorParams>;
 
@@ -224,11 +230,13 @@ namespace NLayoutEditor {
     static constexpr int kBaseOffset = 5;
     static constexpr int kImageWidthPx = 1000;
     static constexpr int kImageHeightPx = 1000;
-    static constexpr int kInfoBufferHeightPx = 100;
+    static constexpr int kInfoBufferHeightPx = 0;
     static constexpr int max_num_vertices = 225;
   public:
     Xorshift rnd;
     SProblemPtr problem;
+    SSolutionPtr optional_initial_solution;
+    SEditorParamsPtr ep;
     int num_nodes;
     std::vector<SNode> nodes;
     int num_edges;
@@ -255,13 +263,15 @@ namespace NLayoutEditor {
     inline P cvt(const P& p) { return cvt(p.x, p.y); }
     inline P cvt(const Point& p) { return cvt(p.first, p.second); }
     inline P icvt(int x, int y) { return { double(x) / mag - offset_x, double(y - kInfoBufferHeightPx) / mag - offset_y }; }
-    SLayout(SProblemPtr problem, int seed = 0);
+    SLayout(SProblemPtr problem, SSolutionPtr optional_initial_solution, SEditorParamsPtr ep, int seed = 0);
     std::vector<P> calc_forces() const;
     void vis(int delay = 0) const;
     void init();
     void draw_base_image();
-    void update(SEditorParamsPtr ep);
+    void display_approx_dislike() const;
+    void update();
     cv::Scalar get_edge_color(integer iedge) const;
+    SSolutionPtr get_rounded_pose() const;
   };
   using SLayoutPtr = std::shared_ptr<SLayout>;
 
@@ -273,10 +283,18 @@ namespace NLayoutEditor {
     SMouseParamsPtr mp;
     SEditorParamsPtr ep;
 
-    SLayoutEditor(SProblemPtr problem, const std::string& solver_name, const std::string window_name, int seed = 0);
+    SLayoutEditor(
+      SProblemPtr problem, SSolutionPtr optional_initial_solution,
+      const std::string& solver_name, const std::string window_name, int seed = 0
+    );
     int get_nearest_node_id() const;
-    void force_directed_layout(bool clipping = true);
-    static void callback(int e, int x, int y, int f, void* param);
+    SSolutionPtr force_directed_layout(bool clipping = true);
+    static void mouse_callback(int e, int x, int y, int f, void* param);
+    static void spring_callback(int val, void* param);
+    static void coulomb_callback(int val, void* param);
+    static void edge_callback(int val, void* param);
+    static void field_callback(int val, void* param);
+    static void edge_field_callback(int val, void* param);
   };
 
 }

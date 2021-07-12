@@ -91,7 +91,7 @@ def main():
     parser = argparse.ArgumentParser(description='Optimize parameters.')
     parser.add_argument('--problem_id', type=int,
                         help='Problem ID', required=True)
-    parser.add_argument('--solver_name', type=int,
+    parser.add_argument('--solver_name', type=str,
                         help='Solver name', required=True)
     args = parser.parse_args()
 

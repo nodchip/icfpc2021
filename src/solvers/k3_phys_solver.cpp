@@ -24,14 +24,11 @@ public:
   SolverOutputs solve(const SolverArguments& args) override {
     using namespace NLayoutEditor;
 
-    auto pose = (args.optional_initial_solution ? args.optional_initial_solution->vertices : args.problem->vertices);
-
-    SLayoutEditor layout_editor(args.problem, "K3PhysSolver", "visualize");
-    layout_editor.force_directed_layout(true);
+    SLayoutEditor layout_editor(args.problem, args.optional_initial_solution, "K3PhysSolver", "visualize");
 
     // do nothing.
     SolverOutputs ret;
-    ret.solution = args.problem->create_solution(pose);
+    ret.solution = layout_editor.force_directed_layout();
 
     return ret;
   }

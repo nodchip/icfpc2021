@@ -66,7 +66,7 @@ class Solver : public SolverBase {
       LOG(INFO) << fmt::format("HopGridAnnealingSolver random sampling test={}", rng_());
     }
     hole_ = args.problem->hole_polygon;
-    vertices_ = args.problem->vertices;
+    vertices_ = args.optional_initial_solution ? args.optional_initial_solution->vertices : args.problem->vertices;
     edges_ = args.problem->edges;
     epsilon_ = args.problem->epsilon;
     hole_polygon_ = ToBoostPolygon(hole_);
@@ -84,10 +84,11 @@ class Solver : public SolverBase {
 
     SPinnedIndex pinned_index(rng_, N, editor);
 
-    const int num_iters = 100000;
+    const int num_iters = args.num_iters.value_or(100000);
     const double T0 = 1.0e1;
     const double T1 = 1.0e-2;
     double progress = 0.0;
+    LOG(INFO) << fmt::format("num_iters={}, T0={:.2g}, T1={:.2g}", num_iters, T0, T1);
 
     integer ymin = INT_MAX, ymax = INT_MIN;
     integer xmin = INT_MAX, xmax = INT_MIN;
@@ -300,7 +301,7 @@ class Solver : public SolverBase {
       }
 
       if (editor && iter % 100 == 0) {
-        editor->set_oneshot_custom_stat(fmt::format("iter = {}/{}", iter, num_iters));
+        editor->set_oneshot_custom_stat(fmt::format("iter = {}/{} ({:.2f}%)", iter, num_iters, 100.0 * iter / num_iters));
         editor->set_pose(args.problem->create_solution(pose));
         if (auto show_result = editor->show(1); show_result.edit_result) {
           pose = show_result.edit_result->pose_after_edit->vertices;

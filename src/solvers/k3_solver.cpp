@@ -245,10 +245,10 @@ public:
     //return stretch_cost + res.dislikes * 3;
     // stretch_cost: 0.1 -> 0.9
     // dislike: 0.9 -> 0.1
-    double weight = 0.8 * progress_rate;
+    double weight = 2.0 * progress_rate;
     double phys_ratio = 0.0;
-    double stretch_ratio = 0.1 + weight;
-    double dislike_ratio = 0.9 - weight;
+    double stretch_ratio = 1.0;
+    double dislike_ratio = 0.0;
     return phys_ratio * calc_phys_cost(pose) + stretch_ratio * stretch_cost + dislike_ratio * dislike_cost;
   }
 
@@ -432,7 +432,7 @@ public:
       }
       STransPtr trans = create_random_trans(pinned_index, pose, now_score, rnd);
       if (!trans) continue;
-      double temp = get_temp(100.0, 0.0, loop, num_loop);
+      double temp = get_temp(10.0, 0.0, loop, num_loop);
       double prob = exp(-trans->diff / temp);
       if (rnd.next_double() < prob) {
         accepted++;
