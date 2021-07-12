@@ -66,7 +66,7 @@ class Solver : public SolverBase {
       LOG(INFO) << fmt::format("HopGridAnnealingSolver random sampling test={}", rng_());
     }
     hole_ = args.problem->hole_polygon;
-    vertices_ = args.problem->vertices;
+    vertices_ = args.optional_initial_solution ? args.optional_initial_solution->vertices : args.problem->vertices;
     edges_ = args.problem->edges;
     epsilon_ = args.problem->epsilon;
     hole_polygon_ = ToBoostPolygon(hole_);
