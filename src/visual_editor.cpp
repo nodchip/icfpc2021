@@ -34,6 +34,8 @@ struct SCanvas {
   static constexpr int kImageWidthPx = 1000;
   static constexpr int kImageHeightPx = 1000;
   static constexpr int kInfoBufferHeightPx = 100;
+  static constexpr integer kMaxMag = 20;
+  static constexpr integer kMinMag = 1;
 
  public:
   SProblemPtr problem;
@@ -225,8 +227,6 @@ struct SCanvas {
   }
 
   void zoom(int dmag) {
-    static constexpr integer kMaxMag = 20;
-    static constexpr integer kMinMag = 2;
     mag += dmag;
     mag = std::max(std::min(mag, kMaxMag), kMinMag);
 
@@ -438,6 +438,7 @@ struct SCanvas {
     integer mag_x = kImageWidthPx / img_width;
     integer mag_y = kImageHeightPx / img_height;
     mag = std::min(mag_x, mag_y);
+    mag = std::max(std::min(mag, kMaxMag), kMinMag);
     edge_colors.resize(problem->edges.size(), cv::Scalar(0, 255, 0));
   }
 
