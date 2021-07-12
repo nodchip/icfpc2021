@@ -30,6 +30,29 @@ function submit(id, subdir) {
 {% endblock %}
 {% block content %}
 <table class="table">
+    <tr>
+        <th>改善できる</th>
+        <td>{{ problems | rejectattr('state') | map(attribute='id') | join(', ')}}</td>
+    </tr>
+    <tr class="table-secondary">
+        <th>未提出</th>
+        <td>{{ problems | selectattr('state', 'eq', 'secondary') | map(attribute='id') | join(', ') }}</td>
+    </tr>
+    <tr class="table-danger">
+        <th>最良解が未提出</th>
+        <td>{{ problems | selectattr('state', 'eq', 'danger') | map(attribute='id') | join(', ') }}</td>
+    </tr>
+    <tr class="table-warning">
+        <th>未知の提出が最良</th>
+        <td>{{ problems | selectattr('state', 'eq', 'warning') | map(attribute='id') | join(', ') }}</td>
+    </tr>
+    <tr class="table-success">
+        <th>改善不可</th>
+        <td>{{ problems | selectattr('state', 'eq', 'success') | map(attribute='id') | join(', ') }}</td>
+    </tr>
+</table>
+
+<table class="table">
     <thead>
         <tr>
             <th>ID</th>
