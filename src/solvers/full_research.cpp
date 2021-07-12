@@ -711,17 +711,25 @@ class Solver : public SolverBase {
       queued_[i] = -1;
     }
 
-        //Cleanup(0);
+    //Cleanup(0);
     auto clean_candidates = Cleanup();
     RevertClean(clean_candidates);
 
-    for (int i = 0; i < 2; i++) {
-      auto tmp_pose = pose;
-      if (i) for (auto e : clean_candidates) tmp_pose[e.first] = args.problem->vertices[e.first];
+    auto tmp_pose = pose;
+    SSolutionPtr solution_simple = std::make_shared<SSolution>(tmp_pose);
+    auto solved = full_research(args.problem, solution_simple);
+    if (solved) return  SolverOutputs{ solution_simple };
+
+    for (int j = 0; j < N_; j++) if (assigned_[j] >= 0) {
+      tmp_pose[j] = args.problem->vertices[j];
       SSolutionPtr solution_simple = std::make_shared<SSolution>(tmp_pose);
       auto solved = full_research(args.problem, solution_simple);
       if (solved) return  SolverOutputs{ solution_simple };
+      tmp_pose[j] = pose[j];
+
+
     }
+    
     return SolverOutputs{ std::make_shared<SSolution>(pose) };
   }
 
