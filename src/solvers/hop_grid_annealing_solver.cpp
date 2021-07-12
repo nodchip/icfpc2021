@@ -75,7 +75,7 @@ class Solver : public SolverBase {
     const int N = vertices_.size();
     auto pose = vertices_;
     double cost = std::numeric_limits<double>::infinity();
-    double best_feasible_cost = std::numeric_limits<double>::infinity();
+    integer best_feasible_dislikes = std::numeric_limits<integer>::infinity();
     std::vector<Point> best_feasible_pose;
 
     SPinnedIndex pinned_index(rng_, N, editor);
@@ -94,18 +94,19 @@ class Solver : public SolverBase {
       ymax = std::max(ymax, get_y(p));
     }
 
-    // lesser version of tonagi's idea
-    for (auto& p : pose) { p = hole_[0]; }
-
+    bool once_fit = false;
     auto evaluate_and_descide_rollback = [&]() -> bool {
-      auto [feasible, updated_cost] = Evaluate(pose);
+      auto [_, updated_cost] = Evaluate(pose);
+
+      auto judge_res = judge(*args.problem, pose);
+      if (judge_res.fit_in_hole()) {
+        once_fit = true;
+      }
 
       // tonagi's idea.
-      if (false || !best_feasible_pose.empty()) {
-        auto res = judge(*args.problem, pose);
-        if (!res.fit_in_hole()) {
-          feasible = false;
-          updated_cost = DBL_MAX;
+      if (once_fit) {
+        if (!judge_res.fit_in_hole()) {
+          updated_cost = DBL_MAX; // forbid transition.
         }
       }
 
@@ -123,11 +124,13 @@ class Solver : public SolverBase {
       }
 #endif
 
-      if (feasible && updated_cost < best_feasible_cost) {
-        best_feasible_cost = updated_cost;
+      // use the exact judge to keep the best solution.
+      if (judge_res.is_valid() && judge_res.dislikes < best_feasible_dislikes) {
+        best_feasible_dislikes = judge_res.dislikes;
         best_feasible_pose = pose;
-        if (editor) editor->set_persistent_custom_stat(fmt::format("best_cost = {}", best_feasible_cost));
+        if (editor) editor->set_persistent_custom_stat(fmt::format("best_feasible_dislikes = {}", best_feasible_dislikes));
       }
+
       const double T = std::pow(T0, 1.0 - progress) * std::pow(T1, progress);
       if (std::uniform_real_distribution(0.0, 1.0)(rng_) < std::exp(-(updated_cost - cost) / T)) {
         cost = updated_cost;
