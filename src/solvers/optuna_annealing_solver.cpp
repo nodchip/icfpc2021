@@ -229,7 +229,12 @@ namespace OptunaAnnealingSolver {
 
       const double vote_pow = parameters_["vote_pow"]; // 5.0 1.0-5.0
       auto edges_cache = edges_from_vertex(*args.problem);
-      std::vector<std::vector<double> > good_pos(ymax - ymin + 1, std::vector<double>(xmax - xmin + 1));
+      std::vector<std::vector<int> > good_pos(ymax - ymin + 1, std::vector<int>(xmax - xmin + 1));
+      std::vector<double> pow_table;
+      for (int i = 0; i < 1024; ++i) {
+        pow_table.push_back(std::pow(static_cast<double>(i), vote_pow));
+      }
+
       auto hop_grid = [&] { // jump to a tolerated (by at least one edge) point.
         const int pivot = std::uniform_int_distribution(0, N - 1)(rng_);
         const auto pivot_bak = pose[pivot];
@@ -254,11 +259,7 @@ namespace OptunaAnnealingSolver {
         double total_votes = 0;
         for (int y = ymin; y <= ymax; ++y) {
           for (int x = xmin; x <= xmax; ++x) {
-            if (good_pos[y - ymin][x - xmin] == 0) {
-              continue;
-            }
-            good_pos[y - ymin][x - xmin] = std::pow(good_pos[y - ymin][x - xmin], vote_pow);
-            total_votes += good_pos[y - ymin][x - xmin];
+            total_votes += pow_table[good_pos[y - ymin][x - xmin]];
           }
         }
         const double select_accum_vote = std::uniform_real_distribution<double>(0.0, total_votes)(rng_);
@@ -266,11 +267,7 @@ namespace OptunaAnnealingSolver {
         bool found = false;
         for (int y = ymin; !found && y <= ymax; ++y) {
           for (int x = xmin; !found && x <= xmax; ++x) {
-            if (good_pos[y - ymin][x - xmin] == 0) {
-              continue;
-            }
-            double adjusted_vote = good_pos[y - ymin][x - xmin];
-            accum_vote += adjusted_vote;
+            accum_vote += pow_table[good_pos[y - ymin][x - xmin]];
             if (select_accum_vote <= accum_vote) {
               pose[pivot] = {x, y};
               found = true;
