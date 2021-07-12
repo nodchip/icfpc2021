@@ -551,12 +551,24 @@ void SVisualEditor::save_intermediate() const {
 SShowResult SVisualEditor::show(int delay_ms) {
   static constexpr int kEscKey = 27;
   static constexpr int kNoKeyPress = -1;
+
+#ifdef _MSC_VER
+  // https://docs.opencv.org/3.2.0/d7/dfc/group__highgui.html#gafa15c0501e0ddd90918f17aa071d3dd0
+  // https://scorpion140309.blog.fc2.com/blog-entry-196.html
+  static constexpr int kUpArrowKey = 0x00260000;
+  static constexpr int kLeftArrowKey = 0x00250000;
+  static constexpr int kDownArrowKey = 0x00280000;
+  static constexpr int kRightArrowKey = 0x00270000;
+  const int key = cv::waitKeyEx(delay_ms);
+#else
   static constexpr int kUpArrowKey = 82;
   static constexpr int kLeftArrowKey = 81;
   static constexpr int kDownArrowKey = 84;
   static constexpr int kRightArrowKey = 83;
+  const int key = cv::waitKey(delay_ms);
+#endif
 
-  SShowResult res(cv::waitKey(delay_ms));
+  SShowResult res(key);
   if (res.key == kEscKey) {
     if (in_internal_edit_loop()) {
       // Leaving internal edit mode.

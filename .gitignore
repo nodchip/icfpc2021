@@ -59,6 +59,7 @@
 /scripts/solve_all.csv
 /src/_HEAD.txt
 /vs/solver/_HEAD.txt
+.ipynb_checkpoints/
 
 # www
 __pycache__/
